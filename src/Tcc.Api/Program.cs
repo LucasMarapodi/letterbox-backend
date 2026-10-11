@@ -3,6 +3,14 @@ builder.Services.AddExceptionHandler<Tcc.Api.IdentityExceptionHandler>();
 builder.Services.AddSingleton<Tcc.Application.Identity.IPasswordHasher, Tcc.Infrastructure.Identity.Pbkdf2PasswordHasher>();
 builder.Services.AddSingleton<Tcc.Application.Identity.IUserAccounts, Tcc.Infrastructure.Identity.InMemoryUserAccounts>();
 builder.Services.AddScoped<Tcc.Application.Identity.RegisterAccount>();
+builder.Services.AddScoped<Tcc.Application.Identity.LoginAccount>();
+builder.Services.AddSingleton<Tcc.Application.Identity.IMockSessions, Tcc.Infrastructure.Identity.InMemoryMockSessions>();
+builder.Services.AddOptions<Tcc.Api.Authentication.SessionOptions>()
+    .BindConfiguration("Authentication")
+    .Validate(options => options.SessionMinutes > 0, "SessionMinutes deve ser positivo.")
+    .ValidateOnStart();
+builder.Services.AddSingleton(services => new Tcc.Application.Identity.SessionSettings(TimeSpan.FromMinutes(
+    services.GetRequiredService<Microsoft.Extensions.Options.IOptions<Tcc.Api.Authentication.SessionOptions>>().Value.SessionMinutes)));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<Tcc.Infrastructure.Memory.HostMemory>();
 builder.Services.AddSingleton<Tcc.Application.Memory.IHostSeed>(services =>

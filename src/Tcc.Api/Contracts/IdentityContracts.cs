@@ -7,6 +7,11 @@ namespace Tcc.Api.Contracts;
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record RegisterRequest([Required] string? Name, [Required] string? Email, [Required] string? Password);
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record LoginRequest([Required] string? Email, [Required] string? Password);
+
+public sealed record LoginResponse(string Token, DateTimeOffset ExpiresAt, PublicUserResponse User);
+
 public sealed record PublicUserResponse(string Id, string Username, string DisplayName, string Bio, string? AvatarUrl)
 {
     public static PublicUserResponse From(UserAccount account) =>
