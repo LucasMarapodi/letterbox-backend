@@ -9,6 +9,22 @@ namespace Tcc.Api.Tests;
 
 public sealed class ErrorTests
 {
+    [Fact]
+    public async Task Serialization_preserves_opaque_id_and_null_and_normalizes_utc()
+    {
+        await using var host = new ProbeFactory();
+        using var client = host.CreateClient();
+        var input = new ProbePayload("opaque/id:value", new DateTimeOffset(2026, 10, 11, 9, 0, 0, TimeSpan.FromHours(-3)), null);
+        using var response = await client.PostAsJsonAsync("/__tests/payload", input);
+        response.EnsureSuccessStatusCode();
+        var output = await response.Content.ReadFromJsonAsync<ProbePayload>();
+        Assert.NotNull(output);
+        Assert.Equal(input.Id, output.Id);
+        Assert.Equal(input.CreatedAt, output.CreatedAt);
+        Assert.Equal(TimeSpan.Zero, output.CreatedAt.Offset);
+        Assert.Contains("\"optional\":null", await response.Content.ReadAsStringAsync());
+    }
+
     [Theory]
     [InlineData(400, "validation_failed")]
     [InlineData(401, "unauthorized")]
