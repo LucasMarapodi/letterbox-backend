@@ -4,6 +4,15 @@ builder.Services.AddSingleton<Tcc.Application.Identity.IPasswordHasher, Tcc.Infr
 builder.Services.AddSingleton<Tcc.Application.Identity.IUserAccounts, Tcc.Infrastructure.Identity.InMemoryUserAccounts>();
 builder.Services.AddScoped<Tcc.Application.Identity.RegisterAccount>();
 builder.Services.AddScoped<Tcc.Application.Identity.LoginAccount>();
+builder.Services.AddScoped<Tcc.Application.Identity.SessionAccess>();
+builder.Services.AddScoped<Tcc.Application.Identity.CurrentAccount>();
+builder.Services.AddScoped<Tcc.Application.Identity.LogoutAccount>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<Tcc.Application.Identity.ICurrentSession, Tcc.Api.Authentication.HttpCurrentSession>();
+builder.Services.AddAuthentication(Tcc.Api.Authentication.MockBearerHandler.SchemeName)
+    .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, Tcc.Api.Authentication.MockBearerHandler>(
+        Tcc.Api.Authentication.MockBearerHandler.SchemeName, _ => { });
+builder.Services.AddAuthorization();
 builder.Services.AddSingleton<Tcc.Application.Identity.IMockSessions, Tcc.Infrastructure.Identity.InMemoryMockSessions>();
 builder.Services.AddOptions<Tcc.Api.Authentication.SessionOptions>()
     .BindConfiguration("Authentication")
@@ -35,6 +44,8 @@ app.UseStatusCodePages(async statusContext =>
     await statusContext.HttpContext.Response.WriteAsJsonAsync(
         Tcc.Api.Contracts.ApiError.FromStatus(statusContext.HttpContext.Response.StatusCode)));
 app.MapControllers();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/health", () => TypedResults.Ok(new Tcc.Api.Contracts.HealthResponse("ok")));
 app.Run();
