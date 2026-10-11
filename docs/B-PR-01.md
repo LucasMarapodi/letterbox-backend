@@ -10,11 +10,11 @@ O backend não tinha solução ou infraestrutura HTTP. Esta entrega cria uma API
 
 Os ciclos RED foram executados e os testes commitados antes das implementações. O health inicialmente retornou 404; erros não continham os códigos previstos; o seed não inicializava e não havia serviço de estado; datas preservavam offset local antes da normalização UTC.
 
-## Escopo e publicação
-
 ## Validação
 
 `dotnet test --no-restore`: 15 testes aprovados (13 HTTP/infraestrutura, 1 Domain, 1 Application). `dotnet build --no-restore -c Release`: sucesso, zero avisos e erros. `git diff --check`: sem erros. Validação executada em 11/10/2026, SDK 10.0.401.
+
+## Escopo e publicação
 
 Nenhum código do frontend alterado. Sem entidades antecipadas, banco, IGDB real, autenticação ou endpoints de negócio. A memória é suporte de inicialização; fixtures e repositórios concretos chegam nas próximas US.
 
