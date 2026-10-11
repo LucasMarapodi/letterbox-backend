@@ -19,8 +19,15 @@ public sealed class MemoryTests
         Assert.NotNull(firstState);
         Assert.Same(firstState, otherScope.ServiceProvider.GetRequiredService<HostMemory>());
         Assert.NotSame(firstState, second.Services.GetRequiredService<HostMemory>());
+        var value = "";
+        firstState.SeedOnce(() => value = "fixture");
+        Assert.Equal("fixture", value);
+        value = "written";
         using var response = await client.GetAsync("/health");
         Assert.Same(firstState, first.Services.GetRequiredService<HostMemory>());
+        otherScope.ServiceProvider.GetRequiredService<HostMemory>().SeedOnce(() => value = "overwritten");
+        Assert.Equal("written", value);
+        Assert.Same(firstState, first.Services.GetRequiredService<Tcc.Application.Memory.IHostSeed>());
         Assert.Equal(TimeSpan.Zero, first.Services.GetRequiredService<TimeProvider>().GetUtcNow().Offset);
     }
 

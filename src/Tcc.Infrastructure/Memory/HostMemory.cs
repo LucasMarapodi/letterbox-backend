@@ -1,6 +1,18 @@
 namespace Tcc.Infrastructure.Memory;
 
-public sealed class HostMemory
+public sealed class HostMemory : Tcc.Application.Memory.IHostSeed
 {
-    public void SeedOnce(Action seed) { }
+    private readonly Lock gate = new();
+    private bool seeded;
+
+    public void SeedOnce(Action seed)
+    {
+        ArgumentNullException.ThrowIfNull(seed);
+        lock (gate)
+        {
+            if (seeded) return;
+            seed();
+            seeded = true;
+        }
+    }
 }

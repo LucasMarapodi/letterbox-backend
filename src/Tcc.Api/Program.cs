@@ -1,4 +1,8 @@
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<Tcc.Infrastructure.Memory.HostMemory>();
+builder.Services.AddSingleton<Tcc.Application.Memory.IHostSeed>(services =>
+    services.GetRequiredService<Tcc.Infrastructure.Memory.HostMemory>());
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
 {
     options.InvalidModelStateResponseFactory = _ =>
