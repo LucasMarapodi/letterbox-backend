@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Tcc.Api/Tcc.Api.csproj" />
+    <Project Path="src/Tcc.Application/Tcc.Application.csproj" />
+    <Project Path="src/Tcc.Domain/Tcc.Domain.csproj" />
+    <Project Path="src/Tcc.Infrastructure/Tcc.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Tcc.Api.Tests/Tcc.Api.Tests.csproj" />
+    <Project Path="tests/Tcc.Application.Tests/Tcc.Application.Tests.csproj" />
+    <Project Path="tests/Tcc.Domain.Tests/Tcc.Domain.Tests.csproj" />
+  </Folder>
+</Solution>
