@@ -7,6 +7,8 @@ builder.Services.AddScoped<Tcc.Application.Identity.LoginAccount>();
 builder.Services.AddScoped<Tcc.Application.Identity.SessionAccess>();
 builder.Services.AddScoped<Tcc.Application.Identity.CurrentAccount>();
 builder.Services.AddScoped<Tcc.Application.Identity.LogoutAccount>();
+builder.Services.AddScoped<Tcc.Application.Identity.GetUserProfile>();
+builder.Services.AddScoped<Tcc.Application.Identity.EditUserProfile>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<Tcc.Application.Identity.ICurrentSession, Tcc.Api.Authentication.HttpCurrentSession>();
 builder.Services.AddAuthentication(Tcc.Api.Authentication.MockBearerHandler.SchemeName)

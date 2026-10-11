@@ -37,4 +37,15 @@ public sealed class InMemoryUserAccounts : IUserAccounts
     {
         lock (gate) return byId.GetValueOrDefault(id);
     }
+
+    public UserAccount? UpdateProfile(string id, ProfileChange change)
+    {
+        lock (gate)
+        {
+            if (!byId.TryGetValue(id, out var account)) return null;
+            var updated = account.UpdateProfile(change);
+            byId[id] = updated;
+            return updated;
+        }
+    }
 }

@@ -21,4 +21,6 @@ public sealed class UserAccount
         PasswordHash = passwordHash;
         Profile = profile;
     }
+
+    public UserAccount UpdateProfile(ProfileChange change) => new(Id, Username, Email, PasswordHash, Profile.Apply(change));
 }

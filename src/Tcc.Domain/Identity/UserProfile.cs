@@ -26,4 +26,7 @@ public sealed record UserProfile
             throw new DomainValidationException("Avatar inválido.");
         return new UserProfile(name, bio, avatarUrl);
     }
+
+    public UserProfile Apply(ProfileChange change) => Create(change.DisplayName ?? DisplayName,
+        change.Bio ?? Bio, change.AvatarSpecified ? change.AvatarUrl : AvatarUrl);
 }

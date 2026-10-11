@@ -7,6 +7,7 @@ public interface IUserAccounts
     bool TryAdd(UserAccount account);
     UserAccount? FindByEmail(Email email);
     UserAccount? FindById(string id);
+    UserAccount? UpdateProfile(string id, ProfileChange change);
 }
 
 public interface IPasswordHasher
