@@ -21,6 +21,36 @@ Email duplicado retorna 409/conflict; payload inválido 400/validation_failed; c
 
 Fixtures por host: Ana, user-1, ana@example.com / teste123 (credenciais fictícias de desenvolvimento compatíveis com o mock). Senha armazenada somente como verificador com salt. Cadastro e alterações não sobrevivem ao reinício.
 
+O verificador usa PBKDF2-SHA512, 210.000 iterações, salt aleatório de 16 bytes e resultado de 32 bytes; comparação com FixedTimeEquals. Tokens usam 32 bytes aleatórios representados em hexadecimal. Segredos permanecem no store interno; somente o login entrega o token correspondente.
+
+## Exemplo local
+
+```http
+POST /api/v1/auth/register
+Content-Type: application/json
+
+{"name":"Lucas","email":"lucas@example.com","password":"exemplo"}
+```
+
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{"email":"lucas@example.com","password":"exemplo"}
+```
+
+Copie token da resposta para o cabeçalho dos comandos privados:
+
+```http
+PATCH /api/v1/users/me/profile
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{"displayName":"Lucas","bio":"Meus jogos favoritos","avatarUrl":null}
+```
+
+## Compatibilidade
+
 Mapeamento frontend, por leitura: RegistrationInput mantém name/email/password e PublicUserResponse mantém User. LoginResponse acrescenta token/expiresAt necessários ao futuro adaptador HTTP; ele deverá guardar token e retornar user ao AuthService. Os códigos HTTP precisam ser convertidos para invalid-credentials, duplicate-email e invalid-fields. Nenhum adaptador ou código do Front será modificado nesta PR.
 
 Implementação de autenticação usará o [mecanismo de handlers do ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/) e hashing pela [API PBKDF2 do .NET](https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.rfc2898derivebytes.pbkdf2?view=net-10.0).
