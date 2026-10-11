@@ -1,4 +1,8 @@
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddExceptionHandler<Tcc.Api.IdentityExceptionHandler>();
+builder.Services.AddSingleton<Tcc.Application.Identity.IPasswordHasher, Tcc.Infrastructure.Identity.Pbkdf2PasswordHasher>();
+builder.Services.AddSingleton<Tcc.Application.Identity.IUserAccounts, Tcc.Infrastructure.Identity.InMemoryUserAccounts>();
+builder.Services.AddScoped<Tcc.Application.Identity.RegisterAccount>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<Tcc.Infrastructure.Memory.HostMemory>();
 builder.Services.AddSingleton<Tcc.Application.Memory.IHostSeed>(services =>
