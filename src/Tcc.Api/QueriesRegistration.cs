@@ -11,6 +11,7 @@ public static class QueriesRegistration
         services.AddScoped<RecentReviews>();
         services.AddScoped<CommentActivity>();
         services.AddScoped<MostCommentedReviews>();
+        services.AddScoped<GamesInDiscussion>();
         return services;
     }
 }
