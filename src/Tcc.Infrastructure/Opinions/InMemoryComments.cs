@@ -18,4 +18,5 @@ public sealed class InMemoryComments : IComments
     {
         lock (gate) return comments.Values.Where(comment => comment.ReviewId == reviewId).ToArray();
     }
+    public void Add(Comment comment) { lock (gate) comments.Add(comment.Id, comment); }
 }

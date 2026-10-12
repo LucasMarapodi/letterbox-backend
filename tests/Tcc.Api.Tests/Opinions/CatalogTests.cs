@@ -7,6 +7,15 @@ namespace Tcc.Api.Tests.Opinions;
 public sealed class CatalogTests
 {
     [Fact]
+    public void Fake_adapter_is_constructible_without_network_and_infrastructure_has_no_http_reference()
+    {
+        var adapter = new Tcc.Infrastructure.Catalog.FakeIgdbCatalog();
+        Assert.Equal(3, adapter.All().Count);
+        Assert.DoesNotContain(typeof(Tcc.Infrastructure.Catalog.FakeIgdbCatalog).Assembly.GetReferencedAssemblies(),
+            reference => reference.Name == "System.Net.Http");
+    }
+
+    [Fact]
     public async Task Public_search_trims_and_sorts_in_both_directions()
     {
         await using var host = new WebApplicationFactory<Program>();
