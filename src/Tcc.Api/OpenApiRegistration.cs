@@ -19,6 +19,7 @@ public static class OpenApiRegistration
             {
                 document.Info = new() { Title = "TCC Games API", Version = "v1",
                     Description = "Backend local com dados em memória, token opaco simulado e IGDB fake. Reiniciar restaura fixtures e invalida sessões." };
+                document.Servers = [new OpenApiServer { Url = "/" }];
                 document.Components ??= new();
                 document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
                 {
