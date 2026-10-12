@@ -14,6 +14,10 @@ public static class OpinionsRegistration
         services.AddSingleton<IRatings, InMemoryRatings>();
         services.AddScoped<PersonalRating>();
         services.AddScoped<LocalRatingAverage>();
+        services.AddSingleton<IReviews, InMemoryReviews>();
+        services.AddScoped<OpinionViews>();
+        services.AddScoped<PublishReview>();
+        services.AddScoped<GetReview>();
         return services;
     }
 }
