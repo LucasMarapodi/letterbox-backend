@@ -15,6 +15,7 @@ public static class SocialRegistration
         services.AddSingleton<IPublicationScope>(provider => provider.GetRequiredService<InMemoryPublicationScope>());
         services.AddSingleton<INotifications, InMemoryNotifications>();
         services.AddScoped<PublicationNotifications>();
+        services.AddScoped<QueryNotifications>();
         return services;
     }
 }
