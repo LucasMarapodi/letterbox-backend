@@ -20,6 +20,8 @@ public static class OpinionsRegistration
         services.AddScoped<GetReview>();
         services.AddScoped<QueryReviews>();
         services.AddScoped<EditReview>();
+        services.AddSingleton<IComments, InMemoryComments>();
+        services.AddScoped<QueryComments>();
         return services;
     }
 }
