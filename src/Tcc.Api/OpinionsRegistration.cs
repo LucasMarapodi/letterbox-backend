@@ -1,5 +1,7 @@
 using Tcc.Application.Catalog;
 using Tcc.Infrastructure.Catalog;
+using Tcc.Application.Opinions;
+using Tcc.Infrastructure.Opinions;
 
 namespace Tcc.Api;
 
@@ -9,6 +11,9 @@ public static class OpinionsRegistration
     {
         services.AddSingleton<IGameCatalog, FakeIgdbCatalog>();
         services.AddScoped<QueryGames>();
+        services.AddSingleton<IRatings, InMemoryRatings>();
+        services.AddScoped<PersonalRating>();
+        services.AddScoped<LocalRatingAverage>();
         return services;
     }
 }
