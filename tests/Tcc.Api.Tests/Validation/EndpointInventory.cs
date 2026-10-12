@@ -1,0 +1,45 @@
+namespace Tcc.Api.Tests.Validation;
+
+public sealed record EndpointContract(string Method, string Path, int Success, bool Private, params int[] Errors);
+
+internal static class EndpointInventory
+{
+    public static IReadOnlyList<EndpointContract> All { get; } = new EndpointContract[]
+    {
+        new("get", "/health", 200, false),
+        new("post", "/api/v1/auth/register", 201, false, 400, 409),
+        new("post", "/api/v1/auth/login", 200, false, 400, 401),
+        new("post", "/api/v1/auth/logout", 204, true),
+        new("get", "/api/v1/auth/me", 200, true),
+        new("get", "/api/v1/users/{userId}", 200, false, 404),
+        new("patch", "/api/v1/users/me/profile", 200, true, 400),
+        new("get", "/api/v1/users/{userId}/reviews", 200, false, 404),
+        new("get", "/api/v1/users/{userId}/followers", 200, false, 404),
+        new("get", "/api/v1/users/{userId}/following", 200, false, 404),
+        new("get", "/api/v1/games", 200, false, 400),
+        new("get", "/api/v1/games/{gameId}", 200, false, 404),
+        new("get", "/api/v1/games/{gameId}/opinions", 200, false, 404),
+        new("get", "/api/v1/games/{gameId}/rating/me", 200, true, 404),
+        new("put", "/api/v1/games/{gameId}/rating/me", 200, true, 400, 404),
+        new("get", "/api/v1/games/{gameId}/reviews", 200, false, 404),
+        new("get", "/api/v1/games/{gameId}/reviews/me", 200, true, 404),
+        new("post", "/api/v1/games/{gameId}/reviews", 201, true, 400, 404, 409),
+        new("get", "/api/v1/reviews/{reviewId}", 200, false, 404),
+        new("patch", "/api/v1/reviews/{reviewId}", 200, true, 400, 403, 404),
+        new("get", "/api/v1/reviews/{reviewId}/comments", 200, false, 404),
+        new("post", "/api/v1/reviews/{reviewId}/comments", 201, true, 400, 404),
+        new("put", "/api/v1/users/{userId}/follow", 200, true, 400, 404),
+        new("delete", "/api/v1/users/{userId}/follow", 204, true, 400, 404),
+        new("get", "/api/v1/users/{userId}/follow/me", 200, true, 404),
+        new("get", "/api/v1/favorites", 200, true),
+        new("get", "/api/v1/favorites/{kind}/{targetId}", 200, true, 400, 404),
+        new("put", "/api/v1/favorites/{kind}/{targetId}", 200, true, 400, 404),
+        new("delete", "/api/v1/favorites/{kind}/{targetId}", 204, true, 400, 404),
+        new("get", "/api/v1/dashboard", 200, true),
+        new("get", "/api/v1/feed/following", 200, true),
+        new("get", "/api/v1/community/reviews/recent", 200, false),
+        new("get", "/api/v1/community/reviews/most-commented", 200, false, 400),
+        new("get", "/api/v1/community/games/in-discussion", 200, false, 400),
+        new("get", "/api/v1/notifications", 200, true)
+    };
+}
