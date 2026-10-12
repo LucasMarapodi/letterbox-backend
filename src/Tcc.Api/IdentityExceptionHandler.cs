@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Tcc.Api.Contracts;
 using Tcc.Application.Identity;
 using Tcc.Domain.Identity;
+using Tcc.Application.Catalog;
 
 namespace Tcc.Api;
 
@@ -12,6 +13,9 @@ public sealed class IdentityExceptionHandler : IExceptionHandler
         var status = exception switch
         {
             DomainValidationException => 400,
+            ResourceFailure { Kind: ResourceFailureKind.NotFound } => 404,
+            ResourceFailure { Kind: ResourceFailureKind.Conflict } => 409,
+            ResourceFailure { Kind: ResourceFailureKind.Forbidden } => 403,
             IdentityFailure { Kind: IdentityFailureKind.Conflict } => 409,
             IdentityFailure { Kind: IdentityFailureKind.Unauthorized } => 401,
             IdentityFailure { Kind: IdentityFailureKind.NotFound } => 404,
