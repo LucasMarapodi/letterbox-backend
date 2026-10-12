@@ -22,7 +22,7 @@ public sealed class OpenApiTests
         var scheme = root.GetProperty("components").GetProperty("securitySchemes").GetProperty("Bearer");
         Assert.Equal("http", scheme.GetProperty("type").GetString());
         Assert.Equal("bearer", scheme.GetProperty("scheme").GetString());
-        Assert.DoesNotContain("JWT", scheme.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("opaque", scheme.GetProperty("bearerFormat").GetString());
         foreach (var route in EndpointInventory.All)
         {
             var operation = paths.GetProperty(route.Path).GetProperty(route.Method);
@@ -62,7 +62,7 @@ public sealed class OpenApiTests
         var password = schemas.GetProperty("RegisterRequest").GetProperty("properties").GetProperty("password");
         Assert.Equal("password", password.GetProperty("format").GetString());
         Assert.True(password.GetProperty("writeOnly").GetBoolean());
-        Assert.True(schemas.GetProperty("RegisterRequest").TryGetProperty("example", out _));
+        Assert.True(schemas.GetProperty("RegisterRequest").GetProperty("examples").GetArrayLength() > 0);
         var value = schemas.GetProperty("RatingRequest").GetProperty("properties").GetProperty("value");
         Assert.Equal(0, value.GetProperty("minimum").GetInt32());
         Assert.Equal(5, value.GetProperty("maximum").GetInt32());
