@@ -8,6 +8,7 @@ public static class QueriesRegistration
     {
         services.AddScoped<FollowingFeed>();
         services.AddScoped<PersonalDashboard>();
+        services.AddScoped<RecentReviews>();
         return services;
     }
 }
