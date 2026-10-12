@@ -9,6 +9,8 @@ public static class SocialRegistration
     {
         services.AddSingleton<IFollows, InMemoryFollows>();
         services.AddScoped<FollowUsers>();
+        services.AddSingleton<IFavorites, InMemoryFavorites>();
+        services.AddScoped<PersonalFavorites>();
         return services;
     }
 }
