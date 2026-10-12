@@ -12,7 +12,37 @@ GET /reviews/{id}, /games/{id}/reviews, /users/{id}/reviews e /games/{id}/opinio
 
 GET /reviews/{id}/comments retorna lista plana por createdAt crescente/ID ordinal crescente. POST recebe apenas {text: string}, trim não vazio, máximo 2.000 caracteres depois do trim; retorna 201 CommentResponse (id,userId,reviewId,text,createdAt,author). Location aponta a lista consultável de comentários. Permite comentário próprio. Sem parentCommentId, likes, exclusão ou eventos/notificações nesta PR.
 
-Fixtures: três jogos fictícios correspondentes aos IDs/títulos do Front; sem notas iniciais. Review review-fixture de Ana em game-3 (introduzida na US10); comentários tipados serão introduzidos na US13. Cada repositório singleton inicializa suas fixtures uma vez, sem usar a marca global de seed da identidade para impedir sementes de outras áreas. Reinício restaura dados iniciais e elimina gravações.
+Fixtures: três jogos fictícios correspondentes aos IDs/títulos do Front, capas null nesta entrega; sem notas iniciais. Review review-fixture de Ana em game-3; três comentários de Ana nessa review (comment-c de 01/01/2026 e comment-a/comment-b de 02/01/2026, às 12h UTC). Cada repositório singleton inicializa suas fixtures uma vez, sem usar a marca global de seed da identidade para impedir sementes de outras áreas. Reinício restaura dados iniciais e elimina gravações.
+
+## Exemplo
+
+```http
+PUT /api/v1/games/game-1/rating/me
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{"value":3.75}
+```
+
+```http
+POST /api/v1/games/game-1/reviews
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{"text":"Minha review sobre o jogo."}
+```
+
+Após copiar o ID retornado:
+
+```http
+POST /api/v1/reviews/<reviewId>/comments
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{"text":"Meu comentário."}
+```
+
+Consultas seguintes usam `/api/v1/games/game-1/opinions` e `/api/v1/reviews/<reviewId>/comments`, sem sessão.
 
 Mapeamento IGDB fake: name → title, summary → summary, cover.url → coverUrl, genres.name → genres, platforms.name → platforms, first_release_date → releaseDate UTC sem hora. Os valores são fixtures fictícias, sem HTTP externo, credenciais ou nota externa. Referência: [IGDB](https://api-docs.igdb.com/).
 
