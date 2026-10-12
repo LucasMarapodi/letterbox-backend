@@ -14,6 +14,7 @@ public sealed class OpenApiTests
         Assert.Equal(200, (int)response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var root = document.RootElement;
+        Assert.Equal("/", root.GetProperty("servers")[0].GetProperty("url").GetString());
         var paths = root.GetProperty("paths");
         var actual = paths.EnumerateObject().SelectMany(path => path.Value.EnumerateObject()
             .Where(operation => operation.Name is "get" or "post" or "put" or "patch" or "delete")
