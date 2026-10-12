@@ -3,9 +3,9 @@ using Tcc.Domain.Social;
 
 namespace Tcc.Infrastructure.Social;
 
-public sealed class InMemoryFollows : IFollows
+public sealed class InMemoryFollows(InMemoryPublicationScope publications) : IFollows
 {
-    private readonly Lock gate = new();
+    private readonly Lock gate = publications.Gate;
     private readonly Dictionary<(string Follower, string Followed), Follow> follows = [];
     public void Add(Follow follow) { lock (gate) follows.TryAdd((follow.FollowerId, follow.FollowedId), follow); }
     public void Remove(string followerId, string followedId) { lock (gate) follows.Remove((followerId, followedId)); }

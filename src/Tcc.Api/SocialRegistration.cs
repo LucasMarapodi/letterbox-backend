@@ -11,6 +11,10 @@ public static class SocialRegistration
         services.AddScoped<FollowUsers>();
         services.AddSingleton<IFavorites, InMemoryFavorites>();
         services.AddScoped<PersonalFavorites>();
+        services.AddSingleton<InMemoryPublicationScope>();
+        services.AddSingleton<IPublicationScope>(provider => provider.GetRequiredService<InMemoryPublicationScope>());
+        services.AddSingleton<INotifications, InMemoryNotifications>();
+        services.AddScoped<PublicationNotifications>();
         return services;
     }
 }
