@@ -18,6 +18,7 @@ public static class OpinionsRegistration
         services.AddScoped<OpinionViews>();
         services.AddScoped<PublishReview>();
         services.AddScoped<GetReview>();
+        services.AddScoped<QueryReviews>();
         return services;
     }
 }

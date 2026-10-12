@@ -8,6 +8,8 @@ namespace Tcc.Api.Contracts;
 public sealed record TextRequest([Required] string? Text);
 public sealed record AuthorResponse(string Id, string DisplayName, string? AvatarUrl);
 public sealed record GameSummaryResponse(string Id, string Title, string? CoverUrl);
+public sealed record MyReviewResponse(ReviewResponse? Review);
+public sealed record GameOpinionsResponse(double? AverageRating, IReadOnlyList<ReviewResponse> Reviews);
 public sealed record ReviewResponse(string Id, string UserId, string GameId, string Text,
     DateTimeOffset CreatedAt, DateTimeOffset? UpdatedAt, AuthorResponse Author, GameSummaryResponse Game)
 {
