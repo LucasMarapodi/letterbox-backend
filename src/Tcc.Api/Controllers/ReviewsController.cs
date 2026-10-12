@@ -7,7 +7,7 @@ namespace Tcc.Api.Controllers;
 
 [ApiController]
 [Route("api/v1")]
-public sealed class ReviewsController(PublishReview publish, GetReview reviews, QueryReviews queries) : ControllerBase
+public sealed class ReviewsController(PublishReview publish, GetReview reviews, QueryReviews queries, EditReview edit) : ControllerBase
 {
     [Authorize]
     [HttpPost("games/{gameId}/reviews")]
@@ -18,6 +18,11 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     }
     [HttpGet("reviews/{reviewId}")]
     public ActionResult<ReviewResponse> Get(string reviewId) => Ok(ReviewResponse.From(reviews.Execute(reviewId)));
+
+    [Authorize]
+    [HttpPatch("reviews/{reviewId}")]
+    public ActionResult<ReviewResponse> Edit(string reviewId, TextRequest request) =>
+        Ok(ReviewResponse.From(edit.Execute(reviewId, request.Text)));
 
     [HttpGet("games/{gameId}/reviews")]
     public ActionResult<IReadOnlyList<ReviewResponse>> ForGame(string gameId) =>

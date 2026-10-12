@@ -3,6 +3,7 @@ using Tcc.Api.Contracts;
 using Tcc.Application.Identity;
 using Tcc.Domain.Identity;
 using Tcc.Application.Catalog;
+using Tcc.Domain.Opinions;
 
 namespace Tcc.Api;
 
@@ -13,6 +14,7 @@ public sealed class IdentityExceptionHandler : IExceptionHandler
         var status = exception switch
         {
             DomainValidationException => 400,
+            ReviewOwnershipException => 403,
             ResourceFailure { Kind: ResourceFailureKind.NotFound } => 404,
             ResourceFailure { Kind: ResourceFailureKind.Conflict } => 409,
             ResourceFailure { Kind: ResourceFailureKind.Forbidden } => 403,

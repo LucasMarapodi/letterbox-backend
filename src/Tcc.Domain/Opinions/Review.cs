@@ -23,6 +23,12 @@ public sealed record Review
     public static Review Create(string id, string userId, string gameId, string? text, DateTimeOffset now) =>
         new(id, userId, gameId, ValidateText(text), now, null);
 
+    public Review Edit(string actorId, string? text, DateTimeOffset now)
+    {
+        if (actorId != UserId) throw new ReviewOwnershipException();
+        return new Review(Id, UserId, GameId, ValidateText(text), CreatedAt, now);
+    }
+
     private static string ValidateText(string? text)
     {
         var value = text?.Trim();
@@ -30,3 +36,5 @@ public sealed record Review
             ? throw new DomainValidationException("Texto de review inválido.") : value;
     }
 }
+
+public sealed class ReviewOwnershipException() : Exception("Somente o autor pode editar a review.");

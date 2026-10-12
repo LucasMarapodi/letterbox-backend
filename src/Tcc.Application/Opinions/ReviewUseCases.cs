@@ -9,6 +9,7 @@ public interface IReviews
     bool TryAdd(Review review);
     Review? Find(string id);
     IReadOnlyList<Review> All();
+    Review? Edit(string id, string actorId, string? text, DateTimeOffset now);
 }
 
 public sealed record PublicAuthor(string Id, string DisplayName, string? AvatarUrl);
@@ -45,4 +46,11 @@ public sealed class PublishReview(IReviews reviews, QueryGames games, ICurrentSe
 public sealed class GetReview(IReviews reviews, OpinionViews views)
 {
     public ReviewDetails Execute(string id) => views.Review(reviews.Find(id) ?? throw new ResourceFailure(ResourceFailureKind.NotFound));
+}
+
+public sealed class EditReview(IReviews reviews, ICurrentSession current, SessionAccess access, TimeProvider clock, OpinionViews views)
+{
+    public ReviewDetails Execute(string id, string? text) => views.Review(
+        reviews.Edit(id, access.Require(current).UserId, text, clock.GetUtcNow())
+        ?? throw new ResourceFailure(ResourceFailureKind.NotFound));
 }

@@ -24,4 +24,14 @@ public sealed class InMemoryReviews : IReviews
     }
     public Review? Find(string id) { lock (gate) return reviews.GetValueOrDefault(id); }
     public IReadOnlyList<Review> All() { lock (gate) return reviews.Values.ToArray(); }
+    public Review? Edit(string id, string actorId, string? text, DateTimeOffset now)
+    {
+        lock (gate)
+        {
+            if (!reviews.TryGetValue(id, out var review)) return null;
+            var updated = review.Edit(actorId, text, now);
+            reviews[id] = updated;
+            return updated;
+        }
+    }
 }
