@@ -19,6 +19,7 @@ public static class OpinionsRegistration
         services.AddScoped<PublishReview>();
         services.AddScoped<GetReview>();
         services.AddScoped<QueryReviews>();
+        services.AddScoped<ReviewProjection>();
         services.AddScoped<EditReview>();
         services.AddSingleton<IComments, InMemoryComments>();
         services.AddScoped<QueryComments>();

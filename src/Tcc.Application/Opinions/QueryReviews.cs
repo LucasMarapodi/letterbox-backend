@@ -7,11 +7,9 @@ namespace Tcc.Application.Opinions;
 public sealed record GameOpinions(double? AverageRating, IReadOnlyList<ReviewDetails> Reviews);
 
 public sealed class QueryReviews(IReviews reviews, QueryGames games, IUserAccounts accounts, OpinionViews views,
-    ICurrentSession current, SessionAccess access, LocalRatingAverage averages)
+    ICurrentSession current, SessionAccess access, LocalRatingAverage averages, ReviewProjection projection)
 {
-    private IReadOnlyList<ReviewDetails> Project(IEnumerable<Review> items) => items
-        .OrderByDescending(review => review.CreatedAt).ThenBy(review => review.Id, StringComparer.Ordinal)
-        .Select(views.Review).ToArray();
+    private IReadOnlyList<ReviewDetails> Project(IEnumerable<Review> items) => projection.Execute(items);
 
     public IReadOnlyList<ReviewDetails> ForGame(string gameId)
     {
