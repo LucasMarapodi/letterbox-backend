@@ -103,6 +103,32 @@ public sealed class CorsTests
         Assert.False(response.Headers.Contains("Access-Control-Allow-Origin"));
     }
 
+    [Theory]
+    [InlineData("http://localhost:5173")]
+    [InlineData("http://127.0.0.1:5173")]
+    public async Task Development_defaults_release_both_vite_hostnames(string origin)
+    {
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder => builder.UseEnvironment("Development"));
+        using var client = host.CreateClient();
+        using var request = Preflight(origin, "GET", "/api/v1/games");
+        using var response = await client.SendAsync(request);
+        Assert.Equal(origin, Assert.Single(response.Headers.GetValues("Access-Control-Allow-Origin")));
+        Assert.Contains("GET", response.Headers.GetValues("Access-Control-Allow-Methods").Single().Split(','));
+    }
+
+    [Theory]
+    [InlineData("*")]
+    [InlineData("https://*.example")]
+    [InlineData("https://web.example/path")]
+    [InlineData("https://web.example/")]
+    [InlineData("https://user:password@web.example")]
+    public void Invalid_origin_configuration_fails_closed(string origin)
+    {
+        using var host = new CorsFactory(origin);
+        var failure = Assert.Throws<InvalidOperationException>(() => host.CreateClient());
+        Assert.Contains("Cors:AllowedOrigins", failure.Message);
+    }
+
     private static HttpRequestMessage Preflight(string origin, string method, string path)
     {
         var request = new HttpRequestMessage(HttpMethod.Options, path);
