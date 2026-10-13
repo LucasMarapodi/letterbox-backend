@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Tcc.Infrastructure.Igdb;
 
 namespace Tcc.Api.Tests.Igdb;
@@ -56,6 +58,26 @@ public sealed class CredentialTests
         Assert.False(handler.UseDefaultCredentials);
         Assert.Null(handler.Credentials);
         Assert.Null(handler.ServerCertificateCustomValidationCallback);
+    }
+
+    [Fact]
+    public async Task Health_and_OpenAPI_do_not_read_credentials_or_acquire_an_external_token()
+    {
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services => services.AddSingleton<IgdbCredentialOptions>(_ =>
+                throw new InvalidOperationException("Credentials must remain lazy"))));
+        using var client = host.CreateClient();
+        foreach (var path in new[] { "/health", "/openapi/v1.json" })
+        {
+            using var response = await client.GetAsync(path);
+            Assert.Equal(200, (int)response.StatusCode);
+            var payload = await response.Content.ReadAsStringAsync();
+            Assert.DoesNotContain("ClientSecret", payload);
+            Assert.DoesNotContain("IGDB__", payload);
+            Assert.DoesNotContain("oauth2/token", payload);
+        }
+        using var tokenEndpoint = await client.GetAsync("/api/v1/igdb/token");
+        Assert.Equal(404, (int)tokenEndpoint.StatusCode);
     }
 
     [Theory]
