@@ -20,6 +20,9 @@ public static class IgdbAuthenticationRegistration
             client.Timeout = TimeSpan.FromSeconds(30);
             client.MaxResponseContentBufferSize = 4 * 1024 * 1024;
         }).RemoveAllLoggers().ConfigurePrimaryHttpMessageHandler(ExternalHttpTransport.CreateHandler);
+        services.AddTransient(services => new TwitchOAuthClient(
+            services.GetRequiredService<IHttpClientFactory>().CreateClient(OAuthClientName),
+            services.GetRequiredService<IgdbCredentialOptions>(), services.GetRequiredService<TimeProvider>()));
         return services;
     }
 }
