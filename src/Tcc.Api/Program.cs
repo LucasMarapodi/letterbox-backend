@@ -35,6 +35,13 @@ app.UseRouting();
 app.UseCors(BrowserCorsRegistration.PolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSwaggerUI(options =>
+{
+    options.RoutePrefix = "swagger";
+    options.DocumentTitle = "TCC Games API — Swagger";
+    options.SwaggerEndpoint("../openapi/v1.json", "TCC Games API v1");
+    options.ConfigObject.PersistAuthorization = false;
+});
 app.MapControllers();
 app.MapOpenApi();
 
