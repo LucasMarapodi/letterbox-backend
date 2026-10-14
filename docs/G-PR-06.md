@@ -1,6 +1,6 @@
 # G-PR-06 — Segurança e smoke do backend
 
-Branch `feat/igdb-pr-06-validacao-back`, base Back `fec0fa8`. G-US-15 concluída; harness da G-US-16 implementado, smoke live BLOCKED_ENV. Sem remoto Git, sem publicação ou merge.
+Branch `feat/igdb-pr-06-validacao-back`, base Back `fec0fa8`. READY_LOCAL: G-US-15 e G-US-16 concluídas, smoke live aprovado. Sem remoto Git, sem publicação ou merge.
 
 ## Resultado funcional e de código
 
@@ -20,7 +20,7 @@ O cenário verifica recentes, repetição do cache, detalhe, evicção seletiva/
 - Build Release com analisadores: zero erros e avisos. OutputPath bin/IgdbPr06/ preserva a API local que usa os binários anteriores.
 - LocalEnvironmentTests: 5 casos sintéticos; SecurityRegressionTests: 8 casos; CacheEvictionRegressionTests: 1 caso; SmokeScenarioTests: 6 casos simulados, incluindo bloqueio antes de iniciar o host.
 - Ciclos RED/commits antes de implementação do leitor local, evicção seletiva e harness. A matriz de segurança verificou comportamentos existentes sem criar defeitos artificiais.
-- Execução opt-in em 2026-10-14: BLOCKED_ENV, as duas chaves do .env ainda são placeholders 123; 0 chamadas OAuth, 0 IGDB. [Relatório sanitizado](evidence/G-PR-06-live.json). Isso não valida a integração live.
+- Primeira tentativa opt-in em 2026-10-14 foi bloqueada por placeholders, com 0 chamadas externas. Após configuração local pelo usuário, a execução de 19:57:41 UTC passou: 1 OAuth, 3 IGDB, seis etapas HTTP 200 (recentes, cache hit, detalhe, local hit após evicção, página seguinte e busca por termo). Jogo observado igdb-423196; stale=false, fetchedAt original preservado nas leituras de cache/local e nenhuma chamada extra para detalhe ou após evicção. [Relatório sanitizado](evidence/G-PR-06-live.json).
 - Nenhum arquivo Front alterado por esta entrega. A G-PR-05 já foi entregue pelo trabalho paralelo do Front, conforme sua descrição versionada; mudanças locais paralelas foram preservadas.
 
 ## Executar
@@ -33,7 +33,7 @@ dotnet build --no-restore -c Release -p:RunAnalyzers=true -p:OutputPath=bin/Igdb
 ./scripts/igdb-smoke.ps1 -Live
 ```
 
-O script restaura o opt-in anterior ao terminar. Saída não aprovada gera erro seguro e relatório FAILED/BLOCKED; não é transformada em sucesso da suíte. Arquivo docs/evidence/G-PR-06-live.json contém a última tentativa, nunca credenciais ou payloads. Smoke real e confirmação dos metadados/cache live seguem pendentes até a configuração válida.
+O script restaura o opt-in anterior ao terminar. Saída não aprovada gera erro seguro e relatório FAILED/BLOCKED; não é transformada em sucesso da suíte. Arquivo docs/evidence/G-PR-06-live.json contém a última tentativa, nunca credenciais ou payloads. Smoke real, metadados/cache/local e reutilização do token estão aprovados no backend. A jornada real no navegador pertence à G-PR-07 e não foi validada por este harness.
 
 ## Condições de uso consultadas
 
