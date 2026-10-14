@@ -43,6 +43,7 @@ public sealed class LocalEnvironmentTests
         var failure = Assert.Throws<InvalidOperationException>(() => IgdbCredentialOptions.Read(LocalIgdbEnvironment.CreateReader(file.Path, _ => null)));
         Assert.DoesNotContain("synthetic-secret", failure.ToString());
         Assert.DoesNotContain(file.Path, failure.ToString());
+        Assert.Contains(".env", failure.Message);
     }
 }
 

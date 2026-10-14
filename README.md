@@ -29,7 +29,9 @@ A [G-PR-02](docs/G-PR-02.md) implementa portas assíncronas, resolução cache/l
 
 A [G-PR-03](docs/G-PR-03.md) implementa cache/local em memória, limites de IGDB, consultas compartilhadas e fallback stale.
 
-A [G-PR-04](docs/G-PR-04.md) conecta endpoints e regras locais ao catálogo: GET /api/v1/games retorna items/page/pageSize/hasNextPage, IDs são igdb-* e metadados são expostos via headers/CORS. Configure IGDB__ClientId e IGDB__ClientSecret no processo Back para jogos desconhecidos; não grave credenciais em arquivos. Sem configuração, consultas não atendidas localmente retornam 503 seguro. Reinicie a API após atualizar. O Front não foi alterado; adaptar seu consumidor ao envelope pertence à G-PR-05.
+A [G-PR-04](docs/G-PR-04.md) conecta endpoints e regras locais ao catálogo: GET /api/v1/games retorna items/page/pageSize/hasNextPage, IDs são igdb-* e metadados são expostos via headers/CORS. Configure IGDB__ClientId e IGDB__ClientSecret no ambiente Back para jogos desconhecidos; não versione credenciais. Sem configuração, consultas não atendidas localmente retornam 503 seguro. Reinicie a API após atualizar. O Front não foi alterado; adaptar seu consumidor ao envelope pertence à G-PR-05.
+
+Para configuração local em Development, use o arquivo `.env` ignorado pelo Git na raiz Back. Se não existir, copie `.env.example` para `.env`, preencha IGDB__ClientId/IGDB__ClientSecret e reinicie a API. Valores definidos no processo têm prioridade; produção usa somente o ambiente do servidor. Não inserir credenciais em launchSettings/appsettings versionados. Consulte [IGDB-AUTH.md](docs/IGDB-AUTH.md).
 
 Para validar a entrega completa:
 
