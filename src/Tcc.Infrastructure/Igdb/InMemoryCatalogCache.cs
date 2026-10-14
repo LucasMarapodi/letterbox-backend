@@ -66,4 +66,5 @@ public sealed class InMemoryCatalogCache : ICatalogCache
                     games.Set(item.Game.Id, new(item, clock.GetUtcNow() + options.DetailFreshFor));
         return Task.CompletedTask;
     }
+    public bool EvictGame(string id) => false;
 }
