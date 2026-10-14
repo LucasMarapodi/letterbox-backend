@@ -150,7 +150,7 @@ internal sealed class ExternalFixture : IDisposable
         var source = new TwitchOAuthClient(oauth, IgdbTest.Options(), clock);
         http = new(new TestHandler(send));
         client = new(http, IgdbTest.Options(), new TwitchTokenProvider(source.AcquireAsync, clock));
-        Catalog = new(client, clock);
+        Catalog = new(() => client, clock);
     }
     public void Dispose() { client.Dispose(); http.Dispose(); oauth.Dispose(); }
 }

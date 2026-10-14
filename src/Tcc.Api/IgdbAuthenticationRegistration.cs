@@ -1,4 +1,5 @@
 using Tcc.Infrastructure.Igdb;
+using Tcc.Application.Catalog;
 
 namespace Tcc.Api;
 
@@ -34,6 +35,8 @@ public static class IgdbAuthenticationRegistration
         services.AddScoped(services => new IgdbAuthenticatedClient(
             services.GetRequiredService<IHttpClientFactory>().CreateClient(IgdbClientName),
             services.GetRequiredService<IgdbCredentialOptions>(), services.GetRequiredService<TwitchTokenProvider>()));
+        services.AddScoped<IExternalGameCatalog>(services => new IgdbGameCatalog(
+            () => services.GetRequiredService<IgdbAuthenticatedClient>(), services.GetRequiredService<TimeProvider>()));
         return services;
     }
 }
