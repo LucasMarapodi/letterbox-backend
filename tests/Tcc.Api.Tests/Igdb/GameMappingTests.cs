@@ -1,5 +1,8 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Tcc.Application.Catalog;
 using Tcc.Infrastructure.Igdb;
 
@@ -74,6 +77,17 @@ public sealed class GameMappingTests
 
 public sealed class ExternalCatalogTests
 {
+    [Fact]
+    public async Task Resolving_supplier_port_and_empty_batch_do_not_load_credentials_before_external_IO()
+    {
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services => services.AddSingleton<IgdbCredentialOptions>(_ =>
+                throw new InvalidOperationException("Credentials must only be read after a supplier miss"))));
+        using var scope = host.Services.CreateScope();
+        var supplier = scope.ServiceProvider.GetRequiredService<IExternalGameCatalog>();
+        Assert.Empty(await supplier.ResolveAsync([], CancellationToken.None));
+    }
+
     [Fact]
     public async Task Search_detail_and_batch_keep_same_id_and_page_lookahead_does_not_invent_total()
     {
