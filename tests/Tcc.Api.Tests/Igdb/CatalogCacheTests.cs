@@ -92,6 +92,25 @@ public sealed class CatalogCacheTests
         Assert.Null(await cache.FindPageAsync(missing, default));
         Assert.Null(await local.FindPageAsync(missing, default));
     }
+
+    [Fact]
+    public async Task Full_singleflight_book_does_not_block_a_known_local_page()
+    {
+        var clock = new TestClock { Now = CatalogFlow.Metadata.FetchedAt };
+        var options = new CatalogMemoryOptions { InFlightLimit = 1 };
+        var cache = new InMemoryCatalogCache(clock, options);
+        var local = new InMemoryLocalGameCatalog(clock, options);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var supplier = new BlockingSupplier(release.Task);
+        var catalog = new SingleFlightGameCatalog(new AsyncGameCatalog(cache, local, supplier), options);
+        var warm = CatalogSearch.Create("warm");
+        await local.SavePageAsync(new(warm, [CatalogFlow.Game("igdb-2")], false, CatalogFlow.Metadata), default);
+        var pending = catalog.SearchAsync(CatalogSearch.Create("cold"));
+        try { Assert.Equal("igdb-2", Assert.Single((await catalog.SearchAsync(warm)).Items).Game.Id); }
+        finally { release.TrySetResult(); }
+        await pending;
+        Assert.Equal(1, supplier.Calls);
+    }
 }
 
 internal sealed class BlockingSupplier(Task release) : IExternalGameCatalog
