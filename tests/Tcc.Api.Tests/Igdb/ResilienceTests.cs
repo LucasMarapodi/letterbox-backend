@@ -153,7 +153,7 @@ public sealed class ResilienceTests
         var statuses = new Queue<HttpStatusCode>([HttpStatusCode.InternalServerError, HttpStatusCode.Unauthorized,
             HttpStatusCode.InternalServerError, HttpStatusCode.InternalServerError]);
         using var http = new HttpClient(new TestHandler((_, _) => Task.FromResult(IgdbTest.Json("[]", statuses.Dequeue()))));
-        using var client = new IgdbAuthenticatedClient(http, IgdbTest.Options(), new TwitchTokenProvider(source.AcquireAsync, scheduler.Clock));
+        using var client = new IgdbAuthenticatedClient(http, IgdbTest.Options(), new TwitchTokenProvider(source.AcquireAsync, scheduler.Clock), policy);
         using var response = await client.PostGamesAsync("fields id;");
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         Assert.Equal(2, oauthCalls);

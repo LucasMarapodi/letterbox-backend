@@ -3,7 +3,7 @@ using Tcc.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddBrowserCors(builder.Configuration);
-builder.Services.AddIgdbAuthentication();
+builder.Services.AddIgdbAuthentication(builder.Configuration);
 builder.Services.AddIdentityFeature();
 builder.Services.AddOpinionsFeature();
 builder.Services.AddSocialFeature();
