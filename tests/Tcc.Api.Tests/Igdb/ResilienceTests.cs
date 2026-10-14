@@ -159,6 +159,16 @@ public sealed class ResilienceTests
         Assert.Equal(2, oauthCalls);
         Assert.Empty(statuses);
     }
+
+    [Fact]
+    public async Task Response_after_budget_expiry_is_not_accepted_as_success_even_if_transport_ignores_cancellation()
+    {
+        var scheduler = new AdvancingScheduler();
+        using var policy = new IgdbResiliencePolicy(new() { TotalTimeout = TimeSpan.FromSeconds(1) }, scheduler);
+        using var budget = policy.CreateBudget();
+        await Assert.ThrowsAsync<CatalogTimeoutException>(() => policy.SendAsync(async ct =>
+        { await scheduler.DelayAsync(TimeSpan.FromSeconds(2), ct); return IgdbTest.Json("[]"); }, budget));
+    }
 }
 
 internal sealed class AdvancingScheduler : IIgdbScheduler
