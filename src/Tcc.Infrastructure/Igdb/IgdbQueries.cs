@@ -13,7 +13,8 @@ public static class IgdbQueries
         var filter = query.Term.Length == 0
             ? "first_release_date != null & first_release_date <= " + now.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture)
             : "name ~ *\"" + term + "\"*";
-        if (query.Term.Length > 0 && query.Sort == "release-desc") filter += " & first_release_date != null";
+        if (query.Term.Length > 0 && query.Sort == "release-desc") filter += " & first_release_date != null & first_release_date <= "
+            + now.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture);
         var sort = query.Sort switch { "name-asc" => "name asc", "name-desc" => "name desc", _ => "first_release_date desc" };
         return Fields + "where " + filter + "; sort " + sort + "; limit "
             + (query.PageSize + 1).ToString(CultureInfo.InvariantCulture) + "; offset " + query.Offset.ToString(CultureInfo.InvariantCulture) + ";";
