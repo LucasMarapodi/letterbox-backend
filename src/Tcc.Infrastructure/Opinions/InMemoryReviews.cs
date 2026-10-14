@@ -15,8 +15,7 @@ public sealed class InMemoryReviews : IReviews
     {
         gate = publications.Gate;
         this.publications = publications;
-        TryAdd(Review.Create("review-fixture", "user-1", "game-3", "Review fictícia de Atlas.",
-            new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero)));
+
     }
 
     public bool TryAdd(Review review)
@@ -44,3 +43,4 @@ public sealed class InMemoryReviews : IReviews
         }
     }
 }
+

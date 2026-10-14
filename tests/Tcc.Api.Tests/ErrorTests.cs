@@ -59,7 +59,7 @@ public sealed class ErrorTests
     [Fact]
     public async Task Production_does_not_expose_probes()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/__tests/failure/400");
         Assert.Equal(404, (int)response.StatusCode);
@@ -68,10 +68,9 @@ public sealed class ErrorTests
     private sealed record ErrorContract(string Code, string Message);
 }
 
-public sealed class ProbeFactory : WebApplicationFactory<Program>
+public sealed class ProbeFactory : TestApiFactory
 {
-    protected override void ConfigureWebHost(IWebHostBuilder builder) =>
-        builder.ConfigureServices(services => services.AddControllers().AddApplicationPart(typeof(ProbeController).Assembly));
+    protected override void ConfigureWebHost(IWebHostBuilder builder) { base.ConfigureWebHost(builder); builder.ConfigureServices(services => services.AddControllers().AddApplicationPart(typeof(ProbeController).Assembly)); }
 }
 
 [ApiController]

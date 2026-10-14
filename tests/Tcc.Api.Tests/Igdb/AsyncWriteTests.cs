@@ -10,6 +10,25 @@ namespace Tcc.Api.Tests.Igdb;
 
 public sealed class AsyncWriteTests
 {
+    [Theory]
+    [InlineData("rating/me")]
+    [InlineData("favorite")]
+    public async Task Rating_and_favorite_revalidate_revoked_session_without_writing(string operation)
+    {
+        var source = new WriteCatalog();
+        await using var host = CatalogHttpTests.Host(source);
+        using var client = host.CreateClient();
+        await ApiTest.SignIn(client);
+        var write = operation == "favorite" ? client.PutAsync("/api/v1/favorites/game/igdb-10", null)
+            : client.PutAsJsonAsync("/api/v1/games/igdb-10/rating/me", new RatingInput(4));
+        await source.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        using var logout = await client.PostAsync("/api/v1/auth/logout", null);
+        source.Release.TrySetResult();
+        using var response = await write;
+        Assert.Equal(401, (int)response.StatusCode);
+        Assert.Null(host.Services.GetRequiredService<IRatings>().Find("user-1", "igdb-10"));
+        Assert.Empty(host.Services.GetRequiredService<IFavorites>().ForUser("user-1"));
+    }
     [Fact]
     public async Task Delayed_catalog_does_not_hold_publication_lock_and_concurrent_reviews_are_unique()
     {

@@ -15,9 +15,9 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(404)]
     [ProducesResponseType<ApiError>(409)]
-    public ActionResult<ReviewResponse> Publish(string gameId, TextRequest request)
+    public async Task<ActionResult<ReviewResponse>> Publish(string gameId, TextRequest request, CancellationToken cancellationToken)
     {
-        var result = ReviewResponse.From(publish.Execute(gameId, request.Text));
+        var result = ReviewResponse.From(await publish.Execute(gameId, request.Text, cancellationToken));
         return Created($"/api/v1/reviews/{result.Id}", result);
     }
     [HttpGet("reviews/{reviewId}")]
@@ -31,8 +31,8 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(403)]
     [ProducesResponseType<ApiError>(404)]
-    public ActionResult<ReviewResponse> Edit(string reviewId, TextRequest request) =>
-        Ok(ReviewResponse.From(edit.Execute(reviewId, request.Text)));
+    public async Task<ActionResult<ReviewResponse>> Edit(string reviewId, TextRequest request, CancellationToken cancellationToken) =>
+        Ok(ReviewResponse.From(await edit.Execute(reviewId, request.Text, cancellationToken)));
 
     [HttpGet("games/{gameId}/reviews")]
     [ProducesResponseType<IReadOnlyList<ReviewResponse>>(200)]
@@ -62,4 +62,5 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
         return Ok(new GameOpinionsResponse(result.AverageRating, result.Reviews.Select(ReviewResponse.From).ToArray()));
     }
 }
+
 

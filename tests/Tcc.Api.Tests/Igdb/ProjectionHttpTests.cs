@@ -13,6 +13,41 @@ namespace Tcc.Api.Tests.Igdb;
 public sealed class ProjectionHttpTests
 {
     [Fact]
+    public async Task Mixed_cache_local_and_missing_games_only_send_missing_ids_to_supplier()
+    {
+        var source = new MissingGamesCatalog();
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services => services.AddSingleton<IExternalGameCatalog>(source)));
+        var now = host.Services.GetRequiredService<TimeProvider>().GetUtcNow();
+        await host.Services.GetRequiredService<ICatalogCache>().SaveGamesAsync([
+            CatalogFlow.Game("igdb-10") with { Metadata = new(now) }], default);
+        await host.Services.GetRequiredService<ILocalGameCatalog>().SaveGamesAsync([
+            CatalogFlow.Game("igdb-11") with { Metadata = new(now.AddDays(-2)) }], default);
+        var store = host.Services.GetRequiredService<IReviews>();
+        foreach (var id in new[] { "igdb-10", "igdb-11", "igdb-12" })
+            store.TryAdd(Review.Create(id, "user-1", id, "Retained", now));
+        using var client = host.CreateClient();
+        using var response = await client.GetAsync("/api/v1/community/reviews/recent");
+        response.EnsureSuccessStatusCode();
+        Assert.Equal(new[] { "igdb-12" }, Assert.Single(source.Batches));
+        Assert.Equal("true", Assert.Single(response.Headers.GetValues("X-Catalog-Stale")));
+        Assert.Equal(3, store.All().Count);
+    }
+
+    [Fact]
+    public async Task Unavailable_missing_game_does_not_erase_review_or_turn_supplier_failure_into_not_found()
+    {
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services => services.AddSingleton<IExternalGameCatalog, OfflineCatalog>()));
+        var store = host.Services.GetRequiredService<IReviews>();
+        store.TryAdd(Review.Create("retained", "user-1", "igdb-10", "Original", CatalogFlow.Metadata.FetchedAt));
+        using var client = host.CreateClient();
+        using var response = await client.GetAsync("/api/v1/community/reviews/recent");
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal("Original", store.Find("retained")?.Text);
+        Assert.False(response.Headers.Contains("X-Catalog-Stale"));
+    }
+    [Fact]
     public async Task Recent_reviews_resolve_unique_games_in_one_batch_with_oldest_stale_metadata()
     {
         var catalog = new BatchCatalog();
@@ -67,6 +102,18 @@ public sealed class ProjectionHttpTests
         Assert.Empty(catalog.Batches);
         Assert.False(response.Headers.Contains("X-Catalog-Stale"));
     }
+}
+
+internal sealed class MissingGamesCatalog : IExternalGameCatalog
+{
+    public List<string[]> Batches { get; } = [];
+    public Task<IReadOnlyDictionary<string, CatalogGame>> ResolveAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken)
+    {
+        Batches.Add(ids.ToArray());
+        return Task.FromResult<IReadOnlyDictionary<string, CatalogGame>>(ids.ToDictionary(id => id,
+            id => CatalogFlow.Game(id) with { Metadata = new(DateTimeOffset.UtcNow) }));
+    }
+    public Task<CatalogPage> SearchAsync(CatalogSearch query, CancellationToken cancellationToken) => throw new NotSupportedException();
 }
 
 internal sealed class BatchCatalog : IAsyncGameCatalog

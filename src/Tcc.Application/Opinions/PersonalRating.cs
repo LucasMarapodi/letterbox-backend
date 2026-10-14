@@ -11,19 +11,26 @@ public interface IRatings
     IReadOnlyList<Rating> ForGame(string gameId);
 }
 
-public sealed class PersonalRating(IRatings ratings, QueryGames games, ICurrentSession current, SessionAccess access)
+public sealed class PersonalRating(IRatings ratings, QueryGames games, ICurrentSession current, SessionAccess access,
+    Tcc.Application.Social.IPublicationScope publications)
 {
-    public Rating? Get(string gameId)
+    public async Task<Rating?> Get(string gameId, CancellationToken cancellationToken = default)
     {
         var userId = access.Require(current).UserId;
-        games.Get(gameId);
+        await games.GetAsync(gameId, cancellationToken);
         return ratings.Find(userId, gameId);
     }
-    public Rating Set(string gameId, double value)
+    public async Task<Rating> Set(string gameId, double value, CancellationToken cancellationToken = default)
     {
         var userId = access.Require(current).UserId;
-        games.Get(gameId);
-        return ratings.Set(userId, gameId, RatingValue.Create(value));
+        var ratingValue = RatingValue.Create(value);
+        await games.GetAsync(gameId, cancellationToken);
+        return publications.Execute(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            access.Require(current);
+            return ratings.Set(userId, gameId, ratingValue);
+        });
     }
 }
 

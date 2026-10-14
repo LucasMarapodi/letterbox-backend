@@ -11,7 +11,7 @@ public sealed class NotificationQueryTests
     [Fact]
     public async Task Notification_list_requires_session_and_empty_list_is_valid()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var anonymous = await client.GetAsync("/api/v1/notifications");
         Assert.Equal(401, (int)anonymous.StatusCode);
@@ -38,7 +38,7 @@ public sealed class NotificationQueryTests
         using var commentResponse = await client.PostAsJsonAsync($"/api/v1/reviews/{bReview.Id}/comments", new TextInput("Comment"));
         commentResponse.EnsureSuccessStatusCode();
         var comment = await commentResponse.Content.ReadFromJsonAsync<CommentDto>();
-        var last = await ApiTest.Publish(client, "game-2");
+        var last = await ApiTest.Publish(client, "igdb-2");
         await ApiTest.SignIn(client, "B@example.com", "p");
         var items = await client.GetFromJsonAsync<NotificationDto[]>("/api/v1/notifications?userId=user-1");
         Assert.NotNull(items);

@@ -1,6 +1,6 @@
 # Autenticação de aplicação Twitch/IGDB
 
-G-PR-01 prepara a autenticação externa no servidor. O catálogo HTTP da aplicação ainda usa o adaptador fake; esta entrega não ativa consultas reais, não cria banco e não altera Front. O token Twitch é separado das sessões locais de usuários.
+G-PR-01 implementou a autenticação externa no servidor. Desde G-PR-04 o catálogo HTTP usa o adaptador IGDB assíncrono, somente após cache/local insuficientes; fake restrito a testes. O token Twitch é separado das sessões locais de usuários. As evidências históricas da G-PR-01 abaixo não representam smoke live.
 
 ## Configuração
 
@@ -14,7 +14,7 @@ Defina somente no processo que executa Back:
 
 `IgdbCredentialOptions` lê diretamente essas variáveis com `EnvironmentVariableTarget.Process`; não lê credenciais de appsettings, argumentos HTTP, query, arquivos Front ou IConfiguration. Não versionar valores reais ou copiá-los para logs, comandos compartilhados ou relatórios. Valores ausentes/inválidos geram mensagem com os nomes das variáveis, sem seus conteúdos. Objetos de opções e token ocultam valores em ToString e serialização JSON.
 
-As opções são resolvidas somente quando a integração externa é solicitada. Health, OpenAPI, Swagger, login local e consultas do catálogo atual não adquirem token nem exigem credenciais externas. A configuração é capturada pelo serviço; reinicie Back após alterar credenciais ou margem. Não existe endpoint de emissão/consulta de token Twitch.
+As opções são resolvidas somente quando a integração externa é solicitada. Health, OpenAPI, Swagger, login local e consultas atendidas pelo cache/catálogo local não adquirem token nem exigem credenciais externas. Jogos/páginas desconhecidos precisam da configuração. Reinicie Back após alterar credenciais ou margem. Não existe endpoint de emissão/consulta de token Twitch.
 
 ## Fluxo interno
 

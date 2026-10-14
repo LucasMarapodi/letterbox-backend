@@ -1,6 +1,6 @@
 # Mapeamento backend ↔ serviços do frontend
 
-Comparação por leitura de `Front/src/models/index.ts`, `authContracts.ts`, `contracts.ts`, `communityContracts.ts` e `notificationContracts.ts`. O Front continua usando mocks; nenhum adaptador HTTP foi implementado nesta entrega.
+Comparação dos contratos com o Front da terceira fase, que usa HTTP. Na G-PR-04 nenhum arquivo Front foi alterado. A nova paginação e os avisos de stale exigem adaptação do consumidor na G-PR-05.
 
 | Contrato/serviço TypeScript | HTTP/DTO C# | Adaptação futura |
 | --- | --- | --- |
@@ -9,7 +9,7 @@ Comparação por leitura de `Front/src/models/index.ts`, `authContracts.ts`, `co
 | RegistrationInput | POST /auth/register, RegisterRequest | Mantém name/email/password; retorna User com 201, sem sessão automática |
 | LoginCredentials / AuthService.login → User | POST /auth/login, LoginResponse | Guardar token/expiresAt e devolver user ao serviço; token não faz parte de User |
 | AuthService.logout | POST /auth/logout | Enviar Bearer, tratar 204 e limpar sessão local; API revoga só o token atual |
-| Game / GameQuery | GET /games e /games/{id}, GameResponse | name-asc/name-desc; 404 de detalhe vira null no serviço getById; média local, capas das fixtures null |
+| Game / GameQuery | GET /games → GamePageResponse; GET /games/{id} → GameResponse | Consumir items/page/pageSize/hasNextPage; release-desc sem termo, name-asc com termo; tratar headers stale/fetchedAt e erros 502/503/504; IDs opacos igdb-* e média local |
 | Rating / getRating | PUT /games/{id}/rating/me e GET → MyRatingResponse | PUT devolve Rating; GET exige sessão e desembrulha rating, inclusive null |
 | Review / PublicReview / ReviewDetails | ReviewResponse | Mantém campos da review e author; game acrescenta coverUrl além de id/title |
 | findOwnReview | GET /games/{id}/reviews/me → MyReviewResponse | Desembrulhar review nullable; 404 significa jogo inexistente, não ausência de review própria |

@@ -1,5 +1,5 @@
 using Tcc.Application.Catalog;
-using Tcc.Infrastructure.Catalog;
+
 using Tcc.Application.Opinions;
 using Tcc.Infrastructure.Opinions;
 
@@ -9,7 +9,7 @@ public static class OpinionsRegistration
 {
     public static IServiceCollection AddOpinionsFeature(this IServiceCollection services)
     {
-        services.AddSingleton<IGameCatalog, FakeIgdbCatalog>();
+
         services.AddScoped<QueryGames>();
         services.AddScoped<CatalogUsage>();
         services.AddScoped<CatalogHeadersFilter>();
@@ -30,3 +30,4 @@ public static class OpinionsRegistration
         return services;
     }
 }
+

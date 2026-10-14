@@ -10,8 +10,8 @@ public sealed class MemoryTests
     [Fact]
     public async Task State_and_clock_are_available_per_host()
     {
-        await using var first = new WebApplicationFactory<Program>();
-        await using var second = new WebApplicationFactory<Program>();
+        await using var first = new TestApiFactory();
+        await using var second = new TestApiFactory();
         using var client = first.CreateClient();
         using var scope = first.Services.CreateScope();
         using var otherScope = first.Services.CreateScope();
@@ -58,10 +58,9 @@ public sealed class MemoryTests
     }
 }
 
-public sealed class FixedClockFactory(TimeProvider clock) : WebApplicationFactory<Program>
+public sealed class FixedClockFactory(TimeProvider clock) : TestApiFactory
 {
-    protected override void ConfigureWebHost(IWebHostBuilder builder) =>
-        builder.ConfigureServices(services => services.AddSingleton(clock));
+    protected override void ConfigureWebHost(IWebHostBuilder builder) { base.ConfigureWebHost(builder); builder.ConfigureServices(services => services.AddSingleton(clock)); }
 }
 
 public sealed class FixedClock(DateTimeOffset instant) : TimeProvider

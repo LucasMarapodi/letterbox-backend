@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "TCC Games API",
-    "description": "Backend local com dados em memória, token opaco simulado e IGDB fake. Reiniciar restaura fixtures e invalida sessões.",
+    "description": "Catálogo IGDB com cache e catálogo local em memória; token de sessão opaco simulado. Reiniciar descarta dados e sessões. Listagem de jogos usa envelope paginado.",
     "version": "v1"
   },
   "servers": [
@@ -548,6 +548,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -571,6 +586,62 @@
                   "items": {
                     "$ref": "#/components/schemas/ReviewResponse"
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
                 }
               }
             }
@@ -617,6 +688,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -654,6 +740,48 @@
                 "example": {
                   "code": "validation_failed",
                   "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
                 }
               }
             }
@@ -700,6 +828,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -741,6 +884,48 @@
               }
             }
           },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -768,6 +953,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -796,6 +996,62 @@
                 "example": {
                   "code": "unauthorized",
                   "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
                 }
               }
             }
@@ -831,6 +1087,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -859,6 +1130,62 @@
                 "example": {
                   "code": "unauthorized",
                   "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
                 }
               }
             }
@@ -916,6 +1243,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -972,6 +1314,48 @@
                 "example": {
                   "code": "unauthorized",
                   "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
                 }
               }
             }
@@ -1028,6 +1412,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -1084,6 +1483,48 @@
                 "example": {
                   "code": "unauthorized",
                   "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
                 }
               }
             }
@@ -1139,7 +1580,22 @@
         ],
         "responses": {
           "204": {
-            "description": "No Content"
+            "description": "No Content",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
           },
           "400": {
             "description": "Requisição inválida.",
@@ -1183,6 +1639,48 @@
               }
             }
           },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -1214,6 +1712,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -1251,6 +1764,62 @@
                 "example": {
                   "code": "unauthorized",
                   "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
                 }
               }
             }
@@ -1724,40 +2293,76 @@
             "in": "query",
             "schema": {
               "enum": [
+                "release-desc",
                 "name-asc",
                 "name-desc"
               ],
               "type": "string",
-              "default": "name-asc"
+              "description": "Omitido: release-desc sem termo, name-asc com termo."
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 20
             }
           }
         ],
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GameResponse"
-                  }
+                  "$ref": "#/components/schemas/GamePageResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GameResponse"
-                  }
+                  "$ref": "#/components/schemas/GamePageResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GameResponse"
-                  }
+                  "$ref": "#/components/schemas/GamePageResponse"
                 }
               }
             }
@@ -1772,6 +2377,48 @@
                 "example": {
                   "code": "validation_failed",
                   "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
                 }
               }
             }
@@ -1813,6 +2460,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -1841,6 +2503,62 @@
                 "example": {
                   "code": "not_found",
                   "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
                 }
               }
             }
@@ -1954,6 +2672,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -1996,6 +2729,62 @@
                 "example": {
                   "code": "unauthorized",
                   "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
                 }
               }
             }
@@ -2059,6 +2848,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -2115,6 +2919,48 @@
                 "example": {
                   "code": "unauthorized",
                   "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
                 }
               }
             }
@@ -2181,6 +3027,21 @@
         "responses": {
           "201": {
             "description": "Created",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -2255,6 +3116,48 @@
               }
             }
           },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -2294,6 +3197,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -2331,6 +3249,62 @@
                 "example": {
                   "code": "not_found",
                   "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
                 }
               }
             }
@@ -2372,6 +3346,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -2400,6 +3389,62 @@
                 "example": {
                   "code": "not_found",
                   "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
                 }
               }
             }
@@ -2460,6 +3505,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -2534,6 +3594,48 @@
               }
             }
           },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -2575,6 +3677,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -2616,6 +3733,62 @@
               }
             }
           },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -2653,6 +3826,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -2699,6 +3887,62 @@
               }
             }
           },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -2740,6 +3984,21 @@
         "responses": {
           "200": {
             "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -2768,6 +4027,62 @@
                 "example": {
                   "code": "not_found",
                   "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração externa indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
                 }
               }
             }
@@ -3141,6 +4456,42 @@
             "items": {
               "$ref": "#/components/schemas/ReviewResponse"
             }
+          }
+        }
+      },
+      "GamePageResponse": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "hasNextPage"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameResponse"
+            }
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hasNextPage": {
+            "type": "boolean"
           }
         }
       },

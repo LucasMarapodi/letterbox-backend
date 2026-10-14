@@ -38,11 +38,23 @@ public static class OpenApiRegistration
                 }] : [];
                 operation.Summary = $"{context.Description.HttpMethod} /{context.Description.RelativePath}";
                 operation.Responses ??= new();
+                var catalogOperation = context.Description.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor action
+                    && action.ControllerName is "Games" or "Reviews" or "Ratings" or "Favorites" or "Feed" or "Dashboard" or "Community";
+                if (catalogOperation)
+                    foreach (var response in operation.Responses.Where(item => int.TryParse(item.Key, out var code) && code is >= 200 and < 300).Select(item => item.Value).OfType<OpenApiResponse>())
+                    {
+                        response.Headers = new Dictionary<string, IOpenApiHeader>
+                        {
+                            ["X-Catalog-Stale"] = new OpenApiHeader { Description = "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.", Schema = new OpenApiSchema { Type = JsonSchemaType.Boolean } },
+                            ["X-Catalog-Fetched-At"] = new OpenApiHeader { Description = "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.", Schema = new OpenApiSchema { Type = JsonSchemaType.String, Format = "date-time" } }
+                        };
+                    }
                 if (operation.Responses.ContainsKey("201") || operation.Responses.ContainsKey("204")) operation.Responses.Remove("200");
                 var errorSchema = await context.GetOrCreateSchemaAsync(typeof(ApiError), null, cancellationToken);
                 context.Document?.AddComponent("ApiError", errorSchema);
                 var errors = context.Description.SupportedResponseTypes.Where(response => response.StatusCode >= 400)
-                    .Select(response => response.StatusCode).Concat(secured ? new[] { 401 } : []).Append(500).Distinct();
+                    .Select(response => response.StatusCode).Concat(secured ? new[] { 401 } : [])
+                    .Concat(catalogOperation ? new[] { 400, 502, 503, 504 } : []).Append(500).Distinct();
                 foreach (var status in errors)
                     operation.Responses[status.ToString()] = new OpenApiResponse
                     {

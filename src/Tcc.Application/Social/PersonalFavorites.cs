@@ -19,26 +19,40 @@ public sealed record FavoriteSnapshot(IReadOnlyList<string> GameIds, IReadOnlyLi
 public sealed class PersonalFavorites(IFavorites favorites, QueryGames games, GetReview reviews,
     ICurrentSession current, SessionAccess access, OpinionViews views, IPublicationScope publications)
 {
-    private FavoriteKind Validate(string kind, string targetId)
+    private async Task<FavoriteKind> Validate(string kind, string targetId, CancellationToken cancellationToken)
     {
         var type = Favorite.ParseKind(kind);
-        if (type == FavoriteKind.Game) games.Get(targetId); else reviews.Execute(targetId);
+        if (type == FavoriteKind.Game) await games.GetAsync(targetId, cancellationToken); else reviews.Find(targetId);
         return type;
     }
-    public Favorite Set(string kind, string targetId)
+    public async Task<Favorite> Set(string kind, string targetId, CancellationToken cancellationToken = default)
     {
         var userId = access.Require(current).UserId;
-        return favorites.Set(userId, Validate(kind, targetId), targetId);
+        var type = await Validate(kind, targetId, cancellationToken);
+        return publications.Execute(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            access.Require(current);
+            if (type == FavoriteKind.Review) reviews.Find(targetId);
+            return favorites.Set(userId, type, targetId);
+        });
     }
-    public Favorite? Get(string kind, string targetId)
+    public async Task<Favorite?> Get(string kind, string targetId, CancellationToken cancellationToken = default)
     {
         var userId = access.Require(current).UserId;
-        return favorites.Find(userId, Validate(kind, targetId), targetId);
+        return favorites.Find(userId, await Validate(kind, targetId, cancellationToken), targetId);
     }
-    public void Remove(string kind, string targetId)
+    public async Task Remove(string kind, string targetId, CancellationToken cancellationToken = default)
     {
         var userId = access.Require(current).UserId;
-        favorites.Remove(userId, Validate(kind, targetId), targetId);
+        var type = await Validate(kind, targetId, cancellationToken);
+        publications.Execute(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            access.Require(current);
+            favorites.Remove(userId, type, targetId);
+            return true;
+        });
     }
     public FavoriteSnapshot Snapshot() => publications.Execute(() =>
     {

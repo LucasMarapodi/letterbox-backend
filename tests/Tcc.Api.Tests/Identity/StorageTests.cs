@@ -14,7 +14,7 @@ public sealed class StorageTests
     [Fact]
     public async Task Stored_passwords_are_salted_verifiers_and_plaintext_is_never_stored()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var first = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("A", "a@example.com", "p"));
         using var second = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
@@ -48,7 +48,7 @@ public sealed class StorageTests
     [Fact]
     public async Task Concurrent_partial_edits_do_not_lose_independent_fields()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         var login = await LoginTests.Login(client);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);

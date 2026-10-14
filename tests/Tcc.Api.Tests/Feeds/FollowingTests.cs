@@ -34,7 +34,7 @@ public sealed class FollowingTests
         Assert.Equal(new[] { ana.Id, c.Id }.Order(StringComparer.Ordinal).Append("review-fixture"), feed.Select(review => review.Id));
         await ApiTest.SignIn(client);
         clock.UtcNow = clock.UtcNow.AddMinutes(1);
-        var newest = await ApiTest.Publish(client, "game-2");
+        var newest = await ApiTest.Publish(client, "igdb-2");
         await ApiTest.SignIn(client, "B@example.com", "p");
         Assert.Equal(newest.Id, (await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/feed/following"))?[0].Id);
         using var deleted = await client.DeleteAsync("/api/v1/users/user-1/follow");
@@ -47,7 +47,7 @@ public sealed class FollowingTests
     [Fact]
     public async Task Anonymous_cannot_read_personal_feed()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/api/v1/feed/following");
         Assert.Equal(401, (int)response.StatusCode);

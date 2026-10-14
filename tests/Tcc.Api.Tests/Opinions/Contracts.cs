@@ -31,7 +31,7 @@ internal static class ApiTest
         return await client.SendAsync(request);
     }
 
-    public static async Task<ReviewDto> Publish(HttpClient client, string game = "game-1", string text = "Review")
+    public static async Task<ReviewDto> Publish(HttpClient client, string game = "igdb-1", string text = "Review")
     {
         using var response = await client.PostAsJsonAsync($"/api/v1/games/{game}/reviews", new TextInput(text));
         response.EnsureSuccessStatusCode();

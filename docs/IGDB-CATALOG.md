@@ -35,6 +35,6 @@ JSON não-array, null, tipos incompatíveis, linhas null, IDs repetidos, IDs nã
 
 ## Estado do runtime
 
-O fornecedor é registrado de forma lazy: resolver sua porta não carrega opções ou inicia OAuth. Os endpoints atuais ainda não usam IAsyncGameCatalog. A implementação local/cache e a migração dos casos de uso virão nas PRs seguintes; `/api/v1/games` continua com seu contrato atual até G-US-10. Nenhum Front foi alterado para uma paginação ainda não exposta.
+Na G-PR-04 os endpoints e casos de uso passaram a usar IAsyncGameCatalog, com cache e catálogo local concretos. O fornecedor permanece lazy: somente faltantes precisam de OAuth/IGDB. A listagem usa items/page/pageSize/hasNextPage; detalhe e projeções usam igdb-*. Não há fake ou sementes de opiniões no runtime. Consulte [G-PR-04](G-PR-04.md) para atomicidade, metadados, validação e mudança incompatível para o Front, ainda não alterado.
 
 Testes usam transporte fake, spies e datas sintéticas. Não comprovam uma consulta live à IGDB. Fontes primárias consultadas: [filtros](https://api-docs.igdb.com/#filters), [paginação](https://api-docs.igdb.com/#pagination) e [imagens](https://api-docs.igdb.com/#images).

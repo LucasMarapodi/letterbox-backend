@@ -23,7 +23,11 @@ Model binding inválido em controllers usa ApiError; respostas de erro sem corpo
 
 ## Compatibilidade com Front
 
-Leitura de `Front/src/models/index.ts`: Id é string, DateTime é string ISO; avatarUrl, coverUrl, releaseDate, averageRating e updatedAt aceitam null. As convenções preservam essa representação. O frontend continua usando mocks. O mapeamento completo e as diferenças estão em [COMPATIBILITY.md](COMPATIBILITY.md); payloads foram concretizados nas PRs anteriores, sem integração do Front.
+Id é string opaca, DateTime é string ISO; avatarUrl, coverUrl, releaseDate, averageRating e updatedAt aceitam null. A terceira fase integrou o Front por HTTP. A G-PR-04 mudou a listagem para envelope paginado; o adaptador dessa mudança e os avisos de stale permanecem pendentes da G-PR-05, sem arquivos Front alterados. Consulte [COMPATIBILITY.md](COMPATIBILITY.md).
+
+GET /api/v1/games retorna GamePageResponse: items (GameResponse[]), page, pageSize e hasNextPage. Query: term, sort (release-desc/name-asc/name-desc), page (padrão 1) e pageSize (padrão 20, máximo 100). Sort omitido usa release-desc sem termo ou name-asc com termo. Não há total artificial. IDs game-* são inválidos; use igdb-{inteiro positivo}.
+
+X-Catalog-Stale e X-Catalog-Fetched-At são expostos via CORS quando a resposta utiliza catálogo. Projeções agregam stale por qualquer entrada e fetchedAt pela mais antiga, preservando a data obtida do fornecedor. Comentários e consultas sem jogos não emitem esses headers. Erro de fornecedor não é 401 da sessão local.
 
 ## OpenAPI
 

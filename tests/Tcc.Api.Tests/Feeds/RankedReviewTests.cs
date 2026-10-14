@@ -59,7 +59,7 @@ public sealed class RankedReviewTests
     [InlineData("")]
     public async Task Unknown_or_empty_period_returns_400(string period)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var response = await client.GetAsync($"/api/v1/community/reviews/most-commented?period={period}");
         Assert.Equal(400, (int)response.StatusCode);

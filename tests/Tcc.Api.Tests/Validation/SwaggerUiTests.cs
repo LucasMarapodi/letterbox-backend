@@ -10,7 +10,7 @@ public sealed class SwaggerUiTests
     [InlineData("Production")]
     public async Task Swagger_page_and_initializer_use_existing_openapi_without_persisting_authorization(string environment)
     {
-        await using var host = new WebApplicationFactory<Program>()
+        await using var host = new TestApiFactory()
             .WithWebHostBuilder(builder => builder.UseEnvironment(environment));
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/swagger/index.html");
@@ -35,7 +35,7 @@ public sealed class SwaggerUiTests
     [InlineData("/swagger/swagger-ui-standalone-preset.js", "text/javascript")]
     public async Task Swagger_assets_are_served_by_backend_without_a_CDN(string path, string mediaType)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var response = await client.GetAsync(path);
         Assert.Equal(200, (int)response.StatusCode);
@@ -46,7 +46,7 @@ public sealed class SwaggerUiTests
     [Fact]
     public async Task Swagger_short_url_redirects_to_the_page()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
         using var response = await client.GetAsync("/swagger");
         Assert.Equal(301, (int)response.StatusCode);
