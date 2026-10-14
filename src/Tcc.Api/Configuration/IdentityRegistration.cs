@@ -1,15 +1,18 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
+using Tcc.Api.Authentication;
+using Tcc.Api.ErrorHandling;
+using SessionOptions = Tcc.Api.Authentication.SessionOptions;
 using Tcc.Application.Identity;
 using Tcc.Infrastructure.Identity;
 
-namespace Tcc.Api.Authentication;
+namespace Tcc.Api.Configuration;
 
 public static class IdentityRegistration
 {
     public static IServiceCollection AddIdentityFeature(this IServiceCollection services)
     {
-        services.AddExceptionHandler<IdentityExceptionHandler>();
+        services.AddExceptionHandler<ApiExceptionHandler>();
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<IUserAccounts, InMemoryUserAccounts>();
         services.AddSingleton<IMockSessions, InMemoryMockSessions>();

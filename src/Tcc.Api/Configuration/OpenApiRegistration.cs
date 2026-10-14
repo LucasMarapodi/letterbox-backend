@@ -4,8 +4,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 using Tcc.Api.Contracts;
+using Tcc.Api.Filters;
 
-namespace Tcc.Api;
+namespace Tcc.Api.Configuration;
 
 public static class OpenApiRegistration
 {

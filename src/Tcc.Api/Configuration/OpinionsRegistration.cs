@@ -1,9 +1,10 @@
 using Tcc.Application.Catalog;
+using Tcc.Api.Filters;
 
 using Tcc.Application.Opinions;
 using Tcc.Infrastructure.Opinions;
 
-namespace Tcc.Api;
+namespace Tcc.Api.Configuration;
 
 public static class OpinionsRegistration
 {

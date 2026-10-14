@@ -1,4 +1,4 @@
-namespace Tcc.Api;
+namespace Tcc.Api.Configuration;
 
 public static class BrowserCorsRegistration
 {

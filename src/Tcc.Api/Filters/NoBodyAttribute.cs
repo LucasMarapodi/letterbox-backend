@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Tcc.Api.Contracts;
 
-namespace Tcc.Api;
+namespace Tcc.Api.Filters;
 
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class NoBodyAttribute : Attribute, IAsyncActionFilter

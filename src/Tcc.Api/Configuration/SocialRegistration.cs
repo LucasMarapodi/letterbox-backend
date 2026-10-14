@@ -1,7 +1,7 @@
 using Tcc.Application.Social;
 using Tcc.Infrastructure.Social;
 
-namespace Tcc.Api;
+namespace Tcc.Api.Configuration;
 
 public static class SocialRegistration
 {

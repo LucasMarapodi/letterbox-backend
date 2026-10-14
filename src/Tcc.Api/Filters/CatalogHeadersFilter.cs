@@ -2,7 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Tcc.Application.Catalog;
 
-namespace Tcc.Api;
+namespace Tcc.Api.Filters;
 
 public sealed class CatalogHeadersFilter(CatalogUsage usage) : IResultFilter
 {

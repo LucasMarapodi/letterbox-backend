@@ -5,8 +5,6 @@ using Tcc.Application.Opinions;
 
 namespace Tcc.Api.Controllers;
 
-public sealed record GamePageResponse(IReadOnlyList<GameResponse> Items, int Page, int PageSize, bool HasNextPage);
-
 [ApiController]
 [Route("api/v1/games")]
 public sealed class GamesController(IAsyncGameCatalog games, CatalogUsage usage, LocalRatingAverage averages) : ControllerBase

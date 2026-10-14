@@ -16,6 +16,8 @@ Escritas preparam jogo/projeção antes de gravar. Publicação, edição, nota 
 
 ## Verificação
 
+Refatoração de organização solicitada após a implementação: registros de DI/CORS/OpenAPI em Tcc.Api/Configuration; tratamento de erros em ErrorHandling/ApiExceptionHandler; filtros em Filters; Authentication contém handler Bearer, sessão HTTP e opções. DTOs GamePageResponse/DashboardResponse movidos para Contracts. Namespaces e referências ajustados, sem alteração dos contratos HTTP ou regras de negócio.
+
 - Ciclos RED confirmados e commits de testes antes da implementação para as três US.
 - CatalogHttpTests: paginação/defaults, validação, headers/CORS, detalhe, 502/503/504, OpenAPI e ausência de fixtures no host produtivo.
 - ProjectionHttpTests: IDs repetidos, lote misto cache/local/externo, leitura offline conhecida, metadados agregados, falha sem perda de review e comentários sem catálogo.

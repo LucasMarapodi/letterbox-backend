@@ -1,3 +1,4 @@
+using Tcc.Api.ErrorHandling;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
@@ -67,7 +68,7 @@ public sealed class GameMappingTests
         var context = new DefaultHttpContext();
         using var body = new MemoryStream();
         context.Response.Body = body;
-        Assert.True(await new IdentityExceptionHandler().TryHandleAsync(context, new CatalogInvalidResponseException(), CancellationToken.None));
+        Assert.True(await new ApiExceptionHandler().TryHandleAsync(context, new CatalogInvalidResponseException(), CancellationToken.None));
         Assert.Equal(502, context.Response.StatusCode);
         body.Position = 0;
         using var json = await JsonDocument.ParseAsync(body);

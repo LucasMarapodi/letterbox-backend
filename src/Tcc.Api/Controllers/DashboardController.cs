@@ -6,8 +6,6 @@ using Tcc.Application.Queries;
 
 namespace Tcc.Api.Controllers;
 
-public sealed record DashboardResponse(FavoriteListsResponse Favorites, IReadOnlyList<ReviewResponse> Feed);
-
 [ApiController, Authorize, Route("api/v1/dashboard")]
 public sealed class DashboardController(PersonalDashboard dashboard, LocalRatingAverage averages) : ControllerBase
 {
