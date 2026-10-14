@@ -51,10 +51,11 @@ public sealed class TwitchTokenProvider(Func<CancellationToken, Task<TwitchAppTo
             }
             completion.SetResult(token);
         }
-        catch (Exception)
+        catch (Exception failure)
         {
             lock (gate) inFlight = null;
-            completion.SetException(new ExternalIntegrationUnavailableException());
+            completion.SetException(new ExternalIntegrationUnavailableException(
+                failure is Tcc.Application.Catalog.CatalogIntegrationUnavailableException { AllowsStaleFallback: true }));
         }
     }
 }

@@ -20,16 +20,17 @@ public sealed class TwitchOAuthClient(HttpClient http, IgdbCredentialOptions opt
                 ["grant_type"] = "client_credentials"
             });
             using var response = await http.SendAsync(request, cancellationToken);
-            if (response.StatusCode != HttpStatusCode.OK) throw new ExternalIntegrationUnavailableException();
+            if (response.StatusCode != HttpStatusCode.OK) throw new ExternalIntegrationUnavailableException(
+                response.StatusCode == HttpStatusCode.TooManyRequests || (int)response.StatusCode >= 500);
             var payload = JsonSerializer.Deserialize<OAuthTokenResponse>(await response.Content.ReadAsStringAsync(cancellationToken));
             if (payload is null || string.IsNullOrEmpty(payload.AccessToken) || payload.AccessToken.Length > 4096
                 || payload.AccessToken.Any(character => character < '!' || character > '~')
                 || payload.ExpiresIn is null or <= 0
                 || !string.Equals(payload.TokenType, "bearer", StringComparison.OrdinalIgnoreCase))
-                throw new ExternalIntegrationUnavailableException();
+                throw new ExternalIntegrationUnavailableException(false);
             var lifetime = TimeSpan.FromSeconds(payload.ExpiresIn.Value);
             var expiresAt = startedAt.Add(lifetime);
-            if (clock.GetUtcNow() >= expiresAt) throw new ExternalIntegrationUnavailableException();
+            if (clock.GetUtcNow() >= expiresAt) throw new ExternalIntegrationUnavailableException(false);
             var margin = TimeSpan.FromTicks(Math.Min(options.RefreshMargin.Ticks, lifetime.Ticks / 2));
             return new(payload.AccessToken, expiresAt, expiresAt.Subtract(margin));
         }
@@ -40,7 +41,7 @@ public sealed class TwitchOAuthClient(HttpClient http, IgdbCredentialOptions opt
         catch (Exception failure) when (failure is HttpRequestException or JsonException or OperationCanceledException)
         {
             // The original exception can contain supplier payloads or credentials.
-            throw new ExternalIntegrationUnavailableException();
+            throw new ExternalIntegrationUnavailableException(failure is not JsonException);
         }
     }
 

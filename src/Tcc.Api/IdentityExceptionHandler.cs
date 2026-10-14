@@ -16,6 +16,7 @@ public sealed class IdentityExceptionHandler : IExceptionHandler
             DomainValidationException => 400,
             CatalogIntegrationUnavailableException => 503,
             CatalogInvalidResponseException => 502,
+            CatalogTimeoutException => 504,
             ReviewOwnershipException => 403,
             ResourceFailure { Kind: ResourceFailureKind.NotFound } => 404,
             ResourceFailure { Kind: ResourceFailureKind.Conflict } => 409,

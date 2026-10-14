@@ -13,7 +13,7 @@ public static class IgdbAuthenticationRegistration
     {
         services.TryAddSingleton(TimeProvider.System);
         IgdbResilienceOptions resilience;
-        try { resilience = configuration?.GetSection("IGDB:Resilience").Get<IgdbResilienceOptions>() ?? new(); }
+        try { resilience = configuration?.GetSection("IGDB:Resilience").Get<IgdbResilienceOptions>() ?? new(); resilience.Validate(); }
         catch (Exception) { throw new InvalidOperationException("Configuração de resiliência IGDB inválida."); }
         services.AddSingleton(resilience);
         services.AddSingleton<IIgdbScheduler, SystemIgdbScheduler>();

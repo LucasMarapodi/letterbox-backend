@@ -31,7 +31,7 @@ public sealed class IgdbAuthenticatedClient(HttpClient http, IgdbCredentialOptio
                 if (attempt == 0) token = await tokens.RefreshRejectedAsync(token, budget.Token);
                 else tokens.InvalidateRejected(token);
             }
-            throw new ExternalIntegrationUnavailableException();
+            throw new ExternalIntegrationUnavailableException(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw new OperationCanceledException(cancellationToken); }
         catch (OperationCanceledException) { throw new CatalogTimeoutException(); }

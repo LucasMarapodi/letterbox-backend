@@ -10,6 +10,12 @@ public sealed record IgdbResilienceOptions
     public int QueueLimit { get; init; } = 32;
     public int MaxRetries { get; init; } = 2;
     public TimeSpan TotalTimeout { get; init; } = TimeSpan.FromSeconds(30);
+    public void Validate()
+    {
+        if (RequestsPerSecond is < 1 or > 4 || MaxConcurrent is < 1 or > 8 || QueueLimit is < 0 or > 128
+            || MaxRetries is < 0 or > 2 || TotalTimeout <= TimeSpan.Zero || TotalTimeout > TimeSpan.FromMinutes(1))
+            throw new InvalidOperationException("Configuração de resiliência IGDB inválida.");
+    }
 }
 public interface IIgdbScheduler
 {
@@ -58,9 +64,7 @@ public sealed class IgdbResiliencePolicy : IDisposable
     private DateTimeOffset cooldown;
     public IgdbResiliencePolicy(IgdbResilienceOptions options, IIgdbScheduler scheduler)
     {
-        if (options.RequestsPerSecond is < 1 or > 4 || options.MaxConcurrent is < 1 or > 8 || options.QueueLimit is < 0 or > 128
-            || options.MaxRetries is < 0 or > 2 || options.TotalTimeout <= TimeSpan.Zero || options.TotalTimeout > TimeSpan.FromMinutes(1))
-            throw new InvalidOperationException("Configuração de resiliência IGDB inválida.");
+        options.Validate();
         this.options = options; this.scheduler = scheduler; slots = new(options.MaxConcurrent, options.MaxConcurrent);
     }
     public IgdbCallBudget CreateBudget(CancellationToken caller = default) => new(options, scheduler, caller);
@@ -75,6 +79,8 @@ public sealed class IgdbResiliencePolicy : IDisposable
                 await EnterAsync(budget);
                 try { response = await send(budget.Token); }
                 finally { slots.Release(); lock (gate) admitted--; }
+                try { budget.Check(); }
+                catch { response.Dispose(); throw; }
                 var transient = response.StatusCode == HttpStatusCode.TooManyRequests || (int)response.StatusCode >= 500;
                 if (!transient) return response;
                 var delay = RetryDelay(response, budget.RetriesUsed);
