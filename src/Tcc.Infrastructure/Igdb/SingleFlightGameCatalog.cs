@@ -14,6 +14,7 @@ public sealed class SingleFlightGameCatalog(IAsyncGameCatalog inner, CatalogMemo
     }
     public async Task<CatalogGame?> GetAsync(string id, CancellationToken cancellationToken = default) =>
         (await ResolveAsync([id], cancellationToken)).GetValueOrDefault(id);
+    public Task<CatalogGame?> RefreshAsync(string id, CancellationToken cancellationToken = default) => inner.RefreshAsync(id, cancellationToken);
     public async Task<IReadOnlyDictionary<string, CatalogGame>> ResolveAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken = default)
     {
         var unique = CatalogIds.Unique(ids);
