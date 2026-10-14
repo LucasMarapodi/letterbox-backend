@@ -10,6 +10,7 @@ public sealed record ApiError(string Code, string Message)
         404 => new("not_found", "Recurso não encontrado."),
         409 => new("conflict", "Conflito com o estado atual."),
         500 => new("internal_error", "Erro interno."),
+        503 => new("integration_unavailable", "Integração externa indisponível."),
         _ => new("http_error", "Não foi possível atender à requisição.")
     };
 }

@@ -80,6 +80,30 @@ public sealed class CredentialTests
         Assert.Equal(404, (int)tokenEndpoint.StatusCode);
     }
 
+    [Fact]
+    public async Task Known_catalog_reads_do_not_activate_external_authentication_or_transport()
+    {
+        var calls = 0;
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+            {
+                services.AddSingleton<IgdbCredentialOptions>(_ => throw new InvalidOperationException("No credentials on local lookup"));
+                foreach (var name in new[] { IgdbAuthenticationRegistration.OAuthClientName, IgdbAuthenticationRegistration.IgdbClientName })
+                    services.AddHttpClient(name).ConfigurePrimaryHttpMessageHandler(() => new TestHandler((_, _) =>
+                    {
+                        Interlocked.Increment(ref calls);
+                        throw new HttpRequestException("Unexpected external request");
+                    }));
+            }));
+        using var client = host.CreateClient();
+        foreach (var path in new[] { "/api/v1/games", "/api/v1/games/game-1", "/api/v1/games/game-1/opinions", "/api/v1/reviews/review-fixture" })
+        {
+            using var response = await client.GetAsync(path);
+            Assert.Equal(200, (int)response.StatusCode);
+        }
+        Assert.Equal(0, calls);
+    }
+
     [Theory]
     [InlineData(IgdbAuthenticationRegistration.OAuthClientName)]
     [InlineData(IgdbAuthenticationRegistration.IgdbClientName)]

@@ -96,6 +96,19 @@ public sealed class OAuthTests
         var failure = await Assert.ThrowsAsync<ExternalIntegrationUnavailableException>(() => client.AcquireAsync());
         Assert.DoesNotContain("synthetic", failure.ToString());
     }
+
+    [Fact]
+    public async Task A_response_already_expired_during_acquisition_is_not_published_as_valid()
+    {
+        var clock = new TestClock();
+        using var http = new HttpClient(new TestHandler((_, _) =>
+        {
+            clock.Now = clock.Now.AddSeconds(121);
+            return Task.FromResult(IgdbTest.TokenResponse());
+        }));
+        await Assert.ThrowsAsync<ExternalIntegrationUnavailableException>(() =>
+            new TwitchOAuthClient(http, IgdbTest.Options(), clock).AcquireAsync());
+    }
 }
 
 internal sealed class TestClock : TimeProvider

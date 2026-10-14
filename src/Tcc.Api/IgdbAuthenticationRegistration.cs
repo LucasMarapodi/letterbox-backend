@@ -20,9 +20,20 @@ public static class IgdbAuthenticationRegistration
             client.Timeout = TimeSpan.FromSeconds(30);
             client.MaxResponseContentBufferSize = 4 * 1024 * 1024;
         }).RemoveAllLoggers().ConfigurePrimaryHttpMessageHandler(ExternalHttpTransport.CreateHandler);
-        services.AddTransient(services => new TwitchOAuthClient(
-            services.GetRequiredService<IHttpClientFactory>().CreateClient(OAuthClientName),
-            services.GetRequiredService<IgdbCredentialOptions>(), services.GetRequiredService<TimeProvider>()));
+        services.AddSingleton(services =>
+        {
+            var factory = services.GetRequiredService<IHttpClientFactory>();
+            var options = services.GetRequiredService<IgdbCredentialOptions>();
+            var clock = services.GetRequiredService<TimeProvider>();
+            return new TwitchTokenProvider(async cancellationToken =>
+            {
+                using var http = factory.CreateClient(OAuthClientName);
+                return await new TwitchOAuthClient(http, options, clock).AcquireAsync(cancellationToken);
+            }, clock);
+        });
+        services.AddScoped(services => new IgdbAuthenticatedClient(
+            services.GetRequiredService<IHttpClientFactory>().CreateClient(IgdbClientName),
+            services.GetRequiredService<IgdbCredentialOptions>(), services.GetRequiredService<TwitchTokenProvider>()));
         return services;
     }
 }

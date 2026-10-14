@@ -7,11 +7,13 @@ namespace Tcc.Api.Tests.Opinions;
 public sealed class CatalogTests
 {
     [Fact]
-    public void Fake_adapter_is_constructible_without_network_and_infrastructure_has_no_http_reference()
+    public void Fake_adapter_is_constructible_without_network_and_inner_layers_have_no_http_reference()
     {
         var adapter = new Tcc.Infrastructure.Catalog.FakeIgdbCatalog();
         Assert.Equal(3, adapter.All().Count);
-        Assert.DoesNotContain(typeof(Tcc.Infrastructure.Catalog.FakeIgdbCatalog).Assembly.GetReferencedAssemblies(),
+        Assert.DoesNotContain(typeof(Tcc.Domain.Catalog.Game).Assembly.GetReferencedAssemblies(),
+            reference => reference.Name == "System.Net.Http");
+        Assert.DoesNotContain(typeof(Tcc.Application.Catalog.IGameCatalog).Assembly.GetReferencedAssemblies(),
             reference => reference.Name == "System.Net.Http");
     }
 
