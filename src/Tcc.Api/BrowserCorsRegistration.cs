@@ -21,7 +21,7 @@ public static class BrowserCorsRegistration
             if (origins.Length > 0) policy.WithOrigins(origins);
             policy.WithMethods("GET", "POST", "PATCH", "PUT", "DELETE")
                 .WithHeaders("Content-Type", "Authorization")
-                .WithExposedHeaders("Location");
+                .WithExposedHeaders("Location", "X-Catalog-Stale", "X-Catalog-Fetched-At");
         }));
         return services;
     }

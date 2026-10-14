@@ -11,6 +11,9 @@ public static class OpinionsRegistration
     {
         services.AddSingleton<IGameCatalog, FakeIgdbCatalog>();
         services.AddScoped<QueryGames>();
+        services.AddScoped<CatalogUsage>();
+        services.AddScoped<CatalogHeadersFilter>();
+        services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(options => options.Filters.AddService<CatalogHeadersFilter>());
         services.AddSingleton<IRatings, InMemoryRatings>();
         services.AddScoped<PersonalRating>();
         services.AddScoped<LocalRatingAverage>();
