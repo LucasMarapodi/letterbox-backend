@@ -25,4 +25,3 @@ public sealed class RatingsController(PersonalRating ratings) : ControllerBase
     public async Task<ActionResult<RatingResponse>> Set(string gameId, RatingRequest request, CancellationToken cancellationToken) =>
         Ok(RatingResponse.From(await ratings.Set(gameId, request.Value.GetValueOrDefault(), cancellationToken)));
 }
-

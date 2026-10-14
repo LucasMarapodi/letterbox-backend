@@ -22,4 +22,3 @@ public sealed class CommunityController(RecentReviews recent, MostCommentedRevie
         Ok((await rankedGames.Execute(query.Period, cancellationToken)).Select(item => new RankedGameResponse(
             GameResponse.From(item.Game, item.AverageRating), item.CommentCount, item.LastCommentAt)).ToArray());
 }
-

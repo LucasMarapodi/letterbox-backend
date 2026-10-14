@@ -30,4 +30,3 @@ public static class OpinionsRegistration
         return services;
     }
 }
-

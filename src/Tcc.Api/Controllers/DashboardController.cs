@@ -19,4 +19,3 @@ public sealed class DashboardController(PersonalDashboard dashboard, LocalRating
             result.Feed.Select(ReviewResponse.From).ToArray()));
     }
 }
-

@@ -11,4 +11,3 @@ public sealed class FeedController(FollowingFeed feed) : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ReviewResponse>>> Get(CancellationToken cancellationToken) => Ok((await feed.Execute(cancellationToken)).Select(ReviewResponse.From).ToArray());
 }
-

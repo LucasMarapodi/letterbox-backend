@@ -62,5 +62,3 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
         return Ok(new GameOpinionsResponse(result.AverageRating, result.Reviews.Select(ReviewResponse.From).ToArray()));
     }
 }
-
-

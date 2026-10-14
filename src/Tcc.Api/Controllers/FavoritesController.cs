@@ -35,5 +35,3 @@ public sealed class FavoritesController(PersonalFavorites favorites, LocalRating
     [ProducesResponseType<ApiError>(404)]
     public async Task<IActionResult> Delete(string kind, string targetId, CancellationToken cancellationToken) { await favorites.Remove(kind, targetId, cancellationToken); return NoContent(); }
 }
-
-

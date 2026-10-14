@@ -12,4 +12,3 @@ public sealed class ReviewProjection(OpinionViews views, Tcc.Application.Catalog
     }
 
 }
-
