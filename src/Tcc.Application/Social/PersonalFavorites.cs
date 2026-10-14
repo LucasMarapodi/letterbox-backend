@@ -14,9 +14,10 @@ public interface IFavorites
     IReadOnlyList<Favorite> ForUser(string userId);
 }
 public sealed record FavoriteCollections(IReadOnlyList<Game> Games, IReadOnlyList<ReviewDetails> Reviews);
+public sealed record FavoriteSnapshot(IReadOnlyList<string> GameIds, IReadOnlyList<Tcc.Domain.Opinions.Review> Reviews);
 
 public sealed class PersonalFavorites(IFavorites favorites, QueryGames games, GetReview reviews,
-    ICurrentSession current, SessionAccess access)
+    ICurrentSession current, SessionAccess access, OpinionViews views, IPublicationScope publications)
 {
     private FavoriteKind Validate(string kind, string targetId)
     {
@@ -39,10 +40,18 @@ public sealed class PersonalFavorites(IFavorites favorites, QueryGames games, Ge
         var userId = access.Require(current).UserId;
         favorites.Remove(userId, Validate(kind, targetId), targetId);
     }
-    public FavoriteCollections List()
+    public FavoriteSnapshot Snapshot() => publications.Execute(() =>
     {
         var items = favorites.ForUser(access.Require(current).UserId).OrderBy(item => item.TargetId, StringComparer.Ordinal).ToArray();
-        return new(items.Where(item => item.Kind == FavoriteKind.Game).Select(item => games.Get(item.TargetId)).ToArray(),
-            items.Where(item => item.Kind == FavoriteKind.Review).Select(item => reviews.Execute(item.TargetId)).ToArray());
+        return new FavoriteSnapshot(items.Where(item => item.Kind == FavoriteKind.Game).Select(item => item.TargetId).ToArray(),
+            items.Where(item => item.Kind == FavoriteKind.Review).Select(item => reviews.Find(item.TargetId)).ToArray());
+    });
+    public FavoriteCollections Project(FavoriteSnapshot snapshot, IReadOnlyDictionary<string, Game> found) =>
+        new(snapshot.GameIds.Select(id => found[id]).ToArray(), snapshot.Reviews.Select(review => views.Review(review, found[review.GameId])).ToArray());
+    public async Task<FavoriteCollections> List(CancellationToken cancellationToken = default)
+    {
+        var snapshot = Snapshot();
+        var found = await games.ResolveAsync(snapshot.GameIds.Concat(snapshot.Reviews.Select(review => review.GameId)), cancellationToken);
+        return Project(snapshot, found);
     }
 }

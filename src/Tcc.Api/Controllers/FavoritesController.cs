@@ -10,9 +10,9 @@ namespace Tcc.Api.Controllers;
 public sealed class FavoritesController(PersonalFavorites favorites, LocalRatingAverage averages) : ControllerBase
 {
     [HttpGet]
-    public ActionResult<FavoriteListsResponse> List()
+    public async Task<ActionResult<FavoriteListsResponse>> List(CancellationToken cancellationToken)
     {
-        var lists = favorites.List();
+        var lists = await favorites.List(cancellationToken);
         return Ok(FavoriteListsResponse.From(lists, averages.ForGame));
     }
     [HttpGet("{kind}/{targetId}")]
@@ -35,3 +35,4 @@ public sealed class FavoritesController(PersonalFavorites favorites, LocalRating
     [ProducesResponseType<ApiError>(404)]
     public IActionResult Delete(string kind, string targetId) { favorites.Remove(kind, targetId); return NoContent(); }
 }
+

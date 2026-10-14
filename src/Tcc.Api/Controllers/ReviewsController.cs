@@ -23,7 +23,7 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     [HttpGet("reviews/{reviewId}")]
     [ProducesResponseType<ReviewResponse>(200)]
     [ProducesResponseType<ApiError>(404)]
-    public ActionResult<ReviewResponse> Get(string reviewId) => Ok(ReviewResponse.From(reviews.Execute(reviewId)));
+    public async Task<ActionResult<ReviewResponse>> Get(string reviewId, CancellationToken cancellationToken) => Ok(ReviewResponse.From(await reviews.ExecuteAsync(reviewId, cancellationToken)));
 
     [Authorize]
     [HttpPatch("reviews/{reviewId}")]
@@ -37,28 +37,29 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     [HttpGet("games/{gameId}/reviews")]
     [ProducesResponseType<IReadOnlyList<ReviewResponse>>(200)]
     [ProducesResponseType<ApiError>(404)]
-    public ActionResult<IReadOnlyList<ReviewResponse>> ForGame(string gameId) =>
-        Ok(queries.ForGame(gameId).Select(ReviewResponse.From).ToArray());
+    public async Task<ActionResult<IReadOnlyList<ReviewResponse>>> ForGame(string gameId, CancellationToken cancellationToken) =>
+        Ok((await queries.ForGame(gameId, cancellationToken)).Select(ReviewResponse.From).ToArray());
     [HttpGet("users/{userId}/reviews")]
     [ProducesResponseType<IReadOnlyList<ReviewResponse>>(200)]
     [ProducesResponseType<ApiError>(404)]
-    public ActionResult<IReadOnlyList<ReviewResponse>> ForUser(string userId) =>
-        Ok(queries.ForUser(userId).Select(ReviewResponse.From).ToArray());
+    public async Task<ActionResult<IReadOnlyList<ReviewResponse>>> ForUser(string userId, CancellationToken cancellationToken) =>
+        Ok((await queries.ForUser(userId, cancellationToken)).Select(ReviewResponse.From).ToArray());
     [Authorize]
     [HttpGet("games/{gameId}/reviews/me")]
     [ProducesResponseType<MyReviewResponse>(200)]
     [ProducesResponseType<ApiError>(404)]
-    public ActionResult<MyReviewResponse> Mine(string gameId)
+    public async Task<ActionResult<MyReviewResponse>> Mine(string gameId, CancellationToken cancellationToken)
     {
-        var mine = queries.Mine(gameId);
+        var mine = await queries.Mine(gameId, cancellationToken);
         return Ok(new MyReviewResponse(mine is null ? null : ReviewResponse.From(mine)));
     }
     [HttpGet("games/{gameId}/opinions")]
     [ProducesResponseType<GameOpinionsResponse>(200)]
     [ProducesResponseType<ApiError>(404)]
-    public ActionResult<GameOpinionsResponse> Opinions(string gameId)
+    public async Task<ActionResult<GameOpinionsResponse>> Opinions(string gameId, CancellationToken cancellationToken)
     {
-        var result = queries.Opinions(gameId);
+        var result = await queries.Opinions(gameId, cancellationToken);
         return Ok(new GameOpinionsResponse(result.AverageRating, result.Reviews.Select(ReviewResponse.From).ToArray()));
     }
 }
+

@@ -30,9 +30,12 @@ internal static class ActivityOrdering
 }
 
 public sealed record RankedReviewDetails(ReviewDetails Review, int CommentCount, DateTimeOffset LastCommentAt);
-public sealed class MostCommentedReviews(CommentActivity activity, OpinionViews views)
+public sealed class MostCommentedReviews(CommentActivity activity, OpinionViews views, Tcc.Application.Catalog.QueryGames games)
 {
-    public IReadOnlyList<RankedReviewDetails> Execute(string? period) =>
-        ActivityOrdering.Sort(activity.Execute(period), item => item.CommentCount, item => item.LastCommentAt, item => item.Review.Id)
-            .Select(item => new RankedReviewDetails(views.Review(item.Review), item.CommentCount, item.LastCommentAt)).ToArray();
+    public async Task<IReadOnlyList<RankedReviewDetails>> Execute(string? period, CancellationToken cancellationToken = default)
+    {
+        var snapshot = ActivityOrdering.Sort(activity.Execute(period), item => item.CommentCount, item => item.LastCommentAt, item => item.Review.Id).ToArray();
+        var found = await games.ResolveAsync(snapshot.Select(item => item.Review.GameId), cancellationToken);
+        return snapshot.Select(item => new RankedReviewDetails(views.Review(item.Review, found[item.Review.GameId]), item.CommentCount, item.LastCommentAt)).ToArray();
+    }
 }

@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Tcc.Application.Catalog;
 using Tcc.Application.Opinions;
 using Tcc.Domain.Opinions;
+using Tcc.Api.Tests.Identity;
 
 namespace Tcc.Api.Tests.Igdb;
 

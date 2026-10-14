@@ -16,10 +16,10 @@ public sealed class PublishComment(IComments comments, GetReview reviews, Opinio
     public CommentDetails Execute(string reviewId, string? text) => publications.Execute(() =>
     {
         var userId = access.Require(current).UserId;
-        var review = reviews.Execute(reviewId);
+        var review = reviews.Find(reviewId);
         var comment = Comment.Create(Guid.NewGuid().ToString("N"), userId, reviewId, text, clock.GetUtcNow());
         var result = new CommentDetails(comment, views.Author(userId));
-        var events = notifications.ForComment(comment, review.Review.UserId);
+        var events = notifications.ForComment(comment, review.UserId);
         comments.Add(comment);
         notifications.Send(events);
         return result;
@@ -31,7 +31,7 @@ public sealed class QueryComments(IComments comments, GetReview reviews, Opinion
 {
     public IReadOnlyList<CommentDetails> Execute(string reviewId)
     {
-        reviews.Execute(reviewId);
+        reviews.Find(reviewId);
         return comments.ForReview(reviewId).OrderBy(comment => comment.CreatedAt)
             .ThenBy(comment => comment.Id, StringComparer.Ordinal)
             .Select(comment => new CommentDetails(comment, views.Author(comment.UserId))).ToArray();

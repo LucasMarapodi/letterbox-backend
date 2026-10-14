@@ -29,6 +29,10 @@ public sealed class OpinionViews(IUserAccounts accounts, QueryGames games)
         var game = games.Get(review.GameId);
         return new(review, Author(review.UserId), new PublicGame(game.Id, game.Title, game.CoverUrl));
     }
+    public ReviewDetails Review(Review review, Tcc.Domain.Catalog.Game game) =>
+        new(review, Author(review.UserId), new PublicGame(game.Id, game.Title, game.CoverUrl));
+    public async Task<ReviewDetails> ReviewAsync(Review review, CancellationToken cancellationToken = default) =>
+        Review(review, await games.GetAsync(review.GameId, cancellationToken));
 }
 
 public sealed class PublishReview(IReviews reviews, QueryGames games, ICurrentSession current,
@@ -49,6 +53,8 @@ public sealed class PublishReview(IReviews reviews, QueryGames games, ICurrentSe
 
 public sealed class GetReview(IReviews reviews, OpinionViews views)
 {
+    public Review Find(string id) => reviews.Find(id) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
+    public Task<ReviewDetails> ExecuteAsync(string id, CancellationToken cancellationToken = default) => views.ReviewAsync(Find(id), cancellationToken);
     public ReviewDetails Execute(string id) => views.Review(reviews.Find(id) ?? throw new ResourceFailure(ResourceFailureKind.NotFound));
 }
 
