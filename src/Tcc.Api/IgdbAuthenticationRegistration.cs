@@ -44,8 +44,7 @@ public static class IgdbAuthenticationRegistration
             services.GetRequiredService<IHttpClientFactory>().CreateClient(IgdbClientName),
             services.GetRequiredService<IgdbCredentialOptions>(), services.GetRequiredService<TwitchTokenProvider>(),
             services.GetRequiredService<IgdbResiliencePolicy>()));
-        services.AddScoped<IExternalGameCatalog>(services => new IgdbGameCatalog(
-            () => services.GetRequiredService<IgdbAuthenticatedClient>(), services.GetRequiredService<TimeProvider>()));
+        services.AddSingleton<IExternalGameCatalog, ScopedExternalGameCatalog>();
         return services;
     }
 }
