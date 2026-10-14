@@ -25,6 +25,8 @@ A primeira entrega da terceira fase prepara CORS para consumo direto pelo navega
 
 A G-PR-01 prepara [autenticação Twitch/IGDB no servidor](docs/IGDB-AUTH.md), com token compartilhado em memória e configuração pelas variáveis do processo. O catálogo atual continua fake; não houve validação live. [Entrega e dependências pendentes](docs/G-PR-01.md).
 
+A [G-PR-02](docs/G-PR-02.md) prepara portas assíncronas, resolução cache/local/IGDB e [consultas e normalização](docs/IGDB-CATALOG.md). A ativação nos endpoints e o cache/local concretos pertencem às próximas PRs; a listagem HTTP atual ainda não mudou.
+
 Para validar a entrega completa:
 
 ```powershell

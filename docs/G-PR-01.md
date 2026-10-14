@@ -26,4 +26,6 @@ A antiga restrição de ausência de HTTP em Infrastructure foi ajustada para a 
 
 Estado: IMPLEMENTED_LOCAL_DEPENDENCY_PENDING. A terceira fase ainda não consta validada integralmente no planejamento; esta infraestrutura foi iniciada por solicitação do usuário, sem ativar catálogo externo ou declarar essa dependência concluída.
 
+Atualização na G-PR-02 em 2026-10-14: a dependência da terceira fase foi conferida na entrega I-PR-07 de Front (`0981a79`), com runtime HTTP e evidências E2E versionadas. O estado acima descreve o encerramento original da G-PR-01; a aquisição live e a ativação do catálogo continuam pendentes.
+
 Não houve aquisição live de token ou consumo real da IGDB. Cache de catálogo, política cache/local/IGDB, consultas, paginação e tradução de jogos pertencem às próximas PRs. O catálogo atual permanece fake. A implementação local não comprova a conclusão da quarta fase.
