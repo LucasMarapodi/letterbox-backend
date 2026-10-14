@@ -32,6 +32,14 @@ public sealed class QueryTests
     }
 
     [Fact]
+    public void Release_sort_with_a_term_also_excludes_future_releases()
+    {
+        var now = new TestClock().GetUtcNow();
+        var body = IgdbQueries.Search(CatalogSearch.Create("Game", "release-desc"), now);
+        Assert.Contains("first_release_date <= " + now.ToUnixTimeSeconds(), body);
+    }
+
+    [Fact]
     public async Task Adversarial_term_remains_inside_a_literal_and_headers_use_application_token()
     {
         const string term = "A\\B\"; fields *; where id > 0;";
