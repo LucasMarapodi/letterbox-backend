@@ -141,6 +141,24 @@ public sealed class ResilienceTests
         Assert.Equal(HttpStatusCode.InternalServerError, second.StatusCode);
         Assert.Empty(statuses);
     }
+
+    [Fact]
+    public async Task Authenticated_client_shares_retry_budget_across_401_recovery()
+    {
+        var scheduler = new AdvancingScheduler();
+        using var policy = new IgdbResiliencePolicy(new(), scheduler);
+        var oauthCalls = 0;
+        using var oauth = new HttpClient(new TestHandler((_, _) => Task.FromResult(IgdbTest.TokenResponse($"token-{++oauthCalls}"))));
+        var source = new TwitchOAuthClient(oauth, IgdbTest.Options(), scheduler.Clock);
+        var statuses = new Queue<HttpStatusCode>([HttpStatusCode.InternalServerError, HttpStatusCode.Unauthorized,
+            HttpStatusCode.InternalServerError, HttpStatusCode.InternalServerError]);
+        using var http = new HttpClient(new TestHandler((_, _) => Task.FromResult(IgdbTest.Json("[]", statuses.Dequeue()))));
+        using var client = new IgdbAuthenticatedClient(http, IgdbTest.Options(), new TwitchTokenProvider(source.AcquireAsync, scheduler.Clock));
+        using var response = await client.PostGamesAsync("fields id;");
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Equal(2, oauthCalls);
+        Assert.Empty(statuses);
+    }
 }
 
 internal sealed class AdvancingScheduler : IIgdbScheduler
