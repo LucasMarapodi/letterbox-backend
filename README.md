@@ -40,6 +40,8 @@ dotnet test --no-restore -c Release
 dotnet build --no-restore -c Release -p:RunAnalyzers=true
 ```
 
+A [G-PR-06](docs/G-PR-06.md) adiciona regressões de segurança e smoke opt-in. A suíte determinística pode excluir explicitamente o teste live com `--filter 'Category!=IgdbLive'`. Para validar Twitch/IGDB reais, execute `./scripts/igdb-smoke.ps1 -Live` após preencher o .env local; o script recusa placeholders, limita chamadas e gera evidência sanitizada. Sem -Live não acessa o fornecedor. Nenhum segredo entra nos argumentos ou relatórios.
+
 Configuração `Authentication:SessionMinutes` em src/Tcc.Api/appsettings.json, padrão 60 minutos e valor positivo. Fixture local: ana@example.com / teste123, exclusivamente para testes/desenvolvimento. Registre outras contas para simular seguidores e comentários de terceiros. Login retorna token opaco; operações privadas enviam `Authorization: Bearer <token>`.
 
 ## Camadas

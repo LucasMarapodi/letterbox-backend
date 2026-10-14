@@ -1,0 +1,9 @@
+{
+  "mode": "live",
+  "result": "BLOCKED",
+  "reason": "credentials_missing_or_placeholder",
+  "at": "2026-10-14T19:50:17.3330043+00:00",
+  "oAuthRequests": 0,
+  "igdbRequests": 0,
+  "steps": []
+}

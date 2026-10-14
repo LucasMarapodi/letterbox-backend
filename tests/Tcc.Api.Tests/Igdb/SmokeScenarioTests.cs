@@ -10,6 +10,21 @@ namespace Tcc.Api.Tests.Igdb;
 public sealed class SmokeScenarioTests
 {
     [Theory]
+    [InlineData(true, 2)]
+    [InlineData(false, 6)]
+    public async Task Concurrent_transport_attempts_cannot_exceed_smoke_budget(bool oauth, int limit)
+    {
+        var counters = new SmokeCounters();
+        var accepted = 0;
+        await Task.WhenAll(Enumerable.Range(0, 20).Select(_ => Task.Run(() =>
+        {
+            try { counters.Record(oauth); Interlocked.Increment(ref accepted); }
+            catch (HttpRequestException) { }
+        })));
+        Assert.Equal(limit, accepted);
+        Assert.Equal(limit, oauth ? counters.OAuthRequests : counters.IgdbRequests);
+    }
+    [Theory]
     [InlineData(false, false, "DISABLED")]
     [InlineData(false, true, "DISABLED")]
     [InlineData(true, false, "BLOCKED")]
