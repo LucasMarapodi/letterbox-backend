@@ -9,4 +9,11 @@ public sealed record CatalogMemoryOptions
     public int CachePageLimit { get; init; } = 128;
     public int CacheGameLimit { get; init; } = 512;
     public int InFlightLimit { get; init; } = 128;
+    public void Validate()
+    {
+        if (QueryFreshFor <= TimeSpan.Zero || DetailFreshFor <= TimeSpan.Zero || QueryFallbackFor < TimeSpan.Zero
+            || QueryFallbackFor > TimeSpan.FromHours(1) || SnapshotLimit is < 1 or > 10000 || CachePageLimit is < 1 or > 10000
+            || CacheGameLimit is < 1 or > 10000 || InFlightLimit is < 1 or > 1000)
+            throw new InvalidOperationException("Configuração de memória do catálogo inválida.");
+    }
 }
