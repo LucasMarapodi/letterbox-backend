@@ -2,7 +2,7 @@ using Tcc.Application.Catalog;
 using Tcc.Api.Filters;
 
 using Tcc.Application.Opinions;
-using Tcc.Infrastructure.Opinions;
+
 
 namespace Tcc.Api.Configuration;
 
@@ -25,7 +25,9 @@ public static class OpinionsRegistration
         services.AddScoped<QueryReviews>();
         services.AddScoped<ReviewProjection>();
         services.AddScoped<EditReview>();
-        services.AddSingleton<IComments, InMemoryComments>();
+        services.AddScoped<IComments, Tcc.Infrastructure.Persistence.Repositories.PostgresComments>();
+        services.AddScoped<ICommentLikes, Tcc.Infrastructure.Persistence.Repositories.PostgresCommentLikes>();
+        services.AddScoped<PersonalCommentLike>();
         services.AddScoped<QueryComments>();
         services.AddScoped<PublishComment>();
         return services;

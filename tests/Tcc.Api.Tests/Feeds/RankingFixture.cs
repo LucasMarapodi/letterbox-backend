@@ -16,6 +16,6 @@ internal static class RankingFixture
         Assert.True(reviews.TryAdd(Review.Create(102, b.Id, 1, "Old B", now.AddDays(-100))));
         Assert.True(reviews.TryAdd(Review.Create(103, 1, 2, "Old C", now.AddDays(-100))));
     }
-    public static void Comment(WebApplicationFactory<Program> host, string id, int reviewId, DateTimeOffset date) =>
+    public static void Comment(WebApplicationFactory<Program> host, int id, int reviewId, DateTimeOffset date) =>
         host.Services.GetRequiredService<IComments>().Add(Tcc.Domain.Opinions.Comment.Create(id, 1, reviewId, "Comment", date));
 }

@@ -6,14 +6,13 @@ namespace Tcc.Application.Queries;
 
 public sealed record ReviewActivity(Review Review, int CommentCount, DateTimeOffset LastCommentAt);
 
-public sealed class CommentActivity(IReviews reviews, IComments comments, TimeProvider clock, IPublicationScope publications)
+public sealed class CommentActivity(IReviews reviews, IComments comments, TimeProvider clock)
 {
     public async Task<IReadOnlyList<ReviewActivity>> Execute(string? period, CancellationToken ct = default)
     {
         var window = RankingPeriod.Parse(period);
         var now = clock.GetUtcNow();
-        var grouped = publications.Execute(() => comments.InWindow(now - window.Duration, now).GroupBy(item => item.ReviewId)
-            .ToDictionary(group => group.Key, group => (Count: group.Count(), Last: group.Max(item => item.CreatedAt))));
+        var grouped = (await comments.ActivityAsync(now - window.Duration, now, ct)).ToDictionary(item => item.ReviewId);
         var result = new List<ReviewActivity>();
         foreach (var chunk in grouped.Keys.Chunk(500))
             foreach (var review in await reviews.QueryAsync(new(Ids: chunk), ct))

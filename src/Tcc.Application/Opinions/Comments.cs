@@ -1,44 +1,47 @@
 using Tcc.Domain.Opinions;
+using Tcc.Application.Catalog;
 using Tcc.Application.Identity;
 using Tcc.Application.Social;
 
 namespace Tcc.Application.Opinions;
+public sealed record CommentWithLikes(Comment Comment, int LikeCount);
+public sealed record CommentActivitySummary(int ReviewId, int Count, DateTimeOffset Last);
 public interface IComments
 {
-    IReadOnlyList<Comment> ForReview(int reviewId);
-    void Add(Comment comment);
-    IReadOnlyList<Comment> InWindow(DateTimeOffset from, DateTimeOffset to);
+    Task<Comment> AddAsync(Comment comment, CancellationToken ct = default, Func<Comment, IPreparedPublication>? prepare = null);
+    Task<Comment?> FindAsync(int id, CancellationToken ct = default);
+    Task<IReadOnlyList<CommentWithLikes>> ForReviewAsync(int reviewId, CancellationToken ct = default);
+    Task<IReadOnlyList<CommentActivitySummary>> ActivityAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
 }
 public sealed class PublishComment(IComments comments, GetReview reviews, OpinionViews views,
     ICurrentSession current, SessionAccess access, TimeProvider clock, PublicationNotifications notifications, IPublicationScope publications)
 {
-    public async Task<CommentDetails> Execute(int reviewId, string? text, CancellationToken cancellationToken = default)
+    public async Task<CommentDetails> Execute(int reviewId, string? text, CancellationToken cancellationToken = default, int? parentCommentId = null)
     {
         var userId = (await access.Require(current, cancellationToken)).UserId;
-        var draft = Comment.Create(Guid.NewGuid().ToString("N"), userId, reviewId, text, clock.GetUtcNow());
+        if (reviewId <= 0) throw new Tcc.Domain.Identity.DomainValidationException("ID de review inválido.");
+        var draft = Comment.Create(0, userId, reviewId, text, clock.GetUtcNow(), parentCommentId);
+        var review = await reviews.FindAsync(reviewId, cancellationToken);
+        if (parentCommentId is int parentId)
+        {
+            var parent = await comments.FindAsync(parentId, cancellationToken) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
+            draft = Comment.Reply(0, userId, reviewId, draft.Text, draft.CreatedAt, parent);
+        }
         var author = await views.Author(userId, cancellationToken);
         await access.Require(current, cancellationToken);
-        var review = await reviews.FindAsync(reviewId, cancellationToken);
-        return publications.Execute(() =>
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var comment = Comment.Create(draft.Id, userId, reviewId, draft.Text, clock.GetUtcNow());
-            var events = notifications.ForComment(comment, review.UserId);
-            comments.Add(comment);
-            notifications.Send(events);
-            return new CommentDetails(comment, author);
-        });
+        var saved = await comments.AddAsync(draft, cancellationToken,
+            comment => publications.Prepare(() => notifications.Send(notifications.ForComment(comment, review.UserId))));
+        return new(saved, author);
     }
 }
-public sealed record CommentDetails(Comment Comment, PublicAuthor Author);
+public sealed record CommentDetails(Comment Comment, PublicAuthor Author, int LikeCount = 0);
 public sealed class QueryComments(IComments comments, GetReview reviews, OpinionViews views)
 {
     public async Task<IReadOnlyList<CommentDetails>> Execute(int reviewId, CancellationToken cancellationToken = default)
     {
         await reviews.FindAsync(reviewId, cancellationToken);
-        var snapshot = comments.ForReview(reviewId).OrderBy(comment => comment.CreatedAt).ThenBy(comment => comment.Id, StringComparer.Ordinal).ToArray();
-        var authors = await views.Authors(snapshot.Select(comment => comment.UserId), cancellationToken);
-        return snapshot.Select(comment => new CommentDetails(comment, authors[comment.UserId])).ToArray();
+        var snapshot = await comments.ForReviewAsync(reviewId, cancellationToken);
+        var authors = await views.Authors(snapshot.Select(item => item.Comment.UserId), cancellationToken);
+        return snapshot.Select(item => new CommentDetails(item.Comment, authors[item.Comment.UserId], item.LikeCount)).ToArray();
     }
 }

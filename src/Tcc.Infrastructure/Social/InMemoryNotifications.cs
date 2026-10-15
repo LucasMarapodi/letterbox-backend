@@ -14,7 +14,7 @@ public sealed class InMemoryNotifications(InMemoryPublicationScope publications)
             {
                 foreach (var item in events)
                 {
-                    var key = (item.Type, item.CommentId ?? item.ReviewId.ToString(System.Globalization.CultureInfo.InvariantCulture), item.UserId);
+                    var key = (item.Type, (item.CommentId ?? item.ReviewId).ToString(System.Globalization.CultureInfo.InvariantCulture), item.UserId);
                     if (notifications.ContainsKey(key)) continue;
                     publications.OnRollback(() => notifications.Remove(key));
                     notifications.Add(key, item);

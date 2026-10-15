@@ -5,6 +5,19 @@ namespace Tcc.Domain.Tests;
 
 public sealed class OpinionTests
 {
+    [Fact]
+    public void Replies_require_a_persisted_root_in_the_same_review()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var root = Comment.Create(1, 1, 1, "Root", now);
+        var reply = Comment.Reply(2, 2, 1, "Reply", now, root);
+        Assert.Equal(root.Id, reply.ParentCommentId);
+        Assert.Throws<DomainValidationException>(() => Comment.Reply(3, 2, 2, "Cross review", now, root));
+        Assert.Throws<DomainValidationException>(() => Comment.Reply(3, 2, 1, "Nested", now, reply));
+        Assert.Throws<DomainValidationException>(() => Comment.Create(1, 1, 1, "Cycle", now, 1));
+        Assert.Throws<DomainValidationException>(() => Comment.Create(0, 1, 1, "Invalid parent", now, 0));
+    }
+
     [Theory]
     [InlineData(double.NaN)]
     [InlineData(double.PositiveInfinity)]
@@ -34,8 +47,8 @@ public sealed class OpinionTests
     public void Comment_text_has_its_own_limit()
     {
         var now = DateTimeOffset.UtcNow;
-        Assert.Equal(2000, Comment.Create("id", 1, 1, new string('a', 2000), now).Text.Length);
-        Assert.Throws<DomainValidationException>(() => Comment.Create("id", 1, 1, new string('a', 2001), now));
-        Assert.Throws<DomainValidationException>(() => Comment.Create("id", 1, 1, " ", now));
+        Assert.Equal(2000, Comment.Create(1, 1, 1, new string('a', 2000), now).Text.Length);
+        Assert.Throws<DomainValidationException>(() => Comment.Create(1, 1, 1, new string('a', 2001), now));
+        Assert.Throws<DomainValidationException>(() => Comment.Create(1, 1, 1, " ", now));
     }
 }

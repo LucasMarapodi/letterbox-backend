@@ -1,6 +1,6 @@
 # Matriz de modelagem e persistência — quinta fase
 
-P-PR-01, P-PR-02 e P-PR-03 validadas localmente: identidade, catálogo e opiniões (dez tabelas). Demais tabelas permanecem planejadas. Cada tabela só fica concluída após suas duas US e testes em PostgreSQL real.
+P-PR-01–04 validadas localmente: identidade, catálogo, opiniões, comentários e curtidas (doze tabelas). Demais tabelas permanecem planejadas. Cada tabela só fica concluída após suas duas US e testes em PostgreSQL real.
 
 | Tabela | Classe .NET relacionada | US A: modelo/DbContext | US B: SQL/retirada de memória | Estado modelo | Estado SQL |
 | --- | --- | --- | --- | --- | --- |
@@ -14,8 +14,8 @@ P-PR-01, P-PR-02 e P-PR-03 validadas localmente: identidade, catálogo e opiniõ
 | JogosPlataformas | GamePlatform nova associação | P-US-16 | P-US-17 | VALIDADO | VALIDADO |
 | Reviews | Review existente | P-US-18 | P-US-19 | VALIDADO | VALIDADO |
 | Avaliacoes | Rating e RatingValue existentes | P-US-20 | P-US-21 | VALIDADO | VALIDADO |
-| Comentarios | Comment adaptada com ParentCommentId | P-US-22 | P-US-23 | PLANEJADO | PLANEJADO |
-| CurtidasComentarios | CommentLike nova entidade | P-US-24 | P-US-25 | PLANEJADO | PLANEJADO |
+| Comentarios | Comment adaptada com ParentCommentId | P-US-22 | P-US-23 | VALIDADO | VALIDADO |
+| CurtidasComentarios | CommentLike nova entidade | P-US-24 | P-US-25 | VALIDADO | VALIDADO |
 | JogosFavoritos | GameFavorite nova; adaptador do Favorite atual | P-US-26 | P-US-27 | PLANEJADO | PLANEJADO |
 | ReviewsFavoritas | ReviewFavorite nova; adaptador do Favorite atual | P-US-28 | P-US-29 | PLANEJADO | PLANEJADO |
 | SeguimentosUsuarios | Follow existente adaptada | P-US-30 | P-US-31 | PLANEJADO | PLANEJADO |
@@ -34,13 +34,13 @@ Não marcar SQL validado apenas porque um DbSet existe, uma migration foi gerada
 - Catálogo segue cache -> PostgreSQL -> IGDB: VALIDADO com SQL real e smoke live.
 - Jogos/gêneros/plataformas e associações persistentes: VALIDADO.
 - Reviews/notas e médias SQL, unicidade e autoria: VALIDADO.
-- Comentários principais e respostas de uma camada na mesma review: PENDENTE.
-- Curtidas únicas/idempotentes e contagem SQL: PENDENTE.
+- Comentários principais e respostas de uma camada na mesma review: VALIDADO.
+- Curtidas únicas/idempotentes e contagem SQL: VALIDADO.
 - Favoritos/seguimentos SQL e isolamento: PENDENTE.
 - Notificações na mesma transação da publicação: PENDENTE.
-- Migrations/upgrade em banco isolado e preservação de baseline: VALIDADO até Opinions; cinco contas e 42 jogos mantidos no upgrade local.
+- Migrations/upgrade em banco isolado e preservação de baseline: VALIDADO até CommentsAndLikes; cinco contas e 42 jogos mantidos no upgrade local.
 - Todos os stores de negócio em memória ausentes do runtime: PENDENTE.
-- Falha PostgreSQL não cai em fixture/sucesso local: VALIDADO para identidade, catálogo e opiniões.
+- Falha PostgreSQL não cai em fixture/sucesso local: VALIDADO para identidade, catálogo, opiniões e discussão.
 - Testes/análises/build e PRs reais: PENDENTE.
 
 ## Limites
@@ -62,3 +62,7 @@ Game/Genre/Platform/GameGenre/GamePlatform, configurações CatalogConfiguration
 ## Evidências P-PR-03
 
 Review/Rating, OpinionConfigurations, migration Opinions, PostgresReviews/PostgresRatings, IReviews/IRatings assíncronos. Reviews/avaliacoes com integer identity, FKs RESTRICT, constraints e unicidade. OpinionPersistenceTests verifica SQL real, autoria, concorrência, upsert, médias, timestamps, rollback e reinício. Memória somente em fixtures para essas entidades. Notificações duráveis continuam pendentes da respectiva PR. 397 testes aprovados e build/analisadores sem avisos; Swagger/OpenAPI local atualizado. Descrição em P-PR-03.md.
+
+## Evidências P-PR-04
+
+Comment/CommentLike, CommentConfigurations, migration CommentsAndLikes, PostgresComments/PostgresCommentLikes, portas assíncronas. InMemoryComments somente no assembly de testes. FK composta garante mesma review; trigger impede segundo nível e alteração de vínculo publicado; likes idempotentes por PK composta. CommentPersistenceTests verifica SQL real, restart, concorrência/isolamento, constraints, rollback de preparação, rankings e migration Down/Up isolada. 405 testes validados; build/analisadores sem avisos e Swagger/OpenAPI local atualizado. Upgrade preservou 5 contas e 42 jogos. Notificações duráveis permanecem pendentes. Descrição P-PR-04.md.

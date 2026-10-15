@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "TCC Games API",
-    "description": "Usuários, perfis, sessões, catálogo, reviews e avaliações persistidos em PostgreSQL. IDs locais de usuários, jogos, reviews e avaliações são inteiros; igdbId é externo de 64 bits. Cache → PostgreSQL → IGDB. Comentários e relações sociais seguem em memória até suas PRs. Listagem de jogos usa envelope paginado.",
+    "description": "Usuários, perfis, sessões, catálogo, reviews, avaliações, comentários/respostas e curtidas persistidos em PostgreSQL. IDs locais dessas entidades são inteiros; igdbId é externo de 64 bits. Cache → PostgreSQL → IGDB. Favoritos, seguimentos e notificações seguem em memória até suas PRs. Listagem de jogos usa envelope paginado.",
     "version": "v1"
   },
   "servers": [
@@ -397,6 +397,323 @@
         ]
       }
     },
+    "/api/v1/comments/{commentId}/like": {
+      "put": {
+        "tags": [
+          "CommentLikes"
+        ],
+        "summary": "PUT /api/v1/comments/{commentId}/like",
+        "description": "Comando idempotente, sem corpo. Identidade exclusivamente pelo Bearer; enviar corpo retorna 400.",
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "not_found",
+                  "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão necessária ou inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "unauthorized",
+                  "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "CommentLikes"
+        ],
+        "summary": "DELETE /api/v1/comments/{commentId}/like",
+        "description": "Comando idempotente, sem corpo. Identidade exclusivamente pelo Bearer; enviar corpo retorna 400.",
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "not_found",
+                  "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão necessária ou inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "unauthorized",
+                  "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/comments/{commentId}/like/me": {
+      "get": {
+        "tags": [
+          "CommentLikes"
+        ],
+        "summary": "GET /api/v1/comments/{commentId}/like/me",
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentLikeStatusResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentLikeStatusResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentLikeStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "not_found",
+                  "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão necessária ou inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "unauthorized",
+                  "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/reviews/{reviewId}/comments": {
       "get": {
         "tags": [
@@ -495,7 +812,7 @@
           "Comments"
         ],
         "summary": "POST /api/v1/reviews/{reviewId}/comments",
-        "description": "Texto obrigatório não vazio após trim; até 2.000 caracteres após trim. Autoria/data vêm da sessão/relógio. Comentário próprio é permitido.",
+        "description": "Texto obrigatório não vazio após trim; até 2.000 caracteres. parentCommentId omitido/null cria principal; inteiro positivo responde a principal da mesma review, sem segundo nível. Autoria vem do Bearer. Lista plana inclui parentCommentId e likeCount SQL. Vínculo de review/pai é imutável após publicação.",
         "parameters": [
           {
             "name": "reviewId",
@@ -512,17 +829,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TextRequest"
+                "$ref": "#/components/schemas/CommentRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/TextRequest"
+                "$ref": "#/components/schemas/CommentRequest"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/TextRequest"
+                "$ref": "#/components/schemas/CommentRequest"
               }
             }
           },
@@ -4693,6 +5010,48 @@
           }
         }
       },
+      "CommentLikeStatusResponse": {
+        "required": [
+          "liked"
+        ],
+        "type": "object",
+        "properties": {
+          "liked": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CommentRequest": {
+        "examples": [
+          {
+            "text": "Comentário fictício.",
+            "parentCommentId": null
+          },
+          {
+            "text": "Resposta fictícia.",
+            "parentCommentId": 1
+          }
+        ],
+        "required": [
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "maxLength": 2000,
+            "type": "string"
+          },
+          "parentCommentId": {
+            "minimum": 1,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "CommentResponse": {
         "required": [
           "id",
@@ -4700,12 +5059,15 @@
           "reviewId",
           "text",
           "createdAt",
-          "author"
+          "author",
+          "parentCommentId",
+          "likeCount"
         ],
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "integer",
+            "format": "int32"
           },
           "userId": {
             "type": "integer",
@@ -4725,6 +5087,17 @@
           },
           "author": {
             "$ref": "#/components/schemas/AuthorResponse"
+          },
+          "parentCommentId": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "likeCount": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -5097,8 +5470,9 @@
           "commentId": {
             "type": [
               "null",
-              "string"
-            ]
+              "integer"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -5359,6 +5733,9 @@
     },
     {
       "name": "Auth"
+    },
+    {
+      "name": "CommentLikes"
     },
     {
       "name": "Comments"

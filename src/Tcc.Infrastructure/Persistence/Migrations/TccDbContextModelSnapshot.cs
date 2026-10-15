@@ -266,6 +266,76 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Tcc.Domain.Opinions.Comment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<int?>("ParentCommentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("comentario_pai_id");
+
+                    b.Property<int>("ReviewId")
+                        .HasColumnType("integer")
+                        .HasColumnName("review_id");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("texto");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("usuario_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("CreatedAt", "ReviewId");
+
+                    b.HasIndex("ReviewId", "ParentCommentId");
+
+                    b.HasIndex("ReviewId", "CreatedAt", "Id");
+
+                    b.ToTable("comentarios", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_comentarios_sem_autopai", "comentario_pai_id IS NULL OR comentario_pai_id <> id");
+
+                            t.HasCheckConstraint("ck_comentarios_texto", "char_length(texto) BETWEEN 1 AND 2000 AND texto ~ '[^[:space:]]'");
+                        });
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Opinions.CommentLike", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("usuario_id");
+
+                    b.Property<int>("CommentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("comentario_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.HasKey("UserId", "CommentId");
+
+                    b.HasIndex("CommentId");
+
+                    b.ToTable("curtidas_comentarios", (string)null);
+                });
+
             modelBuilder.Entity("Tcc.Domain.Opinions.Rating", b =>
                 {
                     b.Property<int>("Id")
@@ -429,6 +499,42 @@ namespace Tcc.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Tcc.Domain.Identity.UserSession", b =>
                 {
+                    b.HasOne("Tcc.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Opinions.Comment", b =>
+                {
+                    b.HasOne("Tcc.Domain.Opinions.Review", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Opinions.Comment", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewId", "ParentCommentId")
+                        .HasPrincipalKey("ReviewId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Opinions.CommentLike", b =>
+                {
+                    b.HasOne("Tcc.Domain.Opinions.Comment", null)
+                        .WithMany()
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Tcc.Domain.Identity.UserAccount", null)
                         .WithMany()
                         .HasForeignKey("UserId")
