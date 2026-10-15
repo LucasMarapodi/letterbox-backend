@@ -146,7 +146,9 @@ public sealed class AsyncGameCatalog(ICatalogCache cache, ILocalGameCatalog loca
             if (!Usable(page, query)) throw new CatalogIntegrationUnavailableException();
             var persisted = await local.UpsertAsync(page.Items, ct);
             if (page.Items.Count > 0) await cache.InvalidateAsync(ct);
-            if (!ReferenceEquals(persisted, page.Items)) page = page with { Items = persisted };
+            var metadata = new CatalogMetadata(persisted.Select(item => item.Metadata.FetchedAt).Append(page.Metadata.FetchedAt).Min(),
+                page.Metadata.IsStale || persisted.Any(item => item.Metadata.IsStale));
+            if (!ReferenceEquals(persisted, page.Items) || metadata != page.Metadata) page = page with { Items = persisted, Metadata = metadata };
             await local.SavePageAsync(page, ct);
         }
         await cache.SaveGamesAsync(page.Items, ct);
