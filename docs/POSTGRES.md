@@ -1,10 +1,10 @@
-# PostgreSQL — P-PR-01
+# PostgreSQL — identidade e catálogo
 
 Usuários, perfis e sessões usam EF Core/Npgsql com DbContext scoped. Domain e Application não dependem do ORM. Cadastro grava conta e perfil atomicamente; índices únicos tratam a disputa por email normalizado como 409. Username é calculado no banco como `user-{id}`. PATCH bloqueia a linha da conta, aplica somente os campos enviados e confirma conta/perfil na mesma transação.
 
 ## Ambiente local
 
-O container local `postgres-tcc` usa PostgreSQL 17, porta 5432 e banco de desenvolvimento `gamesdb`. As duas migrations de identidade foram aplicadas nesse banco. O arquivo ignorado `Back/.env` contém `ConnectionStrings__TccDatabase`, além das variáveis IGDB. Não há seed de usuários: execute a API em Development e registre uma conta pelo Swagger.
+O container local `postgres-tcc` usa PostgreSQL 17, porta 5432 e banco de desenvolvimento `gamesdb`. As duas migrations de identidade e LocalCatalog foram aplicadas nesse banco, preservando contas existentes. O arquivo ignorado `Back/.env` contém `ConnectionStrings__TccDatabase`, além das variáveis IGDB. Não há seed de usuários: execute a API em Development e registre uma conta pelo Swagger.
 
 ```powershell
 dotnet run --project src/Tcc.Api --urls http://localhost:5080
@@ -23,7 +23,7 @@ dotnet tool restore
 dotnet ef database update --project src/Tcc.Infrastructure --startup-project src/Tcc.Infrastructure --configuration EfDesign
 ```
 
-Não passar conexão por argumento de CLI. Migrations: `IdentityUsersProfiles` e `IdentitySessions`. `usuarios.id` e `sessoes_usuarios.id` são integer identity. `perfis_usuarios.usuario_id` é PK/FK integer sem identity. As FKs usam RESTRICT. Datas são timestamp with time zone; email normalizado, username e token_hash têm índices únicos.
+Não passar conexão por argumento de CLI. Migrations: `IdentityUsersProfiles`, `IdentitySessions` e `LocalCatalog`. `usuarios.id` e `sessoes_usuarios.id` são integer identity. `perfis_usuarios.usuario_id` é PK/FK integer sem identity. As FKs usam RESTRICT. Datas são timestamp with time zone; email normalizado, username e token_hash têm índices únicos.
 
 EF Core omite o DeleteBehavior customizado de ownership ao gerar snapshots ([issue 23496](https://github.com/dotnet/efcore/issues/23496)). Os Designers e snapshot incluem explicitamente `WithOwner().HasForeignKey("UserId").Metadata.DeleteBehavior = DeleteBehavior.Restrict`. Revisar essa linha em novas migrations; `IdentityModelTests` exige ausência de alterações pendentes, sem suprimir o aviso.
 
@@ -41,8 +41,12 @@ Sem `.env.postgres-test`, testes marcados PostgresFact são explicitamente ignor
 
 ## Transição e compatibilidade
 
-Somente usuários, perfis e sessões estão persistidos nesta PR. Catálogo local, reviews, notas, comentários, favoritos, seguimentos e notificações continuam em memória até suas PRs. Cache e token Twitch permanecem transitórios. A ordem cache → catálogo local → IGDB foi preservada; a etapa SQL do catálogo pertence à P-PR-02.
+Usuários/perfis/sessões e catálogo normalizado (jogos, gêneros, plataformas e junções) estão persistidos. Reviews/notas/comentários/favoritos/seguimentos/notificações seguem em memória até suas PRs. Cache, snapshots de cobertura e token Twitch permanecem transitórios. Cache → PostgreSQL → IGDB está ativo. Detalhes em [P-PR-02.md](P-PR-02.md).
 
-UserAccount.Id, UserSession.Id/UserId e referências de usuário nas demais entidades são int. PublicUserResponse.Id, AuthorResponse.Id, userId e actorId são JSON number; rotas de usuário aceitam inteiro positivo. Não há dados anteriores de identidade para importar, pois a fonte anterior era exclusivamente memória. IDs de jogos/reviews/comentários/notificações continuam strings e serão migrados com suas tabelas. Username textual não é PK.
+UserAccount.Id, UserSession.Id/UserId e referências de usuário nas demais entidades são int. PublicUserResponse.Id, AuthorResponse.Id, userId e actorId são JSON number; rotas de usuário aceitam inteiro positivo. Não há dados anteriores de identidade para importar, pois a fonte anterior era exclusivamente memória. Game.Id e referências gameId são int; IgdbId é long/bigint separado. IDs próprios de reviews/comentários/notificações continuam strings até suas tabelas. Username textual não é PK.
 
-O Front não foi alterado. Seus tipos, validadores e parâmetros de usuário precisam aceitar números antes de liberar esse contrato ao consumidor atual. Login usa token opaco; somente SHA-256 é armazenado em sessoes_usuarios, nunca o token original. Senhas continuam PBKDF2 com salt.
+O Front não foi alterado. Seus tipos, validadores e parâmetros de usuário/jogo precisam aceitar números antes de liberar esse contrato ao consumidor atual. Login usa token opaco; somente SHA-256 é armazenado em sessoes_usuarios, nunca o token original. Senhas continuam PBKDF2 com salt.
+
+## Catálogo P-PR-02
+
+LocalCatalog adiciona generos, plataformas, jogos, jogos_generos e jogos_plataformas; PKs/FKs integer e referências externas bigint positivas únicas. Importações são transacionais e SQL parametrizado. Contas existentes não foram apagadas. Detalhes conhecidos persistem após reiniciar; uma busca sem cobertura de página conhecida pode exigir IGDB. O banco exclusivo de testes e seu marcador mantêm os nomes definidos na P-PR-01.

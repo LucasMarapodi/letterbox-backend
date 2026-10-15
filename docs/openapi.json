@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "TCC Games API",
-    "description": "Contas, perfis e sessões persistidos em PostgreSQL. IDs de usuários são inteiros. Token opaco com verificador SHA-256; reiniciar preserva identidade e sessões. Catálogo local, opiniões e relações ainda em memória nesta etapa. Listagem de jogos usa envelope paginado.",
+    "description": "Usuários, perfis, sessões e catálogo normalizado persistidos em PostgreSQL. IDs locais de usuários/jogos são inteiros; igdbId é externo de 64 bits. Cache → PostgreSQL → IGDB. Opiniões e relações seguem em memória até suas PRs. Listagem de jogos usa envelope paginado.",
     "version": "v1"
   },
   "servers": [
@@ -2458,6 +2458,153 @@
         "security": [ ]
       }
     },
+    "/api/v1/games/igdb/{igdbId}": {
+      "get": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "GET /api/v1/games/igdb/{igdbId}",
+        "description": "ID externo IGDB positivo (int64). Consulta SQL por igdb_id antes do fornecedor; importação faz upsert transacional e retorna o ID local int32 para as demais rotas.",
+        "parameters": [
+          {
+            "name": "igdbId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "not_found",
+                  "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": [ ]
+      }
+    },
     "/api/v1/games": {
       "get": {
         "tags": [
@@ -2580,7 +2727,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2637,7 +2784,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -2720,7 +2873,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2863,7 +3016,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -3019,7 +3178,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -3198,7 +3363,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -3388,7 +3559,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -4023,7 +4200,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -4181,7 +4364,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -4765,6 +4954,7 @@
       "GameResponse": {
         "required": [
           "id",
+          "igdbId",
           "title",
           "summary",
           "coverUrl",
@@ -4776,7 +4966,20 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "igdbId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
           },
           "title": {
             "type": "string"
@@ -4829,7 +5032,12 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "title": {
             "type": "string"
@@ -5139,7 +5347,12 @@
             "format": "int32"
           },
           "gameId": {
-            "type": "string"
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "value": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -5206,7 +5419,12 @@
             "format": "int32"
           },
           "gameId": {
-            "type": "string"
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "text": {
             "type": "string"

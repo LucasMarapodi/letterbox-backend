@@ -81,3 +81,7 @@ Esta entrega comprova contratos HTTP em testes, sem consumo de negócio pela int
 ## Transição P-PR-01
 
 IDs de usuários e referências userId/actorId são JSON number. Usuários, perfis e sessões persistem no PostgreSQL; falha SQL retorna 503/storage_unavailable. Adaptação do Front é dependência de liberação. Detalhes em [POSTGRES.md](POSTGRES.md).
+
+## Transição P-PR-02
+
+IDs de jogos, resumos e gameId agora são números locais; GameResponse expõe igdbId externo int64. Use /games/{gameId} para detalhe local e /games/igdb/{igdbId} para descoberta explícita. Não inferir um ID pelo outro. Persistência, cache e limites em [P-PR-02.md](P-PR-02.md). O Front não foi alterado e exige adaptação dos validadores.

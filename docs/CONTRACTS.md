@@ -1,6 +1,6 @@
 # Convenções HTTP
 
-DTOs públicos são tipos C# nomeados, separados das entidades. JSON usa camelCase. IDs de usuários (id de PublicUserResponse/AuthorResponse, userId e actorId) são JSON number desde P-PR-01. IDs de jogos, reviews, comentários e notificações continuam strings até suas PRs de persistência. Envelopes de ausência e propriedades nullable usam null explícito; commentId é omitido em notificações new-review. DateTimeOffset é normalizado para UTC na entrada e saída, em ISO 8601; releaseDate usa DateOnly no formato yyyy-MM-dd.
+DTOs públicos são tipos C# nomeados, separados das entidades. JSON usa camelCase. IDs de usuários (id de PublicUserResponse/AuthorResponse, userId e actorId) são JSON number desde P-PR-01. Desde P-PR-02, IDs de jogos/resumos/gameId também são JSON number int32; GameResponse.igdbId é externo int64. IDs próprios de reviews/comentários/notificações continuam strings até suas PRs. Envelopes de ausência e propriedades nullable usam null explícito; commentId é omitido em notificações new-review. DateTimeOffset é normalizado para UTC na entrada e saída, em ISO 8601; releaseDate usa DateOnly no formato yyyy-MM-dd.
 
 HealthResponse: `{"status":"ok"}`.
 
@@ -24,9 +24,9 @@ Model binding inválido em controllers usa ApiError; respostas de erro sem corpo
 
 ## Compatibilidade com Front
 
-IDs de usuários passam a number; as demais identidades seguem na transição descrita em [POSTGRES.md](POSTGRES.md). DateTime é string ISO; avatarUrl, coverUrl, releaseDate, averageRating e updatedAt aceitam null. A adaptação de tipos e rotas do Front é uma dependência antes da liberação deste contrato. O Front não foi alterado. Consulte [COMPATIBILITY.md](COMPATIBILITY.md).
+IDs de usuários e jogos passam a number; as demais identidades seguem na transição descrita em [POSTGRES.md](POSTGRES.md). DateTime é string ISO; avatarUrl, coverUrl, releaseDate, averageRating e updatedAt aceitam null. A adaptação de tipos e rotas do Front é uma dependência antes da liberação deste contrato. O Front não foi alterado. Consulte [COMPATIBILITY.md](COMPATIBILITY.md).
 
-GET /api/v1/games retorna GamePageResponse: items (GameResponse[]), page, pageSize e hasNextPage. Query: term, sort (release-desc/name-asc/name-desc), page (padrão 1) e pageSize (padrão 20, máximo 100). Sort omitido usa release-desc sem termo ou name-asc com termo. Não há total artificial. IDs game-* são inválidos; use igdb-{inteiro positivo}.
+GET /api/v1/games retorna GamePageResponse: items (GameResponse[]), page, pageSize e hasNextPage. Query: term, sort (release-desc/name-asc/name-desc), page (padrão 1) e pageSize (padrão 20, máximo 100). Sort omitido usa release-desc sem termo ou name-asc com termo. Não há total artificial. As rotas de jogo usam o ID local positivo retornado pela API. Prefixos game-*/igdb-* são inválidos. GET /api/v1/games/igdb/{igdbId} consulta/importa pelo ID externo positivo e retorna GameResponse com id local e igdbId separados.
 
 X-Catalog-Stale e X-Catalog-Fetched-At são expostos via CORS quando a resposta utiliza catálogo. Projeções agregam stale por qualquer entrada e fetchedAt pela mais antiga, preservando a data obtida do fornecedor. Comentários e consultas sem jogos não emitem esses headers. Erro de fornecedor não é 401 da sessão local.
 
@@ -34,7 +34,7 @@ X-Catalog-Stale e X-Catalog-Fetched-At são expostos via CORS quando a resposta 
 
 Interface interativa em `/swagger`, servida pelo próprio backend em todos os ambientes, consumindo o documento existente em `/openapi/v1.json`. Operações privadas podem ser executadas após informar o token em Authorize; a autorização não é persistida após reload. Consulte [SWAGGER.md](SWAGGER.md).
 
-Documento OpenAPI 3.1 em `GET /openapi/v1.json`, público em todos os ambientes. São 34 operações funcionais mais health; o endpoint de documentação e probes de teste não entram no inventário. Schemas vêm dos DTOs, com status de sucesso/erros, exemplos fictícios, formatos de data e requisitos Bearer aplicados somente às operações privadas. As regras semânticas de trim/limites são descritas nas operações e contratos.
+Documento OpenAPI 3.1 em `GET /openapi/v1.json`, público em todos os ambientes. São 35 operações funcionais mais health; o endpoint de documentação e probes de teste não entram no inventário. Schemas vêm dos DTOs, com status de sucesso/erros, exemplos fictícios, formatos de data e requisitos Bearer aplicados somente às operações privadas. As regras semânticas de trim/limites são descritas nas operações e contratos.
 
 Cópia exportada da API executada em Release: [openapi.json](openapi.json), com servidor relativo `/` para não fixar uma porta de verificação. Não contém credenciais reais nem dados de sessão do processo. Para atualizar, execute a API e salve a resposta de `/openapi/v1.json` em Back/docs/openapi.json; o arquivo é um artefato gerado, não a fonte das rotas. Os testes OpenApiTests comparam o documento vivo ao inventário planejado e aos requisitos de schemas/acesso.
 

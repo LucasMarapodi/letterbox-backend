@@ -1,6 +1,6 @@
 # Backend TCC
 
-API .NET 10 da plataforma de avaliações e reviews de jogos. Catálogo IGDB assíncrono, cache e catálogo local em memória; usuários, perfis e sessões no PostgreSQL. Opiniões, social, notificações, dashboard, feeds e rankings seguem em transição. Código exclusivamente em Back.
+API .NET 10 da plataforma de avaliações e reviews de jogos. Catálogo IGDB assíncrono, cache em memória e catálogo local PostgreSQL; usuários, perfis e sessões também persistidos. Opiniões, social, notificações, dashboard, feeds e rankings seguem em transição. Código exclusivamente em Back.
 
 ## Executar
 
@@ -15,7 +15,7 @@ dotnet run --project src/Tcc.Api --urls http://localhost:5080
 
 `GET /health` retorna `200 {"status":"ok"}`. Endpoints de negócio estão em `/api/v1`; contratos e exemplos em [AUTH.md](docs/AUTH.md), [OPINIONS.md](docs/OPINIONS.md), [SOCIAL.md](docs/SOCIAL.md) e [FEEDS.md](docs/FEEDS.md).
 
-`GET /openapi/v1.json` fornece OpenAPI 3.1 com 34 operações funcionais e health, schemas, erros e autenticação Bearer. [Documento exportado](docs/openapi.json) e [mapeamento para o frontend](docs/COMPATIBILITY.md).
+`GET /openapi/v1.json` fornece OpenAPI 3.1 com 35 operações funcionais e health, schemas, erros e autenticação Bearer. [Documento exportado](docs/openapi.json) e [mapeamento para o frontend](docs/COMPATIBILITY.md).
 
 Swagger UI em [http://localhost:5080/swagger](http://localhost:5080/swagger), usando o mesmo documento OpenAPI. Permite explorar contratos e executar chamadas; para operações privadas, faça login e informe o token no botão **Authorize**. [Guia do Swagger](docs/SWAGGER.md).
 
@@ -29,7 +29,7 @@ A [G-PR-02](docs/G-PR-02.md) implementa portas assíncronas, resolução cache/l
 
 A [G-PR-03](docs/G-PR-03.md) implementa cache/local em memória, limites de IGDB, consultas compartilhadas e fallback stale.
 
-A [G-PR-04](docs/G-PR-04.md) conecta endpoints e regras locais ao catálogo: GET /api/v1/games retorna items/page/pageSize/hasNextPage, IDs são igdb-* e metadados são expostos via headers/CORS. Configure IGDB__ClientId e IGDB__ClientSecret no ambiente Back para jogos desconhecidos; não versione credenciais. Sem configuração, consultas não atendidas localmente retornam 503 seguro. Reinicie a API após atualizar. O Front não foi alterado; adaptar seu consumidor ao envelope pertence à G-PR-05.
+A [G-PR-04](docs/G-PR-04.md) conecta endpoints e regras locais ao catálogo: GET /api/v1/games retorna items/page/pageSize/hasNextPage, naquela etapa os IDs eram igdb-* (substituídos por IDs locais numéricos na P-PR-02) e metadados são expostos via headers/CORS. Configure IGDB__ClientId e IGDB__ClientSecret no ambiente Back para jogos desconhecidos; não versione credenciais. Sem configuração, consultas não atendidas localmente retornam 503 seguro. Reinicie a API após atualizar. O Front não foi alterado; adaptar seu consumidor ao envelope pertence à G-PR-05.
 
 Para configuração local em Development, use o arquivo `.env` ignorado pelo Git na raiz Back. Se não existir, crie `.env`, configure ConnectionStrings__TccDatabase e IGDB__ClientId/IGDB__ClientSecret e reinicie a API. Consulte [POSTGRES.md](docs/POSTGRES.md) para preparar o banco e aplicar migrations explicitamente. Valores definidos no processo têm prioridade; produção usa somente o ambiente do servidor. Não inserir credenciais em launchSettings/appsettings versionados. Consulte [IGDB-AUTH.md](docs/IGDB-AUTH.md).
 
@@ -54,8 +54,8 @@ Configuração `Authentication:SessionMinutes` em src/Tcc.Api/appsettings.json, 
 
 A [P-PR-01](docs/P-PR-01.md) persiste usuários, perfis e sessões. Cadastro conta/perfil é atômico; PATCH serializa mudanças parciais; sessões guardam somente SHA-256 do token. Reiniciar a API preserva identidade no mesmo banco. Configuração, migrations e testes em [POSTGRES.md](docs/POSTGRES.md).
 
-`TimeProvider` pode ser substituído por host. Publicações e notificações ainda compartilham escopo em memória com lock/rollback; I/O SQL ocorre fora desses locks. Projeções carregam autores em lote. Catálogo/cache, opiniões, relações e notificações continuam transitórios até suas PRs de persistência. A ordem cache → catálogo local → IGDB foi preservada; o catálogo SQL será P-PR-02.
+`TimeProvider` pode ser substituído por host. Publicações e notificações ainda compartilham escopo em memória com lock/rollback; I/O SQL ocorre fora desses locks. Projeções carregam autores em lote. O catálogo local agora usa PostgreSQL na [P-PR-02](docs/P-PR-02.md), mantendo cache/snapshots transitórios e a ordem cache → SQL → IGDB. Opiniões, relações e notificações permanecem em memória até suas PRs.
 
-IDs de usuários são numéricos nos contratos. O Front precisa adaptar tipos e rotas antes da liberação; nenhum arquivo Front foi alterado. IDs das outras entidades continuam no formato atual até suas migrations. Não há importação de identidade anterior: sua fonte era apenas memória.
+IDs de usuários e jogos são numéricos nos contratos; jogos expõem também igdbId externo int64. GET /games/{gameId} usa ID local; GET /games/igdb/{igdbId} permite descoberta por ID externo. O Front precisa adaptar tipos/validadores/rotas; nenhum arquivo Front foi alterado. IDs próprios das demais entidades permanecem no formato atual até suas migrations. Não há importação de identidade anterior: sua fonte era apenas memória.
 
 Confira [contratos](docs/CONTRACTS.md) e entregas [PR-1](docs/B-PR-01.md), [PR-2](docs/B-PR-02.md), [PR-3](docs/B-PR-03.md), [PR-4](docs/B-PR-04.md), [PR-5](docs/B-PR-05.md) e [PR-6](docs/B-PR-06.md).

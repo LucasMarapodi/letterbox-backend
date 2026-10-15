@@ -1,40 +1,35 @@
 # Catálogo assíncrono e tradução IGDB
 
-## Portas e resolução
+Desde P-PR-02: cache → catálogo PostgreSQL → IGDB. IExternalGameCatalog usa IDs externos long; IAsyncGameCatalog, detalhes e cache usam IDs locais int. A identidade externa não é convertida em PK local.
 
-Application define ICatalogCache e ILocalGameCatalog como papéis separados de armazenamento; IExternalGameCatalog é somente o fornecedor. Implementações concretas de cache/local ainda pertencem à próxima PR. AsyncGameCatalog implementa IAsyncGameCatalog:
+## Resolução
 
-- SearchAsync: cache da consulta exata → snapshot local completo/fresco → fornecedor. Um conjunto parcial de jogos ou página stale não representa cobertura da busca global. Descoberta é salva no catálogo local antes de preencher o cache.
-- GetAsync: resolve um ID, retornando null somente para ausência no resultado do fornecedor; erros permanecem erros.
-- ResolveAsync: deduplica IDs, consulta cache, consulta local apenas para ausentes e consulta fornecedor apenas para os ainda faltantes. Dados conhecidos e fetchedAt são preservados. Detalhe local desatualizado mantém sua marca, sem forçar rede automaticamente.
+- SearchAsync: cache da consulta → snapshot de cobertura reidratado do SQL → fornecedor quando não houver cobertura suficiente. A página externa faz upsert transacional antes do cache. Uma tabela parcial não é tratada como busca global completa.
+- GetAsync/ResolveAsync: IDs locais positivos, deduplicados em lotes de até 500; cache e SQL. Ausência retorna null/404 sem adivinhar identidade externa. Dados antigos continuam disponíveis com stale, sem forçar rede.
+- DiscoverGame, GET /games/igdb/{igdbId}: lookup SQL por ID externo; a ausência consulta IGDB, persiste e retorna o ID local.
+- RefreshAsync: operação interna sobre um ID local conhecido; busca seu igdbId no SQL, atualiza pelo fornecedor e confirma associações antes do cache. Falha externa elegível preserva o SQL conhecido.
 
-CancellationToken atravessa todas as portas e há verificação entre leituras. Não há rede sob lock, nem Result/Wait ou download completo do catálogo. Resiliência/fallback/TTL e snapshots locais concretos serão entregues na G-PR-03.
+CancellationToken atravessa as portas. Sem rede sob lock/transação SQL, Result/Wait ou download completo do catálogo. Single-flight e limites de memória preservados. Falha SQL retorna storage_unavailable, sem fallback em memória ou sucesso falso.
 
-CatalogMetadata contém fetchedAt e isStale; CatalogGame envolve Game; CatalogPage contém query, items, hasNextPage, metadata e isComplete. Esses tipos são internos de Application, não o DTO HTTP. Domain permanece com o mesmo Game, sem metadados de cache, token, DTO IGDB ou média externa.
+## Consulta e tradução
 
-## Consultas
+CatalogSearch valida termo com trim (até 200, sem controles), sort permitido, page >= 1, pageSize de 1 a 100 e offset sem overflow. Sem termo: release-desc; com termo: name-asc. Também aceita name-desc. Página usa pageSize+1 para hasNextPage, sem total artificial.
 
-CatalogSearch.Create valida termo (trim, máximo 200, sem caracteres de controle), sort, página inicial 1, pageSize de 1 a 100 e offset sem overflow. Defaults: tamanho 20; sem termo, release-desc; com termo, name-asc. Sort permitido: name-asc, name-desc e release-desc.
+Campos: id, name, summary, cover.image_id, genres.id/genres.name, platforms.id/platforms.name e first_release_date. Sem termo e em release-desc, são excluídos lançamentos ausentes/futuros. Aspas e barras do termo são escapadas; fields/endpoint/expressão não são definidos pelo usuário. Expansões seguem a [documentação oficial IGDB](https://api-docs.igdb.com/#expander).
 
-Campos fixos: id, name, summary, cover.image_id, genres.name, platforms.name e first_release_date. Não solicitar fields *, screenshots, vídeos ou ratings. Queries incluem limit pageSize+1 e offset (page-1)*pageSize para calcular hasNextPage sem inventar total.
+- ID externo positivo → IgdbId long; ID local atribuído pelo PostgreSQL após commit.
+- name obrigatório → title trim; summary ausente → vazio.
+- cover.image_id validado → URL HTTPS fixa de imagem; ausência → null.
+- gêneros/plataformas preservam ID externo e nome. Repetição consistente do ID é deduplicada; IDs ausentes/inválidos ou nomes conflitantes são rejeitados.
+- lançamento Unix → DateOnly UTC; ausência → null.
+- ratings externos/enums/campos extras não são importados; média usa avaliações locais.
 
-Busca usa filtro infix case insensitive com aspas e backslash escapados. Sem termo, filtra first_release_date existente e menor/igual ao instante UTC atual. Ordenação release-desc com termo também exclui futuros. Nenhum endpoint, fields ou expressão fornecida pelo usuário é concatenado como sintaxe livre.
+JSON inválido, linhas/IDs repetidos ou não solicitados, identidade/nome/capa/data inválidos resultam em 502 seguro sem payload do fornecedor. Erros externos permanecem separados da sessão da plataforma.
 
-IDs de detalhe/batch são strings canônicas `igdb-{inteiro positivo}`, representadas externamente por números. Rejeitar game-1, zero, negativos, zeros à esquerda, overflow e expressões. Batch máximo de 500 IDs únicos; vazio não faz requisição. IGDB é chamada somente na URL fixa `/v4/games` pelo cliente autenticado da G-PR-01.
+## Fonte e cache
 
-## Normalização
+PostgresGameCatalog grava jogo/dimensões/vínculos na mesma transação, com unicidade por igdb_id e por par nas junções. Associações são lidas em lote sob RepeatableRead. Resposta antiga não substitui jogo mais recente; IDs locais são preservados em atualizações.
 
-- id → ID público igdb-*; name obrigatório → title com trim.
-- summary ausente/null → string vazia.
-- cover.image_id validado (ASCII alfanumérico/underscore, máximo 128) → `https://images.igdb.com/igdb/image/upload/t_cover_big/{image_id}.jpg`. URL/host extras do fornecedor não são usados; ausência válida → null.
-- genres.name/platforms.name → listas de nomes únicos, sem entradas vazias; ausentes → listas vazias.
-- first_release_date Unix em segundos → DateOnly UTC; ausente → null; fora da faixa → erro seguro.
-- rating/aggregated_rating/enums/campos extras não são importados; a média continua pertencendo às notas locais.
+Cache/snapshots são transitórios e limitados. Snapshot contém IDs/query/metadados; os nomes e relações vêm do SQL. Após importação confirmada, cache/snapshots são invalidados; falha de gravação preserva cache anterior. O timestamp da primeira página agrega valores já persistidos, mantendo a precisão da resposta do cache.
 
-JSON não-array, null, tipos incompatíveis, linhas null, IDs repetidos, IDs não solicitados, nome/ID inválido e capa/data inválida geram CatalogInvalidResponseException sem body/inner exception do fornecedor. O pipeline traduz para 502/integration_invalid_response. Status externo não-200 gera indisponibilidade; recuperação de 401 segue a G-PR-01, sem modificar sessão local.
-
-## Estado do runtime
-
-Na G-PR-04 os endpoints e casos de uso passaram a usar IAsyncGameCatalog, com cache e catálogo local concretos. O fornecedor permanece lazy: somente faltantes precisam de OAuth/IGDB. A listagem usa items/page/pageSize/hasNextPage; detalhe e projeções usam igdb-*. Não há fake ou sementes de opiniões no runtime. Consulte [G-PR-04](G-PR-04.md) para atomicidade, metadados, validação e mudança incompatível para o Front, ainda não alterado.
-
-Testes usam transporte fake, spies e datas sintéticas. Não comprovam uma consulta live à IGDB. Fontes primárias consultadas: [filtros](https://api-docs.igdb.com/#filters), [paginação](https://api-docs.igdb.com/#pagination) e [imagens](https://api-docs.igdb.com/#images).
+GameResponse.id e gameId são números locais; igdbId é externo. Prefixos igdb-* não são aceitos nas rotas locais. O Front exige adaptação e não foi alterado. Testes SQL, operação e smoke real em [P-PR-02](P-PR-02.md).

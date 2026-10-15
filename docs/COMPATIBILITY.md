@@ -4,12 +4,12 @@ Comparação dos contratos com o Front da terceira fase, que usa HTTP. Na G-PR-0
 
 | Contrato/serviço TypeScript | HTTP/DTO C# | Adaptação futura |
 | --- | --- | --- |
-| Id / DateTime | string opaca / DateTimeOffset UTC ISO 8601 | Preservar strings, codificar IDs nas URLs; releaseDate é yyyy-MM-dd |
+| Id / DateTime | Usuário/jogo: número int32; igdbId externo int64; demais identidades próprias em transição / DateTimeOffset UTC ISO | Adaptar tipos/validadores e validar IDs numéricos das rotas; releaseDate é yyyy-MM-dd |
 | User | PublicUserResponse | Mesmos id, username, displayName, bio, avatarUrl; sem email ou credenciais |
 | RegistrationInput | POST /auth/register, RegisterRequest | Mantém name/email/password; retorna User com 201, sem sessão automática |
 | LoginCredentials / AuthService.login → User | POST /auth/login, LoginResponse | Guardar token/expiresAt e devolver user ao serviço; token não faz parte de User |
 | AuthService.logout | POST /auth/logout | Enviar Bearer, tratar 204 e limpar sessão local; API revoga só o token atual |
-| Game / GameQuery | GET /games → GamePageResponse; GET /games/{id} → GameResponse | Consumir items/page/pageSize/hasNextPage; release-desc sem termo, name-asc com termo; tratar headers stale/fetchedAt e erros 502/503/504; IDs opacos igdb-* e média local |
+| Game / GameQuery | GET /games → GamePageResponse; GET /games/{id} → GameResponse | Consumir items/page/pageSize/hasNextPage; release-desc sem termo, name-asc com termo; tratar headers stale/fetchedAt e erros 502/503/504; ID local numérico, igdbId externo separado e média local |
 | Rating / getRating | PUT /games/{id}/rating/me e GET → MyRatingResponse | PUT devolve Rating; GET exige sessão e desembrulha rating, inclusive null |
 | Review / PublicReview / ReviewDetails | ReviewResponse | Mantém campos da review e author; game acrescenta coverUrl além de id/title |
 | findOwnReview | GET /games/{id}/reviews/me → MyReviewResponse | Desembrulhar review nullable; 404 significa jogo inexistente, não ausência de review própria |
@@ -39,4 +39,4 @@ ApiError usa código HTTP estável (`validation_failed`, `unauthorized`, `forbid
 
 Não enviar identidades/autoria em payloads. Requests nomeados rejeitam campos desconhecidos; PUT/DELETE de relações/favoritos não aceitam corpo. PATCH perfil preserva campos omitidos, permite avatarUrl null e rejeita username/email/password/userId. Limites e semântica de trim estão em [AUTH.md](AUTH.md) e [OPINIONS.md](OPINIONS.md).
 
-Desde P-PR-01, usuários, perfis e sessões persistem no PostgreSQL. IDs de usuários e referências userId/actorId são números; o Front precisa adaptar tipos e rotas antes da liberação. Outras entidades continuam transitórias e conservam seus IDs atuais até suas PRs. O catálogo usa HTTP IGDB quando cache/local não atendem. Consulte POSTGRES.md para o escopo exato.
+Desde P-PR-01, usuários, perfis e sessões persistem no PostgreSQL. IDs de usuários/jogos e referências userId/actorId/gameId são números; o Front precisa adaptar tipos e rotas antes da liberação. Catálogo/dimensões/associações persistem desde P-PR-02. Outras entidades seguem transitórias. O catálogo consulta SQL antes da IGDB; IDs externos têm rota explícita /games/igdb/{igdbId}. Consulte POSTGRES.md para o escopo exato.
