@@ -19,14 +19,14 @@ public sealed class AsyncWriteTests
         await using var host = CatalogHttpTests.Host(source);
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        var write = operation == "favorite" ? client.PutAsync("/api/v1/favorites/game/igdb-10", null)
-            : client.PutAsJsonAsync("/api/v1/games/igdb-10/rating/me", new RatingInput(4));
+        var write = operation == "favorite" ? client.PutAsync("/api/v1/favorites/game/10", null)
+            : client.PutAsJsonAsync("/api/v1/games/10/rating/me", new RatingInput(4));
         await source.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
         using var logout = await client.PostAsync("/api/v1/auth/logout", null);
         source.Release.TrySetResult();
         using var response = await write;
         Assert.Equal(401, (int)response.StatusCode);
-        Assert.Null(host.Services.GetRequiredService<IRatings>().Find(1, "igdb-10"));
+        Assert.Null(host.Services.GetRequiredService<IRatings>().Find(1, 10));
         Assert.Empty(host.Services.GetRequiredService<IFavorites>().ForUser(1));
     }
     [Fact]
@@ -36,17 +36,17 @@ public sealed class AsyncWriteTests
         await using var host = CatalogHttpTests.Host(source);
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        var first = client.PostAsJsonAsync("/api/v1/games/igdb-10/reviews", new TextInput("A"));
+        var first = client.PostAsJsonAsync("/api/v1/games/10/reviews", new TextInput("A"));
         await source.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
         var read = Task.Run(() => host.Services.GetRequiredService<IPublicationScope>().Execute(() =>
             host.Services.GetRequiredService<IReviews>().All().Count));
         await read.WaitAsync(TimeSpan.FromSeconds(3));
-        var second = client.PostAsJsonAsync("/api/v1/games/igdb-10/reviews", new TextInput("B"));
+        var second = client.PostAsJsonAsync("/api/v1/games/10/reviews", new TextInput("B"));
         source.Release.TrySetResult();
         var responses = await Task.WhenAll(first, second);
         try { Assert.Equal(new[] { 201, 409 }, responses.Select(response => (int)response.StatusCode).Order()); }
         finally { foreach (var response in responses) response.Dispose(); }
-        Assert.Single(host.Services.GetRequiredService<IReviews>().All(), review => review.GameId == "igdb-10");
+        Assert.Single(host.Services.GetRequiredService<IReviews>().All(), review => review.GameId == 10);
     }
 
     [Fact]
@@ -56,13 +56,13 @@ public sealed class AsyncWriteTests
         await using var host = CatalogHttpTests.Host(source);
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        var publish = client.PostAsJsonAsync("/api/v1/games/igdb-10/reviews", new TextInput("A"));
+        var publish = client.PostAsJsonAsync("/api/v1/games/10/reviews", new TextInput("A"));
         await source.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
         using var logout = await client.PostAsync("/api/v1/auth/logout", null);
         source.Release.TrySetResult();
         using var response = await publish;
         Assert.Equal(401, (int)response.StatusCode);
-        Assert.DoesNotContain(host.Services.GetRequiredService<IReviews>().All(), review => review.GameId == "igdb-10");
+        Assert.DoesNotContain(host.Services.GetRequiredService<IReviews>().All(), review => review.GameId == 10);
     }
 
     [Fact]
@@ -73,12 +73,12 @@ public sealed class AsyncWriteTests
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
         using var cancellation = new CancellationTokenSource();
-        var publish = client.PostAsJsonAsync("/api/v1/games/igdb-10/reviews", new TextInput("A"), cancellation.Token);
+        var publish = client.PostAsJsonAsync("/api/v1/games/10/reviews", new TextInput("A"), cancellation.Token);
         await source.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => publish);
         source.Release.TrySetResult();
-        Assert.DoesNotContain(host.Services.GetRequiredService<IReviews>().All(), review => review.GameId == "igdb-10");
+        Assert.DoesNotContain(host.Services.GetRequiredService<IReviews>().All(), review => review.GameId == 10);
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public sealed class AsyncWriteTests
         source.Release.TrySetResult();
         await using var host = CatalogHttpTests.Host(source);
         var store = host.Services.GetRequiredService<IReviews>();
-        store.TryAdd(Review.Create("edit", 1, "igdb-10", "Original", CatalogFlow.Metadata.FetchedAt));
+        store.TryAdd(Review.Create("edit", 1, 10, "Original", CatalogFlow.Metadata.FetchedAt));
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
         using var failed = await client.PatchAsJsonAsync("/api/v1/reviews/edit", new TextInput("Changed"));
@@ -109,14 +109,14 @@ internal sealed class WriteCatalog : IAsyncGameCatalog
     public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public bool Fail { get; set; }
     public int Calls { get; private set; }
-    public async Task<CatalogGame?> GetAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<CatalogGame?> GetAsync(int id, CancellationToken cancellationToken = default)
     {
         Calls++; Entered.TrySetResult();
         await Release.Task.WaitAsync(cancellationToken);
         if (Fail) throw new CatalogIntegrationUnavailableException();
         return CatalogFlow.Game(id);
     }
-    public Task<CatalogGame?> RefreshAsync(string id, CancellationToken cancellationToken = default) => GetAsync(id, cancellationToken);
+    public Task<CatalogGame?> RefreshAsync(int id, CancellationToken cancellationToken = default) => GetAsync(id, cancellationToken);
     public Task<CatalogPage> SearchAsync(CatalogSearch query, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-    public Task<IReadOnlyDictionary<string, CatalogGame>> ResolveAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<IReadOnlyDictionary<int, CatalogGame>> ResolveAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 }

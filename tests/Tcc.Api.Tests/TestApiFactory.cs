@@ -27,7 +27,7 @@ internal sealed class OpinionFixtures(IReviews reviews, IComments comments) : IH
     public Task StartAsync(CancellationToken cancellationToken)
     {
         var date = new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
-        if (reviews.TryAdd(Review.Create("review-fixture", 1, "igdb-3", "Review fictícia de Atlas.", date)))
+        if (reviews.TryAdd(Review.Create("review-fixture", 1, 3, "Review fictícia de Atlas.", date)))
         {
             comments.Add(Comment.Create("comment-b", 1, "review-fixture", "Segundo comentário.", date.AddDays(1)));
             comments.Add(Comment.Create("comment-a", 1, "review-fixture", "Primeiro no empate.", date.AddDays(1)));
@@ -42,9 +42,9 @@ internal sealed class FixtureCatalog(TimeProvider clock) : IExternalGameCatalog
 {
     internal static readonly Game[] Games =
     [
-        new("igdb-1", "Ecos do Horizonte", "Explore os caminhos de um mundo fictício.", null, ["Aventura"], ["PC"], new(2024, 4, 12)),
-        new("igdb-2", "Circuito Aurora", "Corridas noturnas em circuitos de uma cidade fictícia.", null, ["Corrida"], ["PC", "Console"], new(2025, 2, 20)),
-        new("igdb-3", "Atlas de Cinzas", "Descubra histórias esquecidas em uma aventura de fantasia.", null, ["RPG", "Aventura"], ["PC"], null)
+        new(1, "Ecos do Horizonte", "Explore os caminhos de um mundo fictício.", null, ["Aventura"], ["PC"], new(2024, 4, 12)),
+        new(2, "Circuito Aurora", "Corridas noturnas em circuitos de uma cidade fictícia.", null, ["Corrida"], ["PC", "Console"], new(2025, 2, 20)),
+        new(3, "Atlas de Cinzas", "Descubra histórias esquecidas em uma aventura de fantasia.", null, ["RPG", "Aventura"], ["PC"], null)
     ];
     public Task<CatalogPage> SearchAsync(CatalogSearch query, CancellationToken cancellationToken)
     {
@@ -59,7 +59,7 @@ internal sealed class FixtureCatalog(TimeProvider clock) : IExternalGameCatalog
         var page = items.Skip(query.Offset).Take(query.PageSize + 1).ToArray();
         return Task.FromResult(new CatalogPage(query, page.Take(query.PageSize).Select(game => new CatalogGame(game, metadata)).ToArray(), page.Length > query.PageSize, metadata));
     }
-    public Task<IReadOnlyDictionary<string, CatalogGame>> ResolveAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyDictionary<string, CatalogGame>>(Games.Where(game => ids.Contains(game.Id)).ToDictionary(game => game.Id,
+    public Task<IReadOnlyDictionary<long, CatalogGame>> ResolveAsync(IReadOnlyList<long> ids, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyDictionary<long, CatalogGame>>(Games.Where(game => ids.Contains(game.IgdbId)).ToDictionary(game => game.IgdbId,
             game => new CatalogGame(game, new(clock.GetUtcNow()))));
 }

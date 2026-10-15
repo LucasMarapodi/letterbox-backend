@@ -8,9 +8,9 @@ namespace Tcc.Api.Tests.Validation;
 public sealed class ConsumerWireContractTests
 {
     [Theory]
-    [InlineData("/api/v1/games/igdb-1/rating/me", "rating")]
-    [InlineData("/api/v1/games/igdb-1/reviews/me", "review")]
-    [InlineData("/api/v1/favorites/game/igdb-1", "favorite")]
+    [InlineData("/api/v1/games/1/rating/me", "rating")]
+    [InlineData("/api/v1/games/1/reviews/me", "review")]
+    [InlineData("/api/v1/favorites/game/1", "favorite")]
     public async Task Missing_personal_value_is_explicit_null_in_a_camel_case_wrapper(string path, string property)
     {
         await using var host = new TestApiFactory();
@@ -25,7 +25,7 @@ public sealed class ConsumerWireContractTests
 
     [Theory]
     [InlineData("/api/v1/users/1/follow", "/api/v1/users/1/follow/me", "following")]
-    [InlineData("/api/v1/favorites/game/igdb-1", "/api/v1/favorites/game/igdb-1", "favorite")]
+    [InlineData("/api/v1/favorites/game/1", "/api/v1/favorites/game/1", "favorite")]
     public async Task Delete_returns_zero_bytes_and_personal_lookup_confirms_absence(string path, string lookup, string property)
     {
         await using var host = new TestApiFactory();
@@ -52,7 +52,7 @@ public sealed class ConsumerWireContractTests
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        using var published = await client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("Consumer contract"));
+        using var published = await client.PostAsJsonAsync("/api/v1/games/1/reviews", new TextInput("Consumer contract"));
         Assert.Equal(201, (int)published.StatusCode);
         using var review = JsonDocument.Parse(await published.Content.ReadAsStringAsync());
         var root = review.RootElement;
@@ -65,7 +65,7 @@ public sealed class ConsumerWireContractTests
         Assert.Equal(TimeSpan.Zero, instant.Offset);
         Assert.True(createdAt!.EndsWith("Z", StringComparison.Ordinal) || createdAt.EndsWith("+00:00", StringComparison.Ordinal));
         Assert.Equal(new[] { "avatarUrl", "displayName", "id" }, root.GetProperty("author").EnumerateObject().Select(property => property.Name).Order());
-        using var response = await client.GetAsync("/api/v1/games/igdb-1");
+        using var response = await client.GetAsync("/api/v1/games/1");
         Assert.Equal(200, (int)response.StatusCode);
         using var game = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal(JsonValueKind.Null, game.RootElement.GetProperty("averageRating").ValueKind);

@@ -9,7 +9,7 @@ public sealed class InMemoryReviews : IReviews
     private readonly Lock gate;
     private readonly InMemoryPublicationScope publications;
     private readonly Dictionary<string, Review> reviews = new(StringComparer.Ordinal);
-    private readonly HashSet<(int User, string Game)> pairs = [];
+    private readonly HashSet<(int User, int Game)> pairs = [];
 
     public InMemoryReviews(InMemoryPublicationScope publications)
     {

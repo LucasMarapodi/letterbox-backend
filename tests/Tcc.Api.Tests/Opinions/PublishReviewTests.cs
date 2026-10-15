@@ -13,12 +13,12 @@ public sealed class PublishReviewTests
         await using var host = new IdentityFactory(clock);
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        using var response = await client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("  Good game  "));
+        using var response = await client.PostAsJsonAsync("/api/v1/games/1/reviews", new TextInput("  Good game  "));
         Assert.Equal(201, (int)response.StatusCode);
         var review = await response.Content.ReadFromJsonAsync<ReviewDto>();
         Assert.NotNull(review);
         Assert.Equal(1, review.UserId);
-        Assert.Equal("igdb-1", review.GameId);
+        Assert.Equal(1, review.GameId);
         Assert.Equal("Good game", review.Text);
         Assert.Equal(clock.GetUtcNow(), review.CreatedAt);
         Assert.Null(review.UpdatedAt);
@@ -33,13 +33,13 @@ public sealed class PublishReviewTests
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        var responses = await Task.WhenAll(client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("One")),
-            client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("Two")));
+        var responses = await Task.WhenAll(client.PostAsJsonAsync("/api/v1/games/1/reviews", new TextInput("One")),
+            client.PostAsJsonAsync("/api/v1/games/1/reviews", new TextInput("Two")));
         try
         {
             Assert.Single(responses, response => (int)response.StatusCode == 201);
             Assert.Single(responses, response => (int)response.StatusCode == 409);
-            using var duplicate = await client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("Three"));
+            using var duplicate = await client.PostAsJsonAsync("/api/v1/games/1/reviews", new TextInput("Three"));
             Assert.Equal(409, (int)duplicate.StatusCode);
         }
         finally { foreach (var response in responses) response.Dispose(); }
@@ -54,7 +54,7 @@ public sealed class PublishReviewTests
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        using var response = await ApiTest.Json(client, HttpMethod.Post, "/api/v1/games/igdb-1/reviews", json);
+        using var response = await ApiTest.Json(client, HttpMethod.Post, "/api/v1/games/1/reviews", json);
         Assert.Equal(400, (int)response.StatusCode);
     }
 
@@ -63,10 +63,10 @@ public sealed class PublishReviewTests
     {
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
-        using var anonymous = await client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("Good"));
+        using var anonymous = await client.PostAsJsonAsync("/api/v1/games/1/reviews", new TextInput("Good"));
         Assert.Equal(401, (int)anonymous.StatusCode);
         await ApiTest.SignIn(client);
-        using var missing = await client.PostAsJsonAsync("/api/v1/games/igdb-999/reviews", new TextInput("Good"));
+        using var missing = await client.PostAsJsonAsync("/api/v1/games/999/reviews", new TextInput("Good"));
         Assert.Equal(404, (int)missing.StatusCode);
     }
 }

@@ -4,7 +4,7 @@ using Tcc.Domain.Catalog;
 
 namespace Tcc.Application.Queries;
 
-public sealed record GameActivity(string GameId, int CommentCount, DateTimeOffset LastCommentAt);
+public sealed record GameActivity(int GameId, int CommentCount, DateTimeOffset LastCommentAt);
 public sealed record RankedGameDetails(Game Game, double? AverageRating, int CommentCount, DateTimeOffset LastCommentAt);
 public sealed class GamesInDiscussion(CommentActivity activity, QueryGames games, LocalRatingAverage averages)
 {

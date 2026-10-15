@@ -22,7 +22,7 @@ public sealed class GameMappingTests
         var dto = JsonSerializer.Deserialize<IgdbGameDto>(json);
         Assert.NotNull(dto);
         var result = IgdbGameMapper.Map(dto, CatalogFlow.Metadata.FetchedAt);
-        Assert.Equal("igdb-42", result.Game.Id);
+        Assert.Equal(42, result.Game.Id);
         Assert.Equal("Game", result.Game.Title);
         Assert.Equal("Summary", result.Game.Summary);
         Assert.Equal("https://images.igdb.com/igdb/image/upload/t_cover_big/co_test.jpg", result.Game.CoverUrl);
@@ -37,7 +37,7 @@ public sealed class GameMappingTests
     public void Valid_absent_optional_fields_remain_null_empty_and_outside_domain_metadata()
     {
         var result = IgdbGameMapper.Map(new() { Id = 7, Name = "Minimal" }, CatalogFlow.Metadata.FetchedAt);
-        Assert.Equal("igdb-7", result.Game.Id);
+        Assert.Equal(7, result.Game.Id);
         Assert.Null(result.Game.CoverUrl);
         Assert.Null(result.Game.ReleaseDate);
         Assert.Empty(result.Game.Genres);
@@ -103,8 +103,8 @@ public sealed class ExternalCatalogTests
         });
         var page = await fixture.Catalog.SearchAsync(CatalogSearch.Create("One", pageSize: 1), CancellationToken.None);
         Assert.True(page.HasNextPage);
-        Assert.Equal("igdb-1", Assert.Single(page.Items).Game.Id);
-        var details = await fixture.Catalog.ResolveAsync(["igdb-1", "igdb-1"], CancellationToken.None);
+        Assert.Equal(1, Assert.Single(page.Items).Game.Id);
+        var details = await fixture.Catalog.ResolveAsync([1, 1], CancellationToken.None);
         Assert.Equal(page.Items[0].Game, Assert.Single(details.Values).Game);
         Assert.Contains("limit 2; offset 0;", queries[0]);
         Assert.Contains("where id = (1); limit 1;", queries[1]);
@@ -122,7 +122,7 @@ public sealed class ExternalCatalogTests
     public async Task Malformed_duplicate_or_unrequested_supplier_rows_are_not_silently_success(string payload)
     {
         using var fixture = new ExternalFixture((_, _) => Task.FromResult(IgdbTest.Json(payload)));
-        var failure = await Assert.ThrowsAsync<CatalogInvalidResponseException>(() => fixture.Catalog.ResolveAsync(["igdb-1"], CancellationToken.None));
+        var failure = await Assert.ThrowsAsync<CatalogInvalidResponseException>(() => fixture.Catalog.ResolveAsync([1], CancellationToken.None));
         Assert.DoesNotContain("secret", failure.ToString());
     }
 
@@ -133,7 +133,7 @@ public sealed class ExternalCatalogTests
         using var fixture = new ExternalFixture((_, _) => { calls++; return Task.FromResult(IgdbTest.Json("[]")); });
         Assert.Empty(await fixture.Catalog.ResolveAsync([], CancellationToken.None));
         Assert.Equal(0, calls);
-        Assert.Empty(await fixture.Catalog.ResolveAsync(["igdb-1"], CancellationToken.None));
+        Assert.Empty(await fixture.Catalog.ResolveAsync([1], CancellationToken.None));
         Assert.Equal(1, calls);
     }
 }

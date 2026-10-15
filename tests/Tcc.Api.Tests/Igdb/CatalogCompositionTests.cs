@@ -17,13 +17,13 @@ public sealed class CatalogCompositionTests
         using var a = host.Services.CreateScope();
         using var b = host.Services.CreateScope();
         var local = a.ServiceProvider.GetRequiredService<ILocalGameCatalog>();
-        await local.SaveGamesAsync([CatalogFlow.Game("igdb-1")], default);
+        await local.SaveGamesAsync([CatalogFlow.Game(1)], default);
         var first = a.ServiceProvider.GetRequiredService<IAsyncGameCatalog>();
         var second = b.ServiceProvider.GetRequiredService<IAsyncGameCatalog>();
         Assert.Same(first, second);
-        Assert.NotNull(await first.GetAsync("igdb-1"));
-        Assert.NotNull(await second.GetAsync("igdb-1"));
+        Assert.NotNull(await first.GetAsync(1));
+        Assert.NotNull(await second.GetAsync(1));
         await using var other = new WebApplicationFactory<Program>();
-        Assert.Empty(await other.Services.GetRequiredService<ILocalGameCatalog>().FindGamesAsync(["igdb-1"], default));
+        Assert.Empty(await other.Services.GetRequiredService<ILocalGameCatalog>().FindGamesAsync([1], default));
     }
 }

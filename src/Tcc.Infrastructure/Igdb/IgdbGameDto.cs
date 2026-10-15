@@ -18,5 +18,6 @@ public sealed class IgdbCoverDto
 }
 public sealed class IgdbNameDto
 {
+    [JsonPropertyName("id")] public long? Id { get; init; }
     [JsonPropertyName("name")] public string? Name { get; init; }
 }

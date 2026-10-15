@@ -18,7 +18,7 @@ public sealed class SocialIsolationTests
         await ApiTest.SignIn(client, "B@example.com", "p");
         await SocialTest.Follow(client, 1);
         await ApiTest.SignIn(client);
-        using var favorite = await client.PutAsync("/api/v1/favorites/game/igdb-1", null);
+        using var favorite = await client.PutAsync("/api/v1/favorites/game/1", null);
         favorite.EnsureSuccessStatusCode();
         await ApiTest.Publish(client);
         Assert.Equal(b.Id, Assert.Single((await client.GetFromJsonAsync<PublicUser[]>("/api/v1/users/1/followers")) ?? []).Id);

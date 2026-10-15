@@ -38,7 +38,7 @@ public sealed class NotificationQueryTests
         using var commentResponse = await client.PostAsJsonAsync($"/api/v1/reviews/{bReview.Id}/comments", new TextInput("Comment"));
         commentResponse.EnsureSuccessStatusCode();
         var comment = await commentResponse.Content.ReadFromJsonAsync<CommentDto>();
-        var last = await ApiTest.Publish(client, "igdb-2");
+        var last = await ApiTest.Publish(client, 2);
         await ApiTest.SignIn(client, "B@example.com", "p");
         var items = await client.GetFromJsonAsync<NotificationDto[]>("/api/v1/notifications?userId=user-1");
         Assert.NotNull(items);

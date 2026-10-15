@@ -17,16 +17,16 @@ public sealed class IgdbGameCatalog(Func<IgdbAuthenticatedClient> getClient, Tim
         var games = rows.Select(row => IgdbGameMapper.Map(row, fetchedAt)).ToArray();
         return new(query, Array.AsReadOnly(games.Take(query.PageSize).ToArray()), games.Length > query.PageSize, new(fetchedAt));
     }
-    public async Task<IReadOnlyDictionary<string, CatalogGame>> ResolveAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken)
+    public async Task<IReadOnlyDictionary<long, CatalogGame>> ResolveAsync(IReadOnlyList<long> ids, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var unique = CatalogIds.Unique(ids);
-        if (unique.Length == 0) return new Dictionary<string, CatalogGame>();
+        var unique = ExternalCatalogIds.Unique(ids);
+        if (unique.Length == 0) return new Dictionary<long, CatalogGame>();
         var rows = await ReadAsync(IgdbQueries.Ids(unique), cancellationToken);
         var fetchedAt = clock.GetUtcNow();
         var games = rows.Select(row => IgdbGameMapper.Map(row, fetchedAt)).ToArray();
-        if (games.Any(game => !unique.Contains(game.Game.Id, StringComparer.Ordinal))) throw new CatalogInvalidResponseException();
-        return games.ToDictionary(game => game.Game.Id, StringComparer.Ordinal);
+        if (games.Any(game => !unique.Contains(game.Game.IgdbId))) throw new CatalogInvalidResponseException();
+        return games.ToDictionary(game => game.Game.IgdbId);
     }
     private async Task<IgdbGameDto[]> ReadAsync(string query, CancellationToken cancellationToken)
     {

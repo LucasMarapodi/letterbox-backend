@@ -8,16 +8,16 @@ public sealed class ResourceFailure(ResourceFailureKind kind) : Exception("Opera
 }
 public sealed class QueryGames(IAsyncGameCatalog catalog, CatalogUsage usage)
 {
-    public async Task<Game> GetAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<Game> GetAsync(int id, CancellationToken cancellationToken = default)
     {
         var entry = await catalog.GetAsync(id, cancellationToken) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
         usage.Include(entry.Metadata);
         return entry.Game;
     }
-    public async Task<IReadOnlyDictionary<string, Game>> ResolveAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyDictionary<int, Game>> ResolveAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default)
     {
-        var result = new Dictionary<string, Game>(StringComparer.Ordinal);
-        foreach (var chunk in ids.Distinct(StringComparer.Ordinal).Chunk(500))
+        var result = new Dictionary<int, Game>();
+        foreach (var chunk in ids.Distinct().Chunk(500))
         {
             var entries = await catalog.ResolveAsync(chunk, cancellationToken);
             foreach (var id in chunk)

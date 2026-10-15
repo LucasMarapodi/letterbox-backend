@@ -31,7 +31,7 @@ public sealed class GamesController(IAsyncGameCatalog games, CatalogUsage usage,
     [ProducesResponseType<ApiError>(502)]
     [ProducesResponseType<ApiError>(503)]
     [ProducesResponseType<ApiError>(504)]
-    public async Task<ActionResult<GameResponse>> Get(string gameId, CancellationToken cancellationToken)
+    public async Task<ActionResult<GameResponse>> Get(int gameId, CancellationToken cancellationToken)
     {
         var item = await games.GetAsync(gameId, cancellationToken) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
         usage.Include(item.Metadata);

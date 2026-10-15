@@ -29,7 +29,7 @@ internal sealed class ScopedExternalGameCatalog(IServiceScopeFactory scopes, Tim
         try { return await source.SearchAsync(query, cancellationToken); }
         catch (InvalidOperationException) { throw new ExternalIntegrationUnavailableException(false); }
     }
-    public async Task<IReadOnlyDictionary<string, CatalogGame>> ResolveAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken)
+    public async Task<IReadOnlyDictionary<long, CatalogGame>> ResolveAsync(IReadOnlyList<long> ids, CancellationToken cancellationToken)
     {
         using var scope = scopes.CreateScope();
         var source = new IgdbGameCatalog(() => scope.ServiceProvider.GetRequiredService<IgdbAuthenticatedClient>(), clock);

@@ -24,9 +24,9 @@ public sealed class CommentActivity(IReviews reviews, IComments comments, TimePr
 
 internal static class ActivityOrdering
 {
-    internal static IEnumerable<T> Sort<T>(IEnumerable<T> items, Func<T, int> count,
-        Func<T, DateTimeOffset> last, Func<T, string> id) => items.OrderByDescending(count)
-        .ThenByDescending(last).ThenBy(id, StringComparer.Ordinal);
+    internal static IEnumerable<T> Sort<T, TKey>(IEnumerable<T> items, Func<T, int> count,
+        Func<T, DateTimeOffset> last, Func<T, TKey> id) => items.OrderByDescending(count)
+        .ThenByDescending(last).ThenBy(id);
 }
 
 public sealed record RankedReviewDetails(ReviewDetails Review, int CommentCount, DateTimeOffset LastCommentAt);

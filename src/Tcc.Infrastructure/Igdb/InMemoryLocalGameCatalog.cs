@@ -7,9 +7,9 @@ public sealed class InMemoryLocalGameCatalog : ILocalGameCatalog
     private readonly TimeProvider clock;
     private readonly CatalogMemoryOptions options;
     private readonly object gate = new();
-    private readonly Dictionary<string, CatalogGame> games = new(StringComparer.Ordinal);
+    private readonly Dictionary<int, CatalogGame> games = new();
     private readonly BoundedCatalogMap<CatalogKey, Snapshot> snapshots;
-    private sealed record Snapshot(CatalogPage Page, string[] Ids);
+    private sealed record Snapshot(CatalogPage Page, int[] Ids);
     public InMemoryLocalGameCatalog(TimeProvider clock, CatalogMemoryOptions options)
     { options.Validate(); this.clock = clock; this.options = options; snapshots = new(options.SnapshotLimit); }
     public Task<CatalogPage?> FindPageAsync(CatalogSearch query, CancellationToken cancellationToken)
@@ -26,12 +26,12 @@ public sealed class InMemoryLocalGameCatalog : ILocalGameCatalog
             return Task.FromResult<CatalogPage?>(CatalogStorage.ReadPage(snapshot.Page, query, items, now, options));
         }
     }
-    public Task<IReadOnlyDictionary<string, CatalogGame>> FindGamesAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken)
+    public Task<IReadOnlyDictionary<int, CatalogGame>> FindGamesAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var unique = CatalogIds.Unique(ids);
-        lock (gate) return Task.FromResult<IReadOnlyDictionary<string, CatalogGame>>(unique.Where(games.ContainsKey)
-            .ToDictionary(id => id, id => CatalogStorage.Read(games[id], clock.GetUtcNow(), options), StringComparer.Ordinal));
+        lock (gate) return Task.FromResult<IReadOnlyDictionary<int, CatalogGame>>(unique.Where(games.ContainsKey)
+            .ToDictionary(id => id, id => CatalogStorage.Read(games[id], clock.GetUtcNow(), options)));
     }
     public Task SavePageAsync(CatalogPage page, CancellationToken cancellationToken)
     {
