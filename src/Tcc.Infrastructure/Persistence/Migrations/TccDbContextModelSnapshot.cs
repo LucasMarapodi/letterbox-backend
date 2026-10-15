@@ -426,6 +426,92 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Tcc.Domain.Social.Follow", b =>
+                {
+                    b.Property<int>("FollowerId")
+                        .HasColumnType("integer")
+                        .HasColumnName("seguidor_id");
+
+                    b.Property<int>("FollowedId")
+                        .HasColumnType("integer")
+                        .HasColumnName("seguido_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.HasKey("FollowerId", "FollowedId");
+
+                    b.HasIndex("FollowedId", "FollowerId");
+
+                    b.ToTable("seguimentos_usuarios", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_seguimentos_sem_autoseguimento", "seguidor_id <> seguido_id");
+                        });
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Social.GameFavorite", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<int>("GameId")
+                        .HasColumnType("integer")
+                        .HasColumnName("jogo_id");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("usuario_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameId");
+
+                    b.HasIndex("UserId", "GameId")
+                        .IsUnique();
+
+                    b.ToTable("jogos_favoritos", (string)null);
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Social.ReviewFavorite", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<int>("ReviewId")
+                        .HasColumnType("integer")
+                        .HasColumnName("review_id");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("usuario_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReviewId");
+
+                    b.HasIndex("UserId", "ReviewId")
+                        .IsUnique();
+
+                    b.ToTable("reviews_favoritas", (string)null);
+                });
+
             modelBuilder.Entity("Tcc.Domain.Catalog.GameGenre", b =>
                 {
                     b.HasOne("Tcc.Domain.Catalog.Game", null)
@@ -562,6 +648,51 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                     b.HasOne("Tcc.Domain.Catalog.Game", null)
                         .WithMany()
                         .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Social.Follow", b =>
+                {
+                    b.HasOne("Tcc.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("FollowedId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("FollowerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Social.GameFavorite", b =>
+                {
+                    b.HasOne("Tcc.Domain.Catalog.Game", null)
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Social.ReviewFavorite", b =>
+                {
+                    b.HasOne("Tcc.Domain.Opinions.Review", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

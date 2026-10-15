@@ -19,7 +19,7 @@ public static class OpenApiRegistration
             options.AddDocumentTransformer((document, _, _) =>
             {
                 document.Info = new() { Title = "TCC Games API", Version = "v1",
-                    Description = "Usuários, perfis, sessões, catálogo, reviews, avaliações, comentários/respostas e curtidas persistidos em PostgreSQL. IDs locais dessas entidades são inteiros; igdbId é externo de 64 bits. Cache → PostgreSQL → IGDB. Favoritos, seguimentos e notificações seguem em memória até suas PRs. Listagem de jogos usa envelope paginado." };
+                    Description = "Usuários, perfis, sessões, catálogo, reviews, avaliações, comentários/respostas, curtidas, favoritos e seguimentos persistidos em PostgreSQL. IDs locais são inteiros; igdbId é externo de 64 bits. Cache → PostgreSQL → IGDB. Notificações seguem em memória até sua PR. Listagem de jogos usa envelope paginado." };
                 document.Servers = [new OpenApiServer { Url = "/" }];
                 document.Components ??= new();
                 document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
@@ -82,7 +82,7 @@ public static class OpenApiRegistration
                     if (parameter.Name == "pageSize") { schema.Minimum = "1"; schema.Maximum = "100"; schema.Default = JsonValue.Create(20); }
                     if (parameter.Name == "kind") schema.Enum = Nodes("game", "review");
                     if (parameter.Name == "userId") schema.Minimum = "1";
-                    if (parameter.Name is "gameId" or "igdbId" or "reviewId" or "commentId") schema.Minimum = "1";
+                    if (parameter.Name is "gameId" or "igdbId" or "reviewId" or "commentId" or "targetId") schema.Minimum = "1";
                 }
                 if (context.Description.RelativePath == "api/v1/games/igdb/{igdbId}")
                     operation.Description = "ID externo IGDB positivo (int64). Consulta SQL por igdb_id antes do fornecedor; importação faz upsert transacional e retorna o ID local int32 para as demais rotas.";

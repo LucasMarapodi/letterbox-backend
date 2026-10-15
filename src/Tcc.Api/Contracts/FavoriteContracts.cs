@@ -3,7 +3,7 @@ using Tcc.Application.Social;
 
 namespace Tcc.Api.Contracts;
 
-public sealed record FavoriteResponse(string Id, int UserId, string TargetType, string TargetId)
+public sealed record FavoriteResponse(int Id, int UserId, string TargetType, int TargetId)
 {
     public static FavoriteResponse From(Favorite item) =>
         new(item.Id, item.UserId, item.Kind == FavoriteKind.Game ? "game" : "review", item.TargetId);

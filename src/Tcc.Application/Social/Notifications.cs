@@ -20,7 +20,8 @@ public interface IPublicationScope
 public interface IPreparedPublication : IDisposable { void Commit(); }
 public sealed class PublicationNotifications(IFollows follows, INotifications notifications)
 {
-    public IReadOnlyList<Notification> ForReview(Review review) => follows.Followers(review.UserId)
+    public Task<IReadOnlyList<int>> ReviewRecipients(int userId, CancellationToken ct = default) => follows.FollowersAsync(userId, ct);
+    public IReadOnlyList<Notification> ForReview(Review review, IReadOnlyList<int> recipients) => recipients
         .Select(userId => Notification.NewReview(userId, review.UserId, review.Id, review.CreatedAt)).ToArray();
     public IReadOnlyList<Notification> ForComment(Comment comment, int reviewAuthor) =>
         comment.UserId == reviewAuthor ? [] : [Notification.ReviewComment(reviewAuthor, comment.UserId,

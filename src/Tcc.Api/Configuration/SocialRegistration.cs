@@ -7,9 +7,9 @@ public static class SocialRegistration
 {
     public static IServiceCollection AddSocialFeature(this IServiceCollection services)
     {
-        services.AddSingleton<IFollows, InMemoryFollows>();
+        services.AddScoped<IFollows, Tcc.Infrastructure.Persistence.Repositories.PostgresFollows>();
         services.AddScoped<FollowUsers>();
-        services.AddSingleton<IFavorites, InMemoryFavorites>();
+        services.AddScoped<IFavorites, Tcc.Infrastructure.Persistence.Repositories.PostgresFavorites>();
         services.AddScoped<PersonalFavorites>();
         services.AddSingleton<InMemoryPublicationScope>();
         services.AddSingleton<IPublicationScope>(provider => provider.GetRequiredService<InMemoryPublicationScope>());
