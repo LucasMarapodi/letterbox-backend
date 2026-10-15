@@ -84,7 +84,7 @@ public sealed class NotificationGenerationTests
         Assert.Empty(Events(host, b.Id));
         using var invalid = await client.PostAsJsonAsync(url, new TextInput(" "));
         Assert.Equal(400, (int)invalid.StatusCode);
-        using var missing = await client.PostAsJsonAsync("/api/v1/reviews/missing/comments", new TextInput("Text"));
+        using var missing = await client.PostAsJsonAsync("/api/v1/reviews/999999/comments", new TextInput("Text"));
         Assert.Equal(404, (int)missing.StatusCode);
         Assert.Single(Events(host, 1));
         host.Services.GetRequiredService<INotifications>().AddRange([notification, notification]);

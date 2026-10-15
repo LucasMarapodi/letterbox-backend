@@ -33,7 +33,7 @@ public sealed class DashboardTests
         await ApiTest.SignIn(client, "B@example.com", "p");
         await SocialTest.Follow(client, 1);
         using var game = await client.PutAsync("/api/v1/favorites/game/1", null);
-        using var favoriteReview = await client.PutAsync("/api/v1/favorites/review/review-fixture", null);
+        using var favoriteReview = await client.PutAsync("/api/v1/favorites/review/1", null);
         game.EnsureSuccessStatusCode(); favoriteReview.EnsureSuccessStatusCode();
         await ApiTest.SignIn(client);
         var newest = await ApiTest.Publish(client);
@@ -48,7 +48,7 @@ public sealed class DashboardTests
         Assert.NotNull(dashboard);
         Assert.Equal(newest.Id, dashboard.Feed[0].Id);
         Assert.Equal(0d, Assert.Single(dashboard.Favorites.Games).AverageRating);
-        Assert.Equal("review-fixture", Assert.Single(dashboard.Favorites.Reviews).Id);
+        Assert.Equal(1, Assert.Single(dashboard.Favorites.Reviews).Id);
         var feed = await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/feed/following");
         Assert.Equal(feed, dashboard.Feed);
         using var remove = await client.DeleteAsync("/api/v1/favorites/game/1");

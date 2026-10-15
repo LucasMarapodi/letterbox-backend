@@ -23,7 +23,7 @@ dotnet tool restore
 dotnet ef database update --project src/Tcc.Infrastructure --startup-project src/Tcc.Infrastructure --configuration EfDesign
 ```
 
-Não passar conexão por argumento de CLI. Migrations: `IdentityUsersProfiles`, `IdentitySessions` e `LocalCatalog`. `usuarios.id` e `sessoes_usuarios.id` são integer identity. `perfis_usuarios.usuario_id` é PK/FK integer sem identity. As FKs usam RESTRICT. Datas são timestamp with time zone; email normalizado, username e token_hash têm índices únicos.
+Não passar conexão por argumento de CLI. Migrations: `IdentityUsersProfiles`, `IdentitySessions`, `LocalCatalog` e `Opinions`. `usuarios.id` e `sessoes_usuarios.id` são integer identity. `perfis_usuarios.usuario_id` é PK/FK integer sem identity. As FKs usam RESTRICT. Datas são timestamp with time zone; email normalizado, username e token_hash têm índices únicos.
 
 EF Core omite o DeleteBehavior customizado de ownership ao gerar snapshots ([issue 23496](https://github.com/dotnet/efcore/issues/23496)). Os Designers e snapshot incluem explicitamente `WithOwner().HasForeignKey("UserId").Metadata.DeleteBehavior = DeleteBehavior.Restrict`. Revisar essa linha em novas migrations; `IdentityModelTests` exige ausência de alterações pendentes, sem suprimir o aviso.
 
@@ -41,11 +41,11 @@ Sem `.env.postgres-test`, testes marcados PostgresFact são explicitamente ignor
 
 ## Transição e compatibilidade
 
-Usuários/perfis/sessões e catálogo normalizado (jogos, gêneros, plataformas e junções) estão persistidos. Reviews/notas/comentários/favoritos/seguimentos/notificações seguem em memória até suas PRs. Cache, snapshots de cobertura e token Twitch permanecem transitórios. Cache → PostgreSQL → IGDB está ativo. Detalhes em [P-PR-02.md](P-PR-02.md).
+Usuários/perfis/sessões e catálogo normalizado (jogos, gêneros, plataformas e junções) estão persistidos. Reviews e avaliações persistem desde P-PR-03, com filtros e médias SQL. Comentários/favoritos/seguimentos/notificações seguem em memória até suas PRs. Cache, snapshots de cobertura e token Twitch permanecem transitórios. Cache → PostgreSQL → IGDB está ativo. Detalhes em [P-PR-02.md](P-PR-02.md).
 
-UserAccount.Id, UserSession.Id/UserId e referências de usuário nas demais entidades são int. PublicUserResponse.Id, AuthorResponse.Id, userId e actorId são JSON number; rotas de usuário aceitam inteiro positivo. Não há dados anteriores de identidade para importar, pois a fonte anterior era exclusivamente memória. Game.Id e referências gameId são int; IgdbId é long/bigint separado. IDs próprios de reviews/comentários/notificações continuam strings até suas tabelas. Username textual não é PK.
+UserAccount.Id, UserSession.Id/UserId e referências de usuário nas demais entidades são int. PublicUserResponse.Id, AuthorResponse.Id, userId e actorId são JSON number; rotas de usuário aceitam inteiro positivo. Não há dados anteriores de identidade para importar, pois a fonte anterior era exclusivamente memória. Game.Id e referências gameId são int; IgdbId é long/bigint separado. Review.Id/Rating.Id e referências reviewId são int desde P-PR-03; comentários/notificações mantêm IDs próprios textuais até suas tabelas. Username textual não é PK.
 
-O Front não foi alterado. Seus tipos, validadores e parâmetros de usuário/jogo precisam aceitar números antes de liberar esse contrato ao consumidor atual. Login usa token opaco; somente SHA-256 é armazenado em sessoes_usuarios, nunca o token original. Senhas continuam PBKDF2 com salt.
+O Front não foi alterado. Seus tipos, validadores e parâmetros de usuário/jogo/review precisam aceitar números antes de liberar esse contrato ao consumidor atual. Login usa token opaco; somente SHA-256 é armazenado em sessoes_usuarios, nunca o token original. Senhas continuam PBKDF2 com salt.
 
 ## Catálogo P-PR-02
 

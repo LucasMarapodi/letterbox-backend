@@ -5,12 +5,13 @@ using Tcc.Application.Social;
 using Tcc.Domain.Catalog;
 
 namespace Tcc.Application.Opinions;
+public sealed record ReviewQuery(int? GameId = null, int? UserId = null, IReadOnlyList<int>? Authors = null, IReadOnlyList<int>? Ids = null);
 public interface IReviews
 {
-    bool TryAdd(Review review);
-    Review? Find(string id);
-    IReadOnlyList<Review> All();
-    Review? Edit(string id, int actorId, string? text, DateTimeOffset now);
+    Task<Review?> AddAsync(Review review, CancellationToken ct = default, Func<Review, IPreparedPublication>? prepare = null);
+    Task<Review?> FindAsync(int id, CancellationToken ct = default);
+    Task<IReadOnlyList<Review>> QueryAsync(ReviewQuery query, CancellationToken ct = default);
+    Task<Review?> EditAsync(int id, int actorId, string? text, DateTimeOffset now, CancellationToken ct = default);
 }
 public sealed record PublicAuthor(int Id, string DisplayName, string? AvatarUrl);
 public sealed record PublicGame(int Id, string Title, string? CoverUrl);
@@ -43,45 +44,40 @@ public sealed class OpinionViews(IUserAccounts accounts, QueryGames games)
 public sealed class PublishReview(IReviews reviews, QueryGames games, ICurrentSession current,
     SessionAccess access, TimeProvider clock, OpinionViews views, PublicationNotifications notifications, IPublicationScope publications)
 {
-    public async Task<ReviewDetails> Execute(int gameId, string? text, CancellationToken cancellationToken = default)
+    public async Task<ReviewDetails> Execute(int gameId, string? text, CancellationToken ct = default)
     {
-        var userId = (await access.Require(current, cancellationToken)).UserId;
-        var draft = Review.Create(Guid.NewGuid().ToString("N"), userId, gameId, text, clock.GetUtcNow());
-        var game = await games.GetAsync(gameId, cancellationToken);
-        var author = await views.Author(userId, cancellationToken);
-        await access.Require(current, cancellationToken);
-        return publications.Execute(() =>
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var review = Review.Create(draft.Id, userId, gameId, draft.Text, clock.GetUtcNow());
-            var result = new ReviewDetails(review, author, new(game.Id, game.Title, game.CoverUrl));
-            var events = notifications.ForReview(review);
-            if (!reviews.TryAdd(review)) throw new ResourceFailure(ResourceFailureKind.Conflict);
-            notifications.Send(events);
-            return result;
-        });
+        var userId = (await access.Require(current, ct)).UserId;
+        var draft = Review.Create(0, userId, gameId, text, clock.GetUtcNow());
+        var game = await games.GetAsync(gameId, ct);
+        var author = await views.Author(userId, ct);
+        await access.Require(current, ct);
+        ct.ThrowIfCancellationRequested();
+        var review = await reviews.AddAsync(Review.Create(0, userId, gameId, draft.Text, clock.GetUtcNow()), ct,
+            saved => publications.Prepare(() => notifications.Send(notifications.ForReview(saved))))
+            ?? throw new ResourceFailure(ResourceFailureKind.Conflict);
+        return new(review, author, new(game.Id, game.Title, game.CoverUrl));
     }
 }
 public sealed class GetReview(IReviews reviews, OpinionViews views)
 {
-    public Review Find(string id) => reviews.Find(id) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
-    public Task<ReviewDetails> ExecuteAsync(string id, CancellationToken cancellationToken = default) => views.ReviewAsync(Find(id), cancellationToken);
-}
-public sealed class EditReview(IReviews reviews, ICurrentSession current, SessionAccess access, TimeProvider clock,
-    OpinionViews views, IPublicationScope publications)
-{
-    public async Task<ReviewDetails> Execute(string id, string? text, CancellationToken cancellationToken = default)
+    public async Task<Review> FindAsync(int id, CancellationToken ct = default)
     {
-        var userId = (await access.Require(current, cancellationToken)).UserId;
-        var original = reviews.Find(id) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
+        if (id <= 0) throw new Tcc.Domain.Identity.DomainValidationException("ID de review inválido.");
+        return await reviews.FindAsync(id, ct) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
+    }
+    public async Task<ReviewDetails> ExecuteAsync(int id, CancellationToken ct = default) => await views.ReviewAsync(await FindAsync(id, ct), ct);
+}
+public sealed class EditReview(IReviews reviews, ICurrentSession current, SessionAccess access, TimeProvider clock, OpinionViews views)
+{
+    public async Task<ReviewDetails> Execute(int id, string? text, CancellationToken ct = default)
+    {
+        var userId = (await access.Require(current, ct)).UserId;
+        if (id <= 0) throw new Tcc.Domain.Identity.DomainValidationException("ID de review inválido.");
+        var original = await reviews.FindAsync(id, ct) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
         var prepared = original.Edit(userId, text, clock.GetUtcNow());
-        var projection = await views.ReviewAsync(prepared, cancellationToken);
-        await access.Require(current, cancellationToken);
-        return publications.Execute(() =>
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var updated = reviews.Edit(id, userId, prepared.Text, clock.GetUtcNow()) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
-            return projection with { Review = updated };
-        });
+        var projection = await views.ReviewAsync(prepared, ct);
+        await access.Require(current, ct);
+        var updated = await reviews.EditAsync(id, userId, prepared.Text, clock.GetUtcNow(), ct) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
+        return projection with { Review = updated };
     }
 }

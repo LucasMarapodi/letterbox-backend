@@ -15,7 +15,7 @@ public sealed class RatingTests
         var absence = await client.GetFromJsonAsync<MyRating>("/api/v1/games/1/rating/me");
         Assert.NotNull(absence);
         Assert.Null(absence.Rating);
-        string? id = null;
+        int? id = null;
         foreach (var value in new[] { 0d, 5d, 3.75d })
         {
             using var response = await client.PutAsJsonAsync("/api/v1/games/1/rating/me", new RatingInput(value));

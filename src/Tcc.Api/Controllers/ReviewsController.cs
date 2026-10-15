@@ -23,7 +23,7 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     [HttpGet("reviews/{reviewId}")]
     [ProducesResponseType<ReviewResponse>(200)]
     [ProducesResponseType<ApiError>(404)]
-    public async Task<ActionResult<ReviewResponse>> Get(string reviewId, CancellationToken cancellationToken) => Ok(ReviewResponse.From(await reviews.ExecuteAsync(reviewId, cancellationToken)));
+    public async Task<ActionResult<ReviewResponse>> Get(int reviewId, CancellationToken cancellationToken) => Ok(ReviewResponse.From(await reviews.ExecuteAsync(reviewId, cancellationToken)));
 
     [Authorize]
     [HttpPatch("reviews/{reviewId}")]
@@ -31,7 +31,7 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(403)]
     [ProducesResponseType<ApiError>(404)]
-    public async Task<ActionResult<ReviewResponse>> Edit(string reviewId, TextRequest request, CancellationToken cancellationToken) =>
+    public async Task<ActionResult<ReviewResponse>> Edit(int reviewId, TextRequest request, CancellationToken cancellationToken) =>
         Ok(ReviewResponse.From(await edit.Execute(reviewId, request.Text, cancellationToken)));
 
     [HttpGet("games/{gameId}/reviews")]

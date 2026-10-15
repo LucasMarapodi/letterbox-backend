@@ -19,9 +19,9 @@ public sealed class SocialTests
     public void Notification_factories_require_correct_event_and_disallow_self_notification()
     {
         var now = DateTimeOffset.UtcNow;
-        Assert.Throws<DomainValidationException>(() => Notification.NewReview(1, 1, "review", now));
-        Assert.Throws<ArgumentException>(() => Notification.ReviewComment(1, 2, "review", "", now));
-        Assert.Null(Notification.NewReview(1, 2, "review", now).CommentId);
-        Assert.Equal("comment", Notification.ReviewComment(1, 2, "review", "comment", now).CommentId);
+        Assert.Throws<DomainValidationException>(() => Notification.NewReview(1, 1, 1, now));
+        Assert.Throws<ArgumentException>(() => Notification.ReviewComment(1, 2, 1, "", now));
+        Assert.Null(Notification.NewReview(1, 2, 1, now).CommentId);
+        Assert.Equal("comment", Notification.ReviewComment(1, 2, 1, "comment", now).CommentId);
     }
 }

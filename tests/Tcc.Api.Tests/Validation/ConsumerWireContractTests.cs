@@ -58,7 +58,7 @@ public sealed class ConsumerWireContractTests
         var root = review.RootElement;
         Assert.Equal(new[] { "author", "createdAt", "game", "gameId", "id", "text", "updatedAt", "userId" },
             root.EnumerateObject().Select(property => property.Name).Order());
-        Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("id").GetString()));
+        Assert.True(root.GetProperty("id").GetInt32() > 0);
         Assert.Equal(JsonValueKind.Null, root.GetProperty("updatedAt").ValueKind);
         var createdAt = root.GetProperty("createdAt").GetString();
         Assert.True(DateTimeOffset.TryParse(createdAt, out var instant));

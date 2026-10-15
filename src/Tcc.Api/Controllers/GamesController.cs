@@ -20,7 +20,7 @@ public sealed class GamesController(IAsyncGameCatalog games, DiscoverGame discov
     {
         var item = await discovery.Execute(igdbId, cancellationToken) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
         usage.Include(item.Metadata);
-        return Ok(GameResponse.From(item.Game, averages.ForGame(item.Game.Id)));
+        return Ok(GameResponse.From(item.Game, await averages.ForGame(item.Game.Id, cancellationToken)));
     }
 
     [HttpGet]
@@ -34,7 +34,8 @@ public sealed class GamesController(IAsyncGameCatalog games, DiscoverGame discov
     {
         var result = await games.SearchAsync(CatalogSearch.Create(term, sort, page, pageSize), cancellationToken);
         usage.Include(result.Metadata);
-        return Ok(new GamePageResponse(result.Items.Select(item => GameResponse.From(item.Game, averages.ForGame(item.Game.Id))).ToArray(),
+        var values = await averages.ForGames(result.Items.Select(item => item.Game.Id), cancellationToken);
+        return Ok(new GamePageResponse(result.Items.Select(item => GameResponse.From(item.Game, values.GetValueOrDefault(item.Game.Id))).ToArray(),
             result.Query.Page, result.Query.PageSize, result.HasNextPage));
     }
 
@@ -49,6 +50,6 @@ public sealed class GamesController(IAsyncGameCatalog games, DiscoverGame discov
     {
         var item = await games.GetAsync(gameId, cancellationToken) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
         usage.Include(item.Metadata);
-        return Ok(GameResponse.From(item.Game, averages.ForGame(gameId)));
+        return Ok(GameResponse.From(item.Game, await averages.ForGame(gameId, cancellationToken)));
     }
 }

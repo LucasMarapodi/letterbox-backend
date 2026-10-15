@@ -25,6 +25,9 @@ public sealed class StorageFailureTests
         using var response = await client.PostAsJsonAsync("/api/v1/auth/login", new LoginInput("ana@example.com", "teste123"));
         Assert.Equal(503, (int)response.StatusCode);
         Assert.Equal("storage_unavailable", (await response.Content.ReadFromJsonAsync<ErrorResult>())?.Code);
+        using var reviews = await client.GetAsync("/api/v1/community/reviews/recent");
+        Assert.Equal(503, (int)reviews.StatusCode);
+        Assert.Equal("storage_unavailable", (await reviews.Content.ReadFromJsonAsync<ErrorResult>())?.Code);
         using var health = await client.GetAsync("/health");
         Assert.Equal(200, (int)health.StatusCode);
         var openapi = await client.GetStringAsync("/openapi/v1.json");

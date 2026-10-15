@@ -63,11 +63,11 @@ public sealed class PublishCommentTests
         var clock = new MutableClock(new DateTimeOffset(2026, 10, 11, 12, 0, 0, TimeSpan.Zero));
         await using var host = new IdentityFactory(clock);
         using var client = host.CreateClient();
-        const string url = "/api/v1/reviews/review-fixture/comments";
+        const string url = "/api/v1/reviews/1/comments";
         using var anonymous = await client.PostAsJsonAsync(url, new TextInput("Good"));
         Assert.Equal(401, (int)anonymous.StatusCode);
         await ApiTest.SignIn(client);
-        using var missing = await client.PostAsJsonAsync("/api/v1/reviews/missing/comments", new TextInput("Good"));
+        using var missing = await client.PostAsJsonAsync("/api/v1/reviews/999999/comments", new TextInput("Good"));
         Assert.Equal(404, (int)missing.StatusCode);
         using var logout = await client.PostAsync("/api/v1/auth/logout", null);
         logout.EnsureSuccessStatusCode();

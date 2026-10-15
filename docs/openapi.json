@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "TCC Games API",
-    "description": "Usuários, perfis, sessões e catálogo normalizado persistidos em PostgreSQL. IDs locais de usuários/jogos são inteiros; igdbId é externo de 64 bits. Cache → PostgreSQL → IGDB. Opiniões e relações seguem em memória até suas PRs. Listagem de jogos usa envelope paginado.",
+    "description": "Usuários, perfis, sessões, catálogo, reviews e avaliações persistidos em PostgreSQL. IDs locais de usuários, jogos, reviews e avaliações são inteiros; igdbId é externo de 64 bits. Cache → PostgreSQL → IGDB. Comentários e relações sociais seguem em memória até suas PRs. Listagem de jogos usa envelope paginado.",
     "version": "v1"
   },
   "servers": [
@@ -43,7 +43,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/auth/register": {
@@ -150,7 +150,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/auth/login": {
@@ -257,7 +257,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/auth/me": {
@@ -332,7 +332,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -392,7 +392,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -409,7 +409,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],
@@ -486,7 +488,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       },
       "post": {
         "tags": [
@@ -500,7 +502,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],
@@ -618,7 +622,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -745,7 +749,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/community/reviews/most-commented": {
@@ -885,7 +889,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/community/games/in-discussion": {
@@ -1025,7 +1029,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/dashboard": {
@@ -1157,7 +1161,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -1291,7 +1295,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -1461,7 +1465,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       },
@@ -1630,7 +1634,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       },
@@ -1782,7 +1786,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -1925,7 +1929,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -1944,11 +1948,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -2047,7 +2047,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       },
@@ -2064,11 +2064,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -2150,7 +2146,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -2168,11 +2164,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -2257,7 +2249,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -2275,11 +2267,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -2357,7 +2345,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/users/{userId}/following": {
@@ -2373,11 +2361,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -2455,7 +2439,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/games/igdb/{igdbId}": {
@@ -2472,11 +2456,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int64"
             }
           }
@@ -2602,7 +2582,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/games": {
@@ -2637,11 +2617,7 @@
             "in": "query",
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32",
               "default": 1
             }
@@ -2652,11 +2628,7 @@
             "schema": {
               "maximum": 100,
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32",
               "default": 20
             }
@@ -2769,7 +2741,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/games/{gameId}": {
@@ -2785,11 +2757,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -2915,7 +2883,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/notifications": {
@@ -2999,7 +2967,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3017,11 +2985,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -3163,7 +3127,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       },
@@ -3179,11 +3143,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -3345,7 +3305,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -3364,11 +3324,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -3544,7 +3500,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       },
@@ -3560,11 +3516,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -3699,7 +3651,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/reviews/{reviewId}": {
@@ -3714,7 +3666,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],
@@ -3839,7 +3793,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       },
       "patch": {
         "tags": [
@@ -3853,7 +3807,9 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],
@@ -4028,7 +3984,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4046,11 +4002,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -4185,7 +4137,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/games/{gameId}/reviews/me": {
@@ -4201,11 +4153,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -4347,7 +4295,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4365,11 +4313,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -4495,7 +4439,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/users/{userId}": {
@@ -4511,11 +4455,7 @@
             "required": true,
             "schema": {
               "minimum": 1,
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
+              "type": "integer",
               "format": "int32"
             }
           }
@@ -4598,7 +4538,7 @@
             }
           }
         },
-        "security": [ ]
+        "security": []
       }
     },
     "/api/v1/users/me/profile": {
@@ -4707,7 +4647,7 @@
         },
         "security": [
           {
-            "Bearer": [ ]
+            "Bearer": []
           }
         ]
       }
@@ -4739,11 +4679,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "displayName": {
@@ -4772,15 +4708,12 @@
             "type": "string"
           },
           "userId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "reviewId": {
-            "type": "string"
+            "type": "integer",
+            "format": "int32"
           },
           "text": {
             "type": "string"
@@ -4847,11 +4780,7 @@
             "type": "string"
           },
           "userId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "targetType": {
@@ -4931,19 +4860,11 @@
             }
           },
           "page": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "pageSize": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "hasNextPage": {
@@ -4966,19 +4887,11 @@
         "type": "object",
         "properties": {
           "id": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "igdbId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int64"
           },
           "title": {
@@ -5032,11 +4945,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "title": {
@@ -5159,23 +5068,16 @@
             "type": "string"
           },
           "userId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "actorId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "reviewId": {
-            "type": "string"
+            "type": "integer",
+            "format": "int32"
           },
           "createdAt": {
             "type": "string",
@@ -5230,11 +5132,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "username": {
@@ -5266,11 +5164,7 @@
             "$ref": "#/components/schemas/GameResponse"
           },
           "commentCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "lastCommentAt": {
@@ -5292,11 +5186,7 @@
             "$ref": "#/components/schemas/ReviewResponse"
           },
           "commentCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "lastCommentAt": {
@@ -5336,22 +5226,15 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "integer",
+            "format": "int32"
           },
           "userId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "gameId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "value": {
@@ -5408,22 +5291,15 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "integer",
+            "format": "int32"
           },
           "userId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "gameId": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
+            "type": "integer",
             "format": "int32"
           },
           "text": {

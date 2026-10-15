@@ -55,7 +55,7 @@ public sealed class EditReviewTests
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        using var response = await client.PatchAsJsonAsync("/api/v1/reviews/missing", new TextInput("New"));
+        using var response = await client.PatchAsJsonAsync("/api/v1/reviews/999999", new TextInput("New"));
         Assert.Equal(404, (int)response.StatusCode);
     }
 }

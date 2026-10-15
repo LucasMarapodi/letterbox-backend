@@ -25,7 +25,7 @@ public sealed class ProjectionHttpTests
             CatalogFlow.Game(11) with { Metadata = new(now.AddDays(-2)) }, CatalogFlow.Game(12)], default);
         var store = host.Services.GetRequiredService<IReviews>();
         foreach (var id in new[] { 10, 11, 12 })
-            store.TryAdd(Review.Create(id.ToString(), 1, id, "Retained", now));
+            store.TryAdd(Review.Create(id, 1, id, "Retained", now));
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/api/v1/community/reviews/recent");
         response.EnsureSuccessStatusCode();
@@ -40,11 +40,11 @@ public sealed class ProjectionHttpTests
         await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.AddSingleton<IExternalGameCatalog, OfflineCatalog>()));
         var store = host.Services.GetRequiredService<IReviews>();
-        store.TryAdd(Review.Create("retained", 1, 10, "Original", CatalogFlow.Metadata.FetchedAt));
+        store.TryAdd(Review.Create(106, 1, 10, "Original", CatalogFlow.Metadata.FetchedAt));
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/api/v1/community/reviews/recent");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Equal("Original", store.Find("retained")?.Text);
+        Assert.Equal("Original", store.Find(106)?.Text);
         Assert.False(response.Headers.Contains("X-Catalog-Stale"));
     }
     [Fact]
@@ -53,9 +53,9 @@ public sealed class ProjectionHttpTests
         var catalog = new BatchCatalog();
         await using var host = CatalogHttpTests.Host(catalog);
         var reviews = host.Services.GetRequiredService<IReviews>();
-        reviews.TryAdd(Review.Create("a", 1, 10, "A", CatalogFlow.Metadata.FetchedAt));
+        reviews.TryAdd(Review.Create(107, 1, 10, "A", CatalogFlow.Metadata.FetchedAt));
         // Use an existing author for every projection; duplicate games across separate review IDs.
-        reviews.TryAdd(Review.Create("c", 1, 11, "C", CatalogFlow.Metadata.FetchedAt));
+        reviews.TryAdd(Review.Create(108, 1, 11, "C", CatalogFlow.Metadata.FetchedAt));
         using var client = host.CreateClient();
         // A second author is registered locally, with no external request.
         using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "test"));
@@ -63,7 +63,7 @@ public sealed class ProjectionHttpTests
         // Replace b with a valid local author's ID by using the account port.
         var accounts = host.Services.GetRequiredService<Tcc.Application.Identity.IUserAccounts>();
         var second = await accounts.FindByEmailAsync(Tcc.Domain.Identity.Email.Create("b@example.com")) ?? throw new InvalidOperationException();
-        reviews.TryAdd(Review.Create("d", second.Id, 10, "D", CatalogFlow.Metadata.FetchedAt));
+        reviews.TryAdd(Review.Create(109, second.Id, 10, "D", CatalogFlow.Metadata.FetchedAt));
         using var response = await client.GetAsync("/api/v1/community/reviews/recent");
         response.EnsureSuccessStatusCode();
         Assert.Single(catalog.Batches);
@@ -81,13 +81,13 @@ public sealed class ProjectionHttpTests
         await host.Services.GetRequiredService<ILocalGameCatalog>().SaveGamesAsync([
             CatalogFlow.Game(10) with { Metadata = new(CatalogFlow.Metadata.FetchedAt.AddDays(-2), true) }], default);
         var reviews = host.Services.GetRequiredService<IReviews>();
-        reviews.TryAdd(Review.Create("known", 1, 10, "Keep me", CatalogFlow.Metadata.FetchedAt));
+        reviews.TryAdd(Review.Create(105, 1, 10, "Keep me", CatalogFlow.Metadata.FetchedAt));
         using var client = host.CreateClient();
-        using var response = await client.GetAsync("/api/v1/reviews/known");
+        using var response = await client.GetAsync("/api/v1/reviews/105");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(0, external.Calls);
         Assert.Equal("true", Assert.Single(response.Headers.GetValues("X-Catalog-Stale")));
-        Assert.Equal("Keep me", reviews.Find("known")?.Text);
+        Assert.Equal("Keep me", reviews.Find(105)?.Text);
     }
 
     [Fact]
@@ -95,9 +95,9 @@ public sealed class ProjectionHttpTests
     {
         var catalog = new BatchCatalog();
         await using var host = CatalogHttpTests.Host(catalog);
-        host.Services.GetRequiredService<IReviews>().TryAdd(Review.Create("known", 1, 10, "Keep", CatalogFlow.Metadata.FetchedAt));
+        host.Services.GetRequiredService<IReviews>().TryAdd(Review.Create(105, 1, 10, "Keep", CatalogFlow.Metadata.FetchedAt));
         using var client = host.CreateClient();
-        using var response = await client.GetAsync("/api/v1/reviews/known/comments");
+        using var response = await client.GetAsync("/api/v1/reviews/105/comments");
         response.EnsureSuccessStatusCode();
         Assert.Empty(catalog.Batches);
         Assert.False(response.Headers.Contains("X-Catalog-Stale"));

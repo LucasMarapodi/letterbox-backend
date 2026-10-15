@@ -10,7 +10,7 @@ public sealed record AuthorResponse(int Id, string DisplayName, string? AvatarUr
 public sealed record GameSummaryResponse(int Id, string Title, string? CoverUrl);
 public sealed record MyReviewResponse(ReviewResponse? Review);
 public sealed record GameOpinionsResponse(double? AverageRating, IReadOnlyList<ReviewResponse> Reviews);
-public sealed record ReviewResponse(string Id, int UserId, int GameId, string Text,
+public sealed record ReviewResponse(int Id, int UserId, int GameId, string Text,
     DateTimeOffset CreatedAt, DateTimeOffset? UpdatedAt, AuthorResponse Author, GameSummaryResponse Game)
 {
     public static ReviewResponse From(ReviewDetails details) => new(details.Review.Id, details.Review.UserId,

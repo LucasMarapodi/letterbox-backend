@@ -7,6 +7,8 @@ public sealed class TccDbContext(DbContextOptions<TccDbContext> options) : DbCon
 {
     public DbSet<UserAccount> Users => Set<UserAccount>();
     public DbSet<UserSession> Sessions => Set<UserSession>();
+    public DbSet<Tcc.Domain.Opinions.Review> Reviews => Set<Tcc.Domain.Opinions.Review>();
+    public DbSet<Tcc.Domain.Opinions.Rating> Ratings => Set<Tcc.Domain.Opinions.Rating>();
     public DbSet<Tcc.Domain.Catalog.Game> Games => Set<Tcc.Domain.Catalog.Game>();
     public DbSet<Tcc.Domain.Catalog.Genre> Genres => Set<Tcc.Domain.Catalog.Genre>();
     public DbSet<Tcc.Domain.Catalog.Platform> Platforms => Set<Tcc.Domain.Catalog.Platform>();

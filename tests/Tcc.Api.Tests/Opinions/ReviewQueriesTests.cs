@@ -64,7 +64,7 @@ public sealed class ReviewQueriesTests
     [InlineData("/api/v1/games/999/reviews", 404)]
     [InlineData("/api/v1/games/999/opinions", 404)]
     [InlineData("/api/v1/users/999999/reviews", 404)]
-    [InlineData("/api/v1/reviews/missing", 404)]
+    [InlineData("/api/v1/reviews/999999", 404)]
     public async Task Missing_resources_and_private_queries_are_rejected(string url, int status)
     {
         await using var host = new TestApiFactory();

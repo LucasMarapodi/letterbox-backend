@@ -88,18 +88,18 @@ public sealed class AsyncWriteTests
         source.Release.TrySetResult();
         await using var host = CatalogHttpTests.Host(source);
         var store = host.Services.GetRequiredService<IReviews>();
-        store.TryAdd(Review.Create("edit", 1, 10, "Original", CatalogFlow.Metadata.FetchedAt));
+        store.TryAdd(Review.Create(104, 1, 10, "Original", CatalogFlow.Metadata.FetchedAt));
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        using var failed = await client.PatchAsJsonAsync("/api/v1/reviews/edit", new TextInput("Changed"));
+        using var failed = await client.PatchAsJsonAsync("/api/v1/reviews/104", new TextInput("Changed"));
         Assert.Equal(503, (int)failed.StatusCode);
-        Assert.Equal("Original", store.Find("edit")?.Text);
+        Assert.Equal("Original", store.Find(104)?.Text);
         source.Fail = false;
         var calls = source.Calls;
-        using var success = await client.PatchAsJsonAsync("/api/v1/reviews/edit", new TextInput("Changed"));
+        using var success = await client.PatchAsJsonAsync("/api/v1/reviews/104", new TextInput("Changed"));
         Assert.Equal(200, (int)success.StatusCode);
         Assert.Equal(calls + 1, source.Calls);
-        Assert.Equal("Changed", store.Find("edit")?.Text);
+        Assert.Equal("Changed", store.Find(104)?.Text);
     }
 }
 

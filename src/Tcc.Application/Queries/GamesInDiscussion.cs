@@ -10,12 +10,13 @@ public sealed class GamesInDiscussion(CommentActivity activity, QueryGames games
 {
     public async Task<IReadOnlyList<RankedGameDetails>> Execute(string? period, CancellationToken cancellationToken = default)
     {
-        var groups = activity.Execute(period).GroupBy(item => item.Review.GameId)
+        var groups = (await activity.Execute(period, cancellationToken)).GroupBy(item => item.Review.GameId)
             .Select(group => new GameActivity(group.Key, group.Sum(item => item.CommentCount), group.Max(item => item.LastCommentAt)));
         var snapshot = ActivityOrdering.Sort(groups, item => item.CommentCount, item => item.LastCommentAt, item => item.GameId)
-            .Select(item => (Activity: item, Average: averages.ForGame(item.GameId))).ToArray();
-        var found = await games.ResolveAsync(snapshot.Select(item => item.Activity.GameId), cancellationToken);
-        return snapshot.Select(item => new RankedGameDetails(found[item.Activity.GameId], item.Average,
-            item.Activity.CommentCount, item.Activity.LastCommentAt)).ToArray();
+            .ToArray();
+        var found = await games.ResolveAsync(snapshot.Select(item => item.GameId), cancellationToken);
+        var values = await averages.ForGames(snapshot.Select(item => item.GameId), cancellationToken);
+        return snapshot.Select(item => new RankedGameDetails(found[item.GameId], values.GetValueOrDefault(item.GameId),
+            item.CommentCount, item.LastCommentAt)).ToArray();
     }
 }
