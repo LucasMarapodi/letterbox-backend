@@ -1,5 +1,6 @@
 using Tcc.Application.Catalog;
 using Tcc.Infrastructure.Igdb;
+using Tcc.Infrastructure.Persistence.Repositories;
 
 namespace Tcc.Api.Configuration;
 
@@ -12,7 +13,10 @@ public static class CatalogMemoryRegistration
         catch (Exception) { throw new InvalidOperationException("Configuração de memória do catálogo inválida."); }
         services.AddSingleton(options);
         services.AddSingleton<ICatalogCache, InMemoryCatalogCache>();
-        services.AddSingleton<ILocalGameCatalog, InMemoryLocalGameCatalog>();
+        services.AddSingleton<CatalogQuerySnapshots>();
+        services.AddScoped<PostgresGameCatalog>();
+        services.AddSingleton<ILocalGameCatalog, ScopedSqlLocalGameCatalog>();
+        services.AddScoped<DiscoverGame>();
         services.AddSingleton<IAsyncGameCatalog>(provider => new SingleFlightGameCatalog(new AsyncGameCatalog(
             provider.GetRequiredService<ICatalogCache>(), provider.GetRequiredService<ILocalGameCatalog>(),
             provider.GetRequiredService<IExternalGameCatalog>()), provider.GetRequiredService<CatalogMemoryOptions>()));

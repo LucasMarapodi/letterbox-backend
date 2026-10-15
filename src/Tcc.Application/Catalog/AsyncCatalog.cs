@@ -57,7 +57,10 @@ public interface ICatalogStore
     Task SavePageAsync(CatalogPage page, CancellationToken cancellationToken);
     Task SaveGamesAsync(IReadOnlyList<CatalogGame> games, CancellationToken cancellationToken);
 }
-public interface ICatalogCache : ICatalogStore;
+public interface ICatalogCache : ICatalogStore
+{
+    Task InvalidateAsync(CancellationToken ct) => Task.CompletedTask;
+}
 public interface ILocalGameCatalog : ICatalogStore
 {
     async Task<IReadOnlyList<CatalogGame>> UpsertAsync(IReadOnlyList<CatalogGame> games, CancellationToken cancellationToken)
@@ -92,6 +95,7 @@ public sealed class DiscoverGame(ILocalGameCatalog local, IExternalGameCatalog e
         var found = await external.ResolveAsync([igdbId], ct);
         if (!found.TryGetValue(igdbId, out var game)) return null;
         var saved = await local.UpsertAsync([game], ct);
+        await cache.InvalidateAsync(ct);
         await cache.SaveGamesAsync(saved, ct);
         return saved.Single();
     }
@@ -118,6 +122,7 @@ public sealed class AsyncGameCatalog(ICatalogCache cache, ILocalGameCatalog loca
         catch (Exception failure) when (CanFallback(failure)) { return known; }
         if (!refreshed.TryGetValue(known.Game.IgdbId, out var item)) return null;
         var saved = await local.UpsertAsync([item], ct);
+        await cache.InvalidateAsync(ct);
         await cache.SaveGamesAsync(saved, ct);
         return saved.Single();
     }
@@ -140,6 +145,7 @@ public sealed class AsyncGameCatalog(ICatalogCache cache, ILocalGameCatalog loca
             }
             if (!Usable(page, query)) throw new CatalogIntegrationUnavailableException();
             var persisted = await local.UpsertAsync(page.Items, ct);
+            if (page.Items.Count > 0) await cache.InvalidateAsync(ct);
             if (!ReferenceEquals(persisted, page.Items)) page = page with { Items = persisted };
             await local.SavePageAsync(page, ct);
         }

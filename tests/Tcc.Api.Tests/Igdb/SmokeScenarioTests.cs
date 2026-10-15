@@ -31,7 +31,7 @@ public sealed class SmokeScenarioTests
     public async Task Smoke_requires_opt_in_and_credentials_without_starting_host(bool requested, bool ready, string result)
     {
         var counters = new SmokeCounters();
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(_ => throw new InvalidOperationException("Host must not start")));
         var report = await LiveSmokeScenario.RunAsync(host, counters, requested, ready, "simulated");
         Assert.Equal(result, report.Result);
@@ -44,7 +44,7 @@ public sealed class SmokeScenarioTests
     public async Task Harness_exercises_public_API_token_cache_local_eviction_pages_and_search_with_bounded_transport()
     {
         var counters = new SmokeCounters();
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(builder =>
         {
             builder.ConfigureLogging(logging => logging.ClearProviders());
             builder.ConfigureServices(services =>

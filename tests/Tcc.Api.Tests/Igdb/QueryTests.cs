@@ -14,7 +14,7 @@ public sealed class QueryTests
         Assert.Contains("first_release_date != null & first_release_date <= " + now.ToUnixTimeSeconds(), body);
         Assert.Contains("sort first_release_date desc;", body);
         Assert.Contains("limit 21; offset 40;", body);
-        Assert.Contains("fields id,name,summary,cover.image_id,genres.name,platforms.name,first_release_date;", body);
+        Assert.Contains("fields id,name,summary,cover.image_id,genres.id,genres.name,platforms.id,platforms.name,first_release_date;", body);
         Assert.DoesNotContain("fields *", body);
         Assert.DoesNotContain("rating", body);
         Assert.DoesNotContain("screenshots", body);

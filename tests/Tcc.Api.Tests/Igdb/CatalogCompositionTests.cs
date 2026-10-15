@@ -11,7 +11,7 @@ public sealed class CatalogCompositionTests
     [Fact]
     public async Task Host_composes_shared_catalog_stores_without_reading_credentials_for_known_local_game()
     {
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.AddSingleton<IgdbCredentialOptions>(_ =>
                 throw new InvalidOperationException("Known local data must not depend on credentials"))));
         using var a = host.Services.CreateScope();
@@ -23,7 +23,7 @@ public sealed class CatalogCompositionTests
         Assert.Same(first, second);
         Assert.NotNull(await first.GetAsync(1));
         Assert.NotNull(await second.GetAsync(1));
-        await using var other = new WebApplicationFactory<Program>();
+        await using var other = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices)));
         Assert.Empty(await other.Services.GetRequiredService<ILocalGameCatalog>().FindGamesAsync([1], default));
     }
 }

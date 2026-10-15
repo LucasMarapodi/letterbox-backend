@@ -22,6 +22,152 @@ namespace Tcc.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Tcc.Domain.Catalog.Game", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CoverUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("capa_url");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<DateTimeOffset>("FetchedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dados_obtidos_em");
+
+                    b.Property<long>("IgdbId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("igdb_id");
+
+                    b.Property<DateOnly?>("ReleaseDate")
+                        .HasColumnType("date")
+                        .HasColumnName("primeira_data_lancamento");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("descricao");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("nome");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("atualizado_em");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IgdbId")
+                        .IsUnique();
+
+                    b.ToTable("jogos", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_jogos_igdb_positivo", "igdb_id > 0");
+                        });
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Catalog.GameGenre", b =>
+                {
+                    b.Property<int>("GameId")
+                        .HasColumnType("integer")
+                        .HasColumnName("jogo_id");
+
+                    b.Property<int>("GenreId")
+                        .HasColumnType("integer")
+                        .HasColumnName("genero_id");
+
+                    b.HasKey("GameId", "GenreId");
+
+                    b.HasIndex("GenreId");
+
+                    b.ToTable("jogos_generos", (string)null);
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Catalog.GamePlatform", b =>
+                {
+                    b.Property<int>("GameId")
+                        .HasColumnType("integer")
+                        .HasColumnName("jogo_id");
+
+                    b.Property<int>("PlatformId")
+                        .HasColumnType("integer")
+                        .HasColumnName("plataforma_id");
+
+                    b.HasKey("GameId", "PlatformId");
+
+                    b.HasIndex("PlatformId");
+
+                    b.ToTable("jogos_plataformas", (string)null);
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Catalog.Genre", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("IgdbId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("igdb_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("nome");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IgdbId")
+                        .IsUnique();
+
+                    b.ToTable("generos", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_generos_igdb_positivo", "igdb_id > 0");
+                        });
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Catalog.Platform", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("IgdbId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("igdb_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("nome");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IgdbId")
+                        .IsUnique();
+
+                    b.ToTable("plataformas", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_plataformas_igdb_positivo", "igdb_id > 0");
+                        });
+                });
+
             modelBuilder.Entity("Tcc.Domain.Identity.UserAccount", b =>
                 {
                     b.Property<int>("Id")
@@ -118,6 +264,36 @@ namespace Tcc.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_sessoes_prazo", "expira_em > criado_em");
                         });
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Catalog.GameGenre", b =>
+                {
+                    b.HasOne("Tcc.Domain.Catalog.Game", null)
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Catalog.Genre", null)
+                        .WithMany()
+                        .HasForeignKey("GenreId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Catalog.GamePlatform", b =>
+                {
+                    b.HasOne("Tcc.Domain.Catalog.Game", null)
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Catalog.Platform", null)
+                        .WithMany()
+                        .HasForeignKey("PlatformId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Tcc.Domain.Identity.UserAccount", b =>

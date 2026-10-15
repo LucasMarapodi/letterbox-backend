@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Tcc.Application.Catalog;
 using Tcc.Application.Identity;
 using Tcc.Domain.Catalog;
@@ -11,6 +12,30 @@ namespace Tcc.Api.Tests.Persistence;
 [Collection("PostgreSQL identity")]
 public sealed class PostgresCatalogTests
 {
+    [PostgresFact]
+    public async Task SQL_enforces_foreign_keys_unique_pairs_positive_external_ids_and_restrict_deletion()
+    {
+        await Reset();
+        await using var db = PostgresTestDatabase.Context();
+        var saved = Assert.Single(await Repository(db).UpsertAsync([Payload()], default));
+        var genre = await db.Genres.AsNoTracking().SingleAsync();
+        db.GameGenres.Add(new GameGenre(999999, genre.Id));
+        var missing = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(missing.InnerException).SqlState);
+        db.ChangeTracker.Clear();
+        db.GameGenres.Add(new GameGenre(saved.Game.Id, genre.Id));
+        var duplicate = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        Assert.Equal(PostgresErrorCodes.UniqueViolation, Assert.IsType<PostgresException>(duplicate.InnerException).SqlState);
+        db.ChangeTracker.Clear();
+        db.Genres.Add(new Genre(0, -1, "Invalid external identity"));
+        var invalid = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        Assert.Equal(PostgresErrorCodes.CheckViolation, Assert.IsType<PostgresException>(invalid.InnerException).SqlState);
+        db.ChangeTracker.Clear();
+        var restricted = await Assert.ThrowsAsync<PostgresException>(() => db.Games.Where(game => game.Id == saved.Game.Id).ExecuteDeleteAsync());
+        Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, restricted.SqlState);
+        Assert.Equal(1, await db.Games.CountAsync());
+    }
+
     private static readonly CatalogMemoryOptions Options = new();
     internal static PostgresGameCatalog Repository(TccDbContext db) => new(new Lazy<TccDbContext>(() => db), TimeProvider.System, Options);
     internal static CatalogGame Payload(long externalId = 3_000_000_001, DateTimeOffset? fetched = null) => new(
@@ -64,7 +89,10 @@ public sealed class PostgresCatalogTests
         await using var context = PostgresTestDatabase.Context();
         var repo = Repository(context);
         var now = DateTimeOffset.UtcNow.AddMinutes(1);
-        var second = Assert.Single(await repo.UpsertAsync([Payload(3_000_000_010, now)], default));
+        var next = Payload(3_000_000_010, now);
+        next = next with { Game = next.Game with { Genres = ["Role Playing"], GenreEntries = [new Genre(0, 3_000_000_002, "Role Playing")] } };
+        var second = Assert.Single(await repo.UpsertAsync([next], default));
+        Assert.Equal("Role Playing", Assert.Single((await repo.FindGamesAsync([results[0]], default))[results[0]].Game.Genres));
         var updated = Payload(fetched: now.AddSeconds(1));
         updated = updated with { Game = updated.Game with { Title = "Renamed", Genres = [], GenreEntries = [], Platforms = [], PlatformEntries = [] } };
         var saved = Assert.Single(await repo.UpsertAsync([updated], default));
@@ -98,6 +126,14 @@ public sealed class PostgresCatalogTests
             Assert.Equal(0, await db.Genres.CountAsync());
             Assert.Equal(0, await db.Platforms.CountAsync());
             Assert.Equal(0, await db.GameGenres.CountAsync());
+            var cache = new InMemoryCatalogCache(TimeProvider.System, Options);
+            var cached = Payload() with { Game = Payload().Game with { Id = 999, Title = "Previously cached" } };
+            await cache.SaveGamesAsync([cached], default);
+            var pipeline = new AsyncGameCatalog(cache, Repository(db), new ImportSupplier());
+            var query = CatalogSearch.Create("rollback");
+            await Assert.ThrowsAsync<DatabaseUnavailableException>(() => pipeline.SearchAsync(query));
+            Assert.Null(await cache.FindPageAsync(query, default));
+            Assert.Equal("Previously cached", (await cache.FindGamesAsync([999], default))[999].Game.Title);
         }
         finally { await db.Database.ExecuteSqlRawAsync("DROP TRIGGER reject_test_catalog ON jogos_plataformas; DROP FUNCTION reject_test_catalog()"); }
     }
@@ -107,5 +143,11 @@ public sealed class PostgresCatalogTests
         public int Calls { get; private set; }
         public Task<CatalogPage> SearchAsync(CatalogSearch query, CancellationToken ct) { Calls++; throw new CatalogIntegrationUnavailableException(); }
         public Task<IReadOnlyDictionary<long, CatalogGame>> ResolveAsync(IReadOnlyList<long> ids, CancellationToken ct) { Calls++; throw new CatalogIntegrationUnavailableException(); }
+    }
+    private sealed class ImportSupplier : IExternalGameCatalog
+    {
+        public Task<CatalogPage> SearchAsync(CatalogSearch query, CancellationToken ct)
+        { var item = Payload(); return Task.FromResult(new CatalogPage(query, [item], false, item.Metadata)); }
+        public Task<IReadOnlyDictionary<long, CatalogGame>> ResolveAsync(IReadOnlyList<long> ids, CancellationToken ct) => throw new NotSupportedException();
     }
 }

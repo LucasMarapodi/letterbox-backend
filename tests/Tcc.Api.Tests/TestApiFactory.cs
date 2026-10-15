@@ -15,11 +15,19 @@ public class TestApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder) => builder.ConfigureServices(services =>
     {
         Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(services);
+        Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(services);
         services.AddSingleton<Tcc.Infrastructure.Memory.HostMemory>();
         services.AddSingleton<Tcc.Application.Memory.IHostSeed>(provider => provider.GetRequiredService<Tcc.Infrastructure.Memory.HostMemory>());
         services.AddSingleton<IExternalGameCatalog, FixtureCatalog>();
+        services.AddHostedService<CatalogFixtures>();
         services.AddHostedService<OpinionFixtures>();
     });
+}
+
+internal sealed class CatalogFixtures(ILocalGameCatalog catalog, TimeProvider clock) : IHostedService
+{
+    public Task StartAsync(CancellationToken ct) => catalog.SaveGamesAsync(FixtureCatalog.Games.Select(game => new CatalogGame(game, new(clock.GetUtcNow()))).ToArray(), ct);
+    public Task StopAsync(CancellationToken ct) => Task.CompletedTask;
 }
 
 internal sealed class OpinionFixtures(IReviews reviews, IComments comments) : IHostedService
@@ -42,9 +50,9 @@ internal sealed class FixtureCatalog(TimeProvider clock) : IExternalGameCatalog
 {
     internal static readonly Game[] Games =
     [
-        new(1, "Ecos do Horizonte", "Explore os caminhos de um mundo fictício.", null, ["Aventura"], ["PC"], new(2024, 4, 12)),
-        new(2, "Circuito Aurora", "Corridas noturnas em circuitos de uma cidade fictícia.", null, ["Corrida"], ["PC", "Console"], new(2025, 2, 20)),
-        new(3, "Atlas de Cinzas", "Descubra histórias esquecidas em uma aventura de fantasia.", null, ["RPG", "Aventura"], ["PC"], null)
+        new(1, "Ecos do Horizonte", "Explore os caminhos de um mundo fictício.", null, ["Aventura"], ["PC"], new(2024, 4, 12)) { IgdbId = 1 },
+        new(2, "Circuito Aurora", "Corridas noturnas em circuitos de uma cidade fictícia.", null, ["Corrida"], ["PC", "Console"], new(2025, 2, 20)) { IgdbId = 2 },
+        new(3, "Atlas de Cinzas", "Descubra histórias esquecidas em uma aventura de fantasia.", null, ["RPG", "Aventura"], ["PC"], null) { IgdbId = 3 }
     ];
     public Task<CatalogPage> SearchAsync(CatalogSearch query, CancellationToken cancellationToken)
     {

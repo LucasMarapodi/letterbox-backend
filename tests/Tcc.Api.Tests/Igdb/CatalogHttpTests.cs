@@ -12,7 +12,7 @@ public sealed class CatalogHttpTests
     [Fact]
     public async Task Production_has_no_catalog_or_opinion_fixtures_and_legacy_ids_are_invalid()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices)));
         Assert.Empty(host.Services.GetRequiredService<Tcc.Application.Opinions.IReviews>().All());
         Assert.Empty(host.Services.GetRequiredService<Tcc.Application.Opinions.IComments>().ForReview("review-fixture"));
         Assert.Empty(await host.Services.GetRequiredService<ILocalGameCatalog>().FindGamesAsync([1], default));
@@ -25,7 +25,7 @@ public sealed class CatalogHttpTests
     [Fact]
     public async Task Openapi_describes_envelope_pagination_metadata_and_supplier_errors()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices)));
         using var client = host.CreateClient();
         using var json = JsonDocument.Parse(await client.GetStringAsync("/openapi/v1.json"));
         var operation = json.RootElement.GetProperty("paths").GetProperty("/api/v1/games").GetProperty("get");
@@ -97,7 +97,7 @@ public sealed class CatalogHttpTests
         Assert.Equal(1, json.RootElement.GetProperty("id").GetInt32());
     }
 
-    internal static WebApplicationFactory<Program> Host(IAsyncGameCatalog source) => new WebApplicationFactory<Program>()
+    internal static WebApplicationFactory<Program> Host(IAsyncGameCatalog source) => new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices)))
         .WithWebHostBuilder(builder => builder.UseEnvironment("Development")
             .ConfigureServices(services => { Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(services); services.AddSingleton(source); }));
 }

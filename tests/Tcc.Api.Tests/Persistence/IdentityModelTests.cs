@@ -28,7 +28,7 @@ public sealed class IdentityModelTests
         Assert.Equal("perfis_usuarios", profile.GetTableName());
         Assert.Equal(typeof(int), Assert.Single(profile.FindPrimaryKey()?.Properties ?? []).ClrType);
         Assert.NotNull(profile.FindProperty("UpdatedAt"));
-        Assert.Equal(3, context.Model.GetEntityTypes().Count());
+        Assert.Equal(8, context.Model.GetEntityTypes().Count());
         Assert.False(context.Database.HasPendingModelChanges());
     }
 }

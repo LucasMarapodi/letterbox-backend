@@ -16,13 +16,14 @@ public sealed class GameMappingTests
     {
         const string json = """
             {"id":42,"name":" Game ","summary":"Summary","cover":{"image_id":"co_test","url":"https://untrusted.example"},
-             "genres":[{"name":"RPG"},{"name":"RPG"}],"platforms":[{"name":"PC"}],
+             "genres":[{"id":12,"name":"RPG"},{"id":12,"name":"RPG"}],"platforms":[{"id":6,"name":"PC"}],
              "first_release_date":1609459200,"rating":99,"aggregated_rating":90,"game_type":123456,"screenshots":[1]}
             """;
         var dto = JsonSerializer.Deserialize<IgdbGameDto>(json);
         Assert.NotNull(dto);
         var result = IgdbGameMapper.Map(dto, CatalogFlow.Metadata.FetchedAt);
-        Assert.Equal(42, result.Game.Id);
+        Assert.Equal(0, result.Game.Id);
+        Assert.Equal(42L, result.Game.IgdbId);
         Assert.Equal("Game", result.Game.Title);
         Assert.Equal("Summary", result.Game.Summary);
         Assert.Equal("https://images.igdb.com/igdb/image/upload/t_cover_big/co_test.jpg", result.Game.CoverUrl);
@@ -37,13 +38,14 @@ public sealed class GameMappingTests
     public void Valid_absent_optional_fields_remain_null_empty_and_outside_domain_metadata()
     {
         var result = IgdbGameMapper.Map(new() { Id = 7, Name = "Minimal" }, CatalogFlow.Metadata.FetchedAt);
-        Assert.Equal(7, result.Game.Id);
+        Assert.Equal(0, result.Game.Id);
+        Assert.Equal(7L, result.Game.IgdbId);
         Assert.Null(result.Game.CoverUrl);
         Assert.Null(result.Game.ReleaseDate);
         Assert.Empty(result.Game.Genres);
         Assert.Empty(result.Game.Platforms);
         Assert.Equal("", result.Game.Summary);
-        Assert.DoesNotContain("FetchedAt", JsonSerializer.Serialize(result.Game));
+        Assert.Equal(CatalogFlow.Metadata.FetchedAt, result.Game.FetchedAt);
     }
 
     [Theory]
@@ -81,7 +83,7 @@ public sealed class ExternalCatalogTests
     [Fact]
     public async Task Resolving_supplier_port_and_empty_batch_do_not_load_credentials_before_external_IO()
     {
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.AddSingleton<IgdbCredentialOptions>(_ =>
                 throw new InvalidOperationException("Credentials must only be read after a supplier miss"))));
         using var scope = host.Services.CreateScope();
@@ -103,7 +105,8 @@ public sealed class ExternalCatalogTests
         });
         var page = await fixture.Catalog.SearchAsync(CatalogSearch.Create("One", pageSize: 1), CancellationToken.None);
         Assert.True(page.HasNextPage);
-        Assert.Equal(1, Assert.Single(page.Items).Game.Id);
+        Assert.Equal(0, Assert.Single(page.Items).Game.Id);
+        Assert.Equal(1L, page.Items[0].Game.IgdbId);
         var details = await fixture.Catalog.ResolveAsync([1, 1], CancellationToken.None);
         Assert.Equal(page.Items[0].Game, Assert.Single(details.Values).Game);
         Assert.Contains("limit 2; offset 0;", queries[0]);

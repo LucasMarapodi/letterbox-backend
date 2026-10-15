@@ -19,7 +19,7 @@ public static class OpenApiRegistration
             options.AddDocumentTransformer((document, _, _) =>
             {
                 document.Info = new() { Title = "TCC Games API", Version = "v1",
-                    Description = "Contas, perfis e sessões persistidos em PostgreSQL. IDs de usuários são inteiros. Token opaco com verificador SHA-256; reiniciar preserva identidade e sessões. Catálogo local, opiniões e relações ainda em memória nesta etapa. Listagem de jogos usa envelope paginado." };
+                    Description = "Usuários, perfis, sessões e catálogo normalizado persistidos em PostgreSQL. IDs locais de usuários/jogos são inteiros; igdbId é externo de 64 bits. Cache → PostgreSQL → IGDB. Opiniões e relações seguem em memória até suas PRs. Listagem de jogos usa envelope paginado." };
                 document.Servers = [new OpenApiServer { Url = "/" }];
                 document.Components ??= new();
                 document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
@@ -41,8 +41,7 @@ public static class OpenApiRegistration
                 operation.Responses ??= new();
                 var catalogOperation = context.Description.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor action
                     && action.ControllerName is "Games" or "Reviews" or "Ratings" or "Favorites" or "Feed" or "Dashboard" or "Community";
-                var storageOperation = secured || context.Description.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor storageAction
-                    && storageAction.ControllerName is not "Games";
+                var storageOperation = secured || context.Description.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor;
                 if (catalogOperation)
                     foreach (var response in operation.Responses.Where(item => int.TryParse(item.Key, out var code) && code is >= 200 and < 300).Select(item => item.Value).OfType<OpenApiResponse>())
                     {
@@ -83,7 +82,11 @@ public static class OpenApiRegistration
                     if (parameter.Name == "pageSize") { schema.Minimum = "1"; schema.Maximum = "100"; schema.Default = JsonValue.Create(20); }
                     if (parameter.Name == "kind") schema.Enum = Nodes("game", "review");
                     if (parameter.Name == "userId") schema.Minimum = "1";
+                    if (parameter.Name is "gameId" or "igdbId") schema.Minimum = "1";
                 }
+                if (context.Description.RelativePath == "api/v1/games/igdb/{igdbId}")
+                    operation.Description = "ID externo IGDB positivo (int64). Consulta SQL por igdb_id antes do fornecedor; importação faz upsert transacional e retorna o ID local int32 para as demais rotas.";
+                else
                 if (context.Description.RelativePath?.EndsWith("comments", StringComparison.Ordinal) == true && context.Description.HttpMethod == "POST")
                     operation.Description = "Texto obrigatório não vazio após trim; até 2.000 caracteres após trim. Autoria/data vêm da sessão/relógio. Comentário próprio é permitido.";
                 else if (context.Description.HttpMethod is "POST" or "PATCH" && context.Description.RelativePath?.Contains("reviews", StringComparison.Ordinal) == true)

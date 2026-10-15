@@ -14,7 +14,7 @@ public sealed class CacheEvictionRegressionTests
     public async Task Targeted_eviction_preserves_other_entries_local_catalog_and_offline_projection()
     {
         var supplier = new OfflineCatalog();
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.AddSingleton<IExternalGameCatalog>(supplier)));
         var cache = Assert.IsType<InMemoryCatalogCache>(host.Services.GetRequiredService<ICatalogCache>());
         var local = host.Services.GetRequiredService<ILocalGameCatalog>();

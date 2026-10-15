@@ -15,7 +15,8 @@ internal static class CatalogStorage
         if (string.IsNullOrWhiteSpace(entry.Game.Title)) throw new CatalogInvalidResponseException();
         return entry with { Game = entry.Game with
         {
-            Genres = Array.AsReadOnly(entry.Game.Genres.ToArray()), Platforms = Array.AsReadOnly(entry.Game.Platforms.ToArray())
+            Genres = Array.AsReadOnly(entry.Game.Genres.ToArray()), Platforms = Array.AsReadOnly(entry.Game.Platforms.ToArray()),
+            GenreEntries = Array.AsReadOnly(entry.Game.GenreEntries.ToArray()), PlatformEntries = Array.AsReadOnly(entry.Game.PlatformEntries.ToArray())
         }};
     }
     public static CatalogGame Read(CatalogGame entry, DateTimeOffset now, CatalogMemoryOptions options) => entry with
@@ -40,6 +41,7 @@ internal sealed class BoundedCatalogMap<TKey, TValue>(int capacity) where TKey :
 {
     private readonly Dictionary<TKey, (TValue Value, LinkedListNode<TKey> Node)> entries = [];
     private readonly LinkedList<TKey> order = new();
+    public void Clear() { entries.Clear(); order.Clear(); }
     public bool TryGet(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
         if (entries.TryGetValue(key, out var entry))

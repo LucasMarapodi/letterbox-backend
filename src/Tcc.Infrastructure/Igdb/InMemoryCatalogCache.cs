@@ -10,6 +10,12 @@ public sealed class InMemoryCatalogCache : ICatalogCache
     private readonly BoundedCatalogMap<CatalogKey, CatalogPage> pages;
     private readonly BoundedCatalogMap<int, Entry> games;
     private sealed record Entry(CatalogGame Data, DateTimeOffset ExpiresAt);
+    public Task InvalidateAsync(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        lock (gate) { pages.Clear(); games.Clear(); }
+        return Task.CompletedTask;
+    }
     public InMemoryCatalogCache(TimeProvider clock, CatalogMemoryOptions options)
     { options.Validate(); this.clock = clock; this.options = options; pages = new(options.CachePageLimit); games = new(options.CacheGameLimit); }
     public Task<CatalogPage?> FindPageAsync(CatalogSearch query, CancellationToken cancellationToken)

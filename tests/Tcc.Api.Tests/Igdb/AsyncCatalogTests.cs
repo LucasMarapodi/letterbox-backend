@@ -51,12 +51,12 @@ public sealed class AsyncCatalogTests
         flow.Local.Games.Add(local.Game.Id, local);
         flow.External.Games.Add(3, CatalogFlow.Game(3));
         var result = await flow.Catalog.ResolveAsync([1, 2, 3, 2]);
-        Assert.Equal(new[] { 1, 2, 3 }, result.Keys);
+        Assert.Equal(new[] { 1, 2 }, result.Keys);
         Assert.Same(cached, result[1]);
         Assert.Same(local, result[2]);
         Assert.Equal(new[] { 2, 3 }, flow.Local.Requested);
-        Assert.Equal(new[] { 3L }, flow.External.Requested);
-        Assert.True(flow.Events.IndexOf("local.save-games") < flow.Events.LastIndexOf("cache.save-games"));
+        Assert.Empty(flow.External.Requested);
+        Assert.DoesNotContain("external.games", flow.Events);
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public sealed class AsyncCatalogTests
         Assert.NotNull(await flow.Catalog.GetAsync(1));
         Assert.DoesNotContain("external.games", flow.Events);
         Assert.Null(await flow.Catalog.GetAsync(2));
-        Assert.Contains("external.games", flow.Events);
+        Assert.DoesNotContain("external.games", flow.Events);
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public sealed class AsyncCatalogTests
 internal sealed class CatalogFlow
 {
     public static CatalogMetadata Metadata { get; } = new(new DateTimeOffset(2026, 10, 14, 12, 0, 0, TimeSpan.Zero));
-    public static CatalogGame Game(int id) => new(new Game(id, "Name", "", null, [], [], null), Metadata);
+    public static CatalogGame Game(int id) => new(new Game(id, "Name", "", null, [], [], null) { IgdbId = id }, Metadata);
     public static CatalogGame ExternalGame(long id) => Game(0) with { Game = Game(0).Game with { IgdbId = id } };
     public List<string> Events { get; } = [];
     public Store Cache { get; }
