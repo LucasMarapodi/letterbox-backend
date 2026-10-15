@@ -8,7 +8,7 @@ namespace Tcc.Application.Opinions;
 public sealed record ReviewQuery(int? GameId = null, int? UserId = null, IReadOnlyList<int>? Authors = null, IReadOnlyList<int>? Ids = null);
 public interface IReviews
 {
-    Task<Review?> AddAsync(Review review, CancellationToken ct = default, Func<Review, IPreparedPublication>? prepare = null);
+    Task<Review?> AddAsync(Review review, CancellationToken ct = default, Func<Review, CancellationToken, Task>? publish = null);
     Task<Review?> FindAsync(int id, CancellationToken ct = default);
     Task<IReadOnlyList<Review>> QueryAsync(ReviewQuery query, CancellationToken ct = default);
     Task<Review?> EditAsync(int id, int actorId, string? text, DateTimeOffset now, CancellationToken ct = default);
@@ -42,7 +42,7 @@ public sealed class OpinionViews(IUserAccounts accounts, QueryGames games)
         Review(review, await games.GetAsync(review.GameId, cancellationToken), await Author(review.UserId, cancellationToken));
 }
 public sealed class PublishReview(IReviews reviews, QueryGames games, ICurrentSession current,
-    SessionAccess access, TimeProvider clock, OpinionViews views, PublicationNotifications notifications, IPublicationScope publications)
+    SessionAccess access, TimeProvider clock, OpinionViews views, PublicationNotifications notifications)
 {
     public async Task<ReviewDetails> Execute(int gameId, string? text, CancellationToken ct = default)
     {
@@ -50,11 +50,10 @@ public sealed class PublishReview(IReviews reviews, QueryGames games, ICurrentSe
         var draft = Review.Create(0, userId, gameId, text, clock.GetUtcNow());
         var game = await games.GetAsync(gameId, ct);
         var author = await views.Author(userId, ct);
-        var recipients = await notifications.ReviewRecipients(userId, ct);
         await access.Require(current, ct);
         ct.ThrowIfCancellationRequested();
         var review = await reviews.AddAsync(Review.Create(0, userId, gameId, draft.Text, clock.GetUtcNow()), ct,
-            saved => publications.Prepare(() => notifications.Send(notifications.ForReview(saved, recipients))))
+            notifications.ForReviewAsync)
             ?? throw new ResourceFailure(ResourceFailureKind.Conflict);
         return new(review, author, new(game.Id, game.Title, game.CoverUrl));
     }

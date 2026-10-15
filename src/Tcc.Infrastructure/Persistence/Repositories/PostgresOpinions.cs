@@ -19,7 +19,7 @@ internal static class OpinionStorage
 }
 public sealed class PostgresReviews(Lazy<TccDbContext> context) : IReviews
 {
-    public Task<Review?> AddAsync(Review review, CancellationToken ct = default, Func<Review, IPreparedPublication>? prepare = null) => OpinionStorage.Run<Review?>(async () =>
+    public Task<Review?> AddAsync(Review review, CancellationToken ct = default, Func<Review, CancellationToken, Task>? publish = null) => OpinionStorage.Run<Review?>(async () =>
     {
         var db = context.Value;
         await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -27,11 +27,9 @@ public sealed class PostgresReviews(Lazy<TccDbContext> context) : IReviews
         try { await db.SaveChangesAsync(ct); }
         catch (DbUpdateException failure) when (failure.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         { db.ChangeTracker.Clear(); return null; }
-        using var publication = prepare?.Invoke(review);
-        // A future SQL notification/outbox can be staged in this same scoped context before commit.
+        if (publish is not null) await publish(review, ct);
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
-        publication?.Commit();
         return review;
     });
     public Task<Review?> FindAsync(int id, CancellationToken ct = default) => OpinionStorage.Run(() => context.Value.Reviews.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, ct));

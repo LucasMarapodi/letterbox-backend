@@ -481,6 +481,65 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                     b.ToTable("jogos_favoritos", (string)null);
                 });
 
+            modelBuilder.Entity("Tcc.Domain.Social.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActorId")
+                        .HasColumnType("integer")
+                        .HasColumnName("ator_id");
+
+                    b.Property<int?>("CommentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("comentario_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<int>("ReviewId")
+                        .HasColumnType("integer")
+                        .HasColumnName("review_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("tipo");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("destinatario_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorId");
+
+                    b.HasIndex("ReviewId", "CommentId");
+
+                    b.HasIndex("UserId", "CommentId")
+                        .IsUnique()
+                        .HasFilter("tipo = 'review-comment'");
+
+                    b.HasIndex("UserId", "ReviewId")
+                        .IsUnique()
+                        .HasFilter("tipo = 'new-review'");
+
+                    b.HasIndex("UserId", "CreatedAt", "Id");
+
+                    b.ToTable("notificacoes", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_notificacoes_sem_auto", "destinatario_id <> ator_id");
+
+                            t.HasCheckConstraint("ck_notificacoes_tipo_comentario", "(tipo = 'new-review' AND comentario_id IS NULL) OR (tipo = 'review-comment' AND comentario_id IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("Tcc.Domain.Social.ReviewFavorite", b =>
                 {
                     b.Property<int>("Id")
@@ -686,6 +745,33 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Social.Notification", b =>
+                {
+                    b.HasOne("Tcc.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Opinions.Review", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Opinions.Comment", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewId", "CommentId")
+                        .HasPrincipalKey("ReviewId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Tcc.Domain.Social.ReviewFavorite", b =>

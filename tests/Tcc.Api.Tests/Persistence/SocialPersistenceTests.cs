@@ -100,10 +100,10 @@ public sealed class SocialPersistenceTests
         using var published = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { text = "For SQL followers" });
         Assert.Equal(201, (int)published.StatusCode);
         using var review = JsonDocument.Parse(await published.Content.ReadAsStringAsync());
-        var notification = Assert.Single(host.Services.GetRequiredService<INotifications>().ForUser(reader.User));
+        var notification = Assert.Single(await db.Notifications.AsNoTracking().Where(item => item.UserId == reader.User).ToArrayAsync());
         Assert.Equal(review.RootElement.GetProperty("id").GetInt32(), notification.ReviewId);
         Assert.Equal(author.User, notification.ActorId);
-        Assert.Empty(host.Services.GetRequiredService<INotifications>().ForUser(author.User));
+        Assert.False(await db.Notifications.AnyAsync(item => item.UserId == author.User));
     }
 
     [PostgresFact]

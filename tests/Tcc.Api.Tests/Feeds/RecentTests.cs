@@ -56,7 +56,7 @@ public sealed class EmptyReviewsFactory : TestApiFactory
 }
 public sealed class EmptyReviews : IReviews
 {
-    public Task<Review?> AddAsync(Review review, CancellationToken ct = default, Func<Review, Tcc.Application.Social.IPreparedPublication>? prepare = null) => Task.FromResult<Review?>(null);
+    public Task<Review?> AddAsync(Review review, CancellationToken ct = default, Func<Review, CancellationToken, Task>? publish = null) => Task.FromResult<Review?>(null);
     public Task<Review?> FindAsync(int id, CancellationToken ct = default) => Task.FromResult<Review?>(null);
     public Task<IReadOnlyList<Review>> QueryAsync(ReviewQuery query, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Review>>([]);
     public Task<Review?> EditAsync(int id, int actorId, string? text, DateTimeOffset now, CancellationToken ct = default) => Task.FromResult<Review?>(null);

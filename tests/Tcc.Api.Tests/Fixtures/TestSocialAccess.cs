@@ -7,6 +7,7 @@ public static class TestSocialAccess
 {
     public static IServiceCollection AddTestSocial(this IServiceCollection services)
     {
+        services.AddSingleton<InMemoryPublicationScope>(); services.AddSingleton<IPublicationScope>(provider => provider.GetRequiredService<InMemoryPublicationScope>()); services.AddSingleton<INotifications, InMemoryNotifications>();
         services.AddSingleton<IFollows, InMemoryFollows>();
         services.AddSingleton<IFavorites, InMemoryFavorites>();
         return services;

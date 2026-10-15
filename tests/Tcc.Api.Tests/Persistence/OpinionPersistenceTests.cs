@@ -51,8 +51,7 @@ public sealed class OpinionPersistenceTests
         var game = Assert.Single(await PostgresCatalogTests.Repository(db).UpsertAsync([PostgresCatalogTests.Payload()], default)).Game;
         await using var original = new PostgresApiFactory();
         await using var host = original.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<INotifications>(provider => new FailingNotifications(
-                new InMemoryNotifications(provider.GetRequiredService<InMemoryPublicationScope>())))));
+            services.AddScoped<INotifications>(provider => new FailingNotifications(new Tcc.Infrastructure.Persistence.Repositories.PostgresNotifications(provider.GetRequiredService<Lazy<TccDbContext>>())))));
         using var client = host.CreateClient();
         using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Writer", "rollback@example.com", "synthetic-password"));
         registered.EnsureSuccessStatusCode();
@@ -61,7 +60,7 @@ public sealed class OpinionPersistenceTests
         using var failed = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { text = "Must roll back" });
         Assert.Equal(500, (int)failed.StatusCode);
         Assert.Equal(0, await db.Reviews.CountAsync());
-        Assert.Empty(host.Services.GetRequiredService<INotifications>().ForUser(login.User.Id));
+        Assert.Equal(0, await db.Notifications.CountAsync());
     }
 
     [PostgresFact]

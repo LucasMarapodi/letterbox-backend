@@ -8,7 +8,7 @@ public sealed record FollowStatus(bool Following);
 public sealed record FavoriteDto(int Id, int UserId, string TargetType, int TargetId);
 public sealed record FavoriteStatus(FavoriteDto? Favorite);
 public sealed record FavoriteLists(GameDto[] Games, ReviewDto[] Reviews);
-public sealed record NotificationDto(string Id, int UserId, int ActorId, int ReviewId,
+public sealed record NotificationDto(int Id, int UserId, int ActorId, int ReviewId,
     DateTimeOffset CreatedAt, string Type, int? CommentId, AuthorDto Actor);
 
 internal static class SocialTest

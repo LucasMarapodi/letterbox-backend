@@ -20,23 +20,18 @@ public sealed class InMemoryComments(InMemoryPublicationScope publications) : IC
             comments.Add(comment.Id, comment);
         }
     }
-    public Task<Comment> AddAsync(Comment comment, CancellationToken ct = default, Func<Comment, IPreparedPublication>? prepare = null)
+    public Task<Comment> AddAsync(Comment comment, CancellationToken ct = default, Func<Comment, CancellationToken, Task>? publish = null) => publications.ExecuteAsync(async () =>
     {
-        ct.ThrowIfCancellationRequested();
+        Comment saved;
         lock (publications.Gate)
         {
-            var saved = Comment.Create(comment.Id == 0 ? ++next : comment.Id, comment.UserId, comment.ReviewId, comment.Text, comment.CreatedAt, comment.ParentCommentId);
-            if (saved.ParentCommentId is int parentId)
-            {
-                var parent = comments[parentId];
-                saved = Comment.Reply(saved.Id, saved.UserId, saved.ReviewId, saved.Text, saved.CreatedAt, parent);
-            }
-            using var publication = prepare?.Invoke(saved);
-            Add(saved);
-            try { publication?.Commit(); return Task.FromResult(saved); }
-            catch { comments.Remove(saved.Id); throw; }
+            saved = Comment.Create(comment.Id == 0 ? ++next : comment.Id, comment.UserId, comment.ReviewId, comment.Text, comment.CreatedAt, comment.ParentCommentId);
+            if (saved.ParentCommentId is int parentId) saved = Comment.Reply(saved.Id, saved.UserId, saved.ReviewId, saved.Text, saved.CreatedAt, comments[parentId]);
         }
-    }
+        if (publish is not null) await publish(saved, ct);
+        Add(saved);
+        return saved;
+    }, ct);
     public Task<Comment?> FindAsync(int id, CancellationToken ct = default)
     { ct.ThrowIfCancellationRequested(); lock (publications.Gate) return Task.FromResult(comments.GetValueOrDefault(id)); }
     public Task<IReadOnlyList<CommentWithLikes>> ForReviewAsync(int reviewId, CancellationToken ct = default)

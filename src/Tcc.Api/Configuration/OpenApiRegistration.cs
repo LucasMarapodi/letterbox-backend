@@ -19,7 +19,7 @@ public static class OpenApiRegistration
             options.AddDocumentTransformer((document, _, _) =>
             {
                 document.Info = new() { Title = "TCC Games API", Version = "v1",
-                    Description = "Usuários, perfis, sessões, catálogo, reviews, avaliações, comentários/respostas, curtidas, favoritos e seguimentos persistidos em PostgreSQL. IDs locais são inteiros; igdbId é externo de 64 bits. Cache → PostgreSQL → IGDB. Notificações seguem em memória até sua PR. Listagem de jogos usa envelope paginado." };
+                    Description = "Usuários, perfis, sessões, catálogo, reviews, avaliações, comentários/respostas, curtidas, favoritos, seguimentos e notificações persistidos em PostgreSQL. IDs locais são inteiros; igdbId é externo de 64 bits. Publicação e eventos compartilham transação SQL. Cache → PostgreSQL → IGDB. Listagem de jogos usa envelope paginado." };
                 document.Servers = [new OpenApiServer { Url = "/" }];
                 document.Components ??= new();
                 document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
