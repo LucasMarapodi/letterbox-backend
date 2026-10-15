@@ -1,6 +1,8 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Tcc.Application.Identity;
 using Tcc.Api.Tests.Identity;
 using Tcc.Infrastructure.Persistence;
 
@@ -9,6 +11,55 @@ namespace Tcc.Api.Tests.Persistence;
 [Collection("PostgreSQL identity")]
 public sealed class SessionPersistenceTests
 {
+    [PostgresFact]
+    public async Task Sessions_of_two_accounts_are_isolated_and_revoking_one_does_not_revoke_the_other()
+    {
+        await PostgresApiFactory.ResetAsync();
+        await using var host = new PostgresApiFactory();
+        using var first = host.CreateClient();
+        using var second = host.CreateClient();
+        using var a = await first.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("A", "a@example.com", "synthetic-password"));
+        using var b = await second.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "synthetic-password"));
+        a.EnsureSuccessStatusCode(); b.EnsureSuccessStatusCode();
+        var logins = await Task.WhenAll(LoginTests.Login(first, "a@example.com", "synthetic-password"), LoginTests.Login(second, "b@example.com", "synthetic-password"));
+        Assert.NotEqual(logins[0].User.Id, logins[1].User.Id);
+        first.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", logins[0].Token);
+        second.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", logins[1].Token);
+        using var logout = await first.PostAsync("/api/v1/auth/logout", null);
+        Assert.Equal(204, (int)logout.StatusCode);
+        using var denied = await first.GetAsync("/api/v1/auth/me");
+        Assert.Equal(401, (int)denied.StatusCode);
+        var current = await second.GetFromJsonAsync<PublicUser>("/api/v1/auth/me");
+        Assert.Equal(logins[1].User.Id, current?.Id);
+    }
+
+    [PostgresFact]
+    public async Task Expired_session_is_denied_and_revoked_in_SQL_and_unknown_user_FK_is_rejected()
+    {
+        await PostgresApiFactory.ResetAsync();
+        await using var host = new PostgresApiFactory();
+        using var client = host.CreateClient();
+        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Expired", "expired@example.com", "synthetic-password"));
+        registered.EnsureSuccessStatusCode();
+        var user = await registered.Content.ReadFromJsonAsync<PublicUser>();
+        Assert.NotNull(user);
+        using var scope = host.Services.CreateScope();
+        var sessions = scope.ServiceProvider.GetRequiredService<IUserSessions>();
+        var now = DateTimeOffset.UtcNow;
+        var expired = await sessions.CreateAsync(user.Id, now.AddHours(-2), now.AddHours(-1));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", expired.Token);
+        using var response = await client.GetAsync("/api/v1/auth/me");
+        Assert.Equal(401, (int)response.StatusCode);
+        await using var context = PostgresTestDatabase.Context();
+        Assert.NotNull((await context.Sessions.SingleAsync()).RevokedAt);
+        context.Sessions.Add(new Tcc.Domain.Identity.UserSession(999999, new string('a', 64), now, now.AddHours(1)));
+        await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
+        context.ChangeTracker.Clear();
+        Assert.Equal(1, await context.Sessions.CountAsync());
+        var accounts = scope.ServiceProvider.GetRequiredService<IUserAccounts>();
+        Assert.Equal(user.Id, (await accounts.FindByUsernameAsync(user.Username))?.Id);
+    }
+
     [Fact]
     public void Session_model_has_integer_keys_hash_only_unique_index_and_restrict_owner()
     {

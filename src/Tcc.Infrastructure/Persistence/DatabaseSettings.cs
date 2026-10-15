@@ -18,7 +18,8 @@ public sealed class DatabaseSettings
                 || string.IsNullOrWhiteSpace(builder.Username)) throw new ArgumentException();
             return new(builder.ConnectionString);
         }
-        catch (Exception) { throw new InvalidOperationException("Configure ConnectionStrings__TccDatabase no ambiente do backend."); }
+        catch (Exception) { throw new DatabaseConfigurationException(); }
     }
     public override string ToString() => "PostgreSQL configuration (redacted)";
 }
+public sealed class DatabaseConfigurationException() : InvalidOperationException("Configure ConnectionStrings__TccDatabase no ambiente do backend.");

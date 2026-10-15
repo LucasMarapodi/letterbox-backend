@@ -12,6 +12,7 @@ public static class PersistenceRegistration
         services.AddDbContext<TccDbContext>((provider, options) => options
             .UseNpgsql(provider.GetRequiredService<DatabaseSettings>().ConnectionString)
             .UseLoggerFactory(NullLoggerFactory.Instance).EnableSensitiveDataLogging(false));
+        services.AddScoped(provider => new Lazy<TccDbContext>(() => provider.GetRequiredService<TccDbContext>()));
         return services;
     }
 }

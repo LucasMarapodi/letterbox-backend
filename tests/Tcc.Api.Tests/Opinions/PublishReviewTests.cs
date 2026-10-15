@@ -17,7 +17,7 @@ public sealed class PublishReviewTests
         Assert.Equal(201, (int)response.StatusCode);
         var review = await response.Content.ReadFromJsonAsync<ReviewDto>();
         Assert.NotNull(review);
-        Assert.Equal("user-1", review.UserId);
+        Assert.Equal(1, review.UserId);
         Assert.Equal("igdb-1", review.GameId);
         Assert.Equal("Good game", review.Text);
         Assert.Equal(clock.GetUtcNow(), review.CreatedAt);

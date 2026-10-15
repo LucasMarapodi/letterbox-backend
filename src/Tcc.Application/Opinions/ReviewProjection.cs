@@ -8,7 +8,8 @@ public sealed class ReviewProjection(OpinionViews views, Tcc.Application.Catalog
     {
         var snapshot = reviews.OrderByDescending(review => review.CreatedAt).ThenBy(review => review.Id, StringComparer.Ordinal).ToArray();
         var found = await games.ResolveAsync(snapshot.Select(review => review.GameId), cancellationToken);
-        return snapshot.Select(review => views.Review(review, found[review.GameId])).ToArray();
+        var authors = await views.Authors(snapshot.Select(review => review.UserId), cancellationToken);
+        return snapshot.Select(review => views.Review(review, found[review.GameId], authors[review.UserId])).ToArray();
     }
 
 }

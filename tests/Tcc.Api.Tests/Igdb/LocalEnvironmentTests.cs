@@ -9,7 +9,7 @@ public sealed class LocalEnvironmentTests
     public void Reads_local_credentials_quotes_comments_and_equals_without_expansion()
     {
         using var file = new EnvironmentFile("# Local only\nIGDB__ClientId=123\nIGDB__ClientSecret=\"synthetic=a#b\"\nIGDB__TokenRefreshMarginSeconds=15\nOTHER_KEY=ignored");
-        var options = IgdbCredentialOptions.Read(LocalIgdbEnvironment.CreateReader(file.Path, _ => null));
+        var options = IgdbCredentialOptions.Read(LocalBackendEnvironment.CreateReader(file.Path, _ => null));
         Assert.Equal("123", options.ClientId);
         Assert.Equal("synthetic=a#b", options.ClientSecret);
         Assert.Equal(TimeSpan.FromSeconds(15), options.RefreshMargin);
@@ -20,7 +20,7 @@ public sealed class LocalEnvironmentTests
     {
         using var file = new EnvironmentFile("IGDB__ClientId=local-id\nIGDB__ClientSecret=local-secret");
         var variables = new Dictionary<string, string?> { ["IGDB__ClientId"] = "process-id", ["IGDB__ClientSecret"] = "process-secret" };
-        var options = IgdbCredentialOptions.Read(LocalIgdbEnvironment.CreateReader(file.Path, name => variables.GetValueOrDefault(name)));
+        var options = IgdbCredentialOptions.Read(LocalBackendEnvironment.CreateReader(file.Path, name => variables.GetValueOrDefault(name)));
         Assert.Equal("process-id", options.ClientId);
         Assert.Equal("process-secret", options.ClientSecret);
         Assert.Equal(2, variables.Count);
@@ -29,7 +29,7 @@ public sealed class LocalEnvironmentTests
     [Fact]
     public void Missing_file_preserves_safe_missing_credentials_error()
     {
-        var reader = LocalIgdbEnvironment.CreateReader(System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".env"), _ => null);
+        var reader = LocalBackendEnvironment.CreateReader(System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".env"), _ => null);
         var failure = Assert.Throws<InvalidOperationException>(() => IgdbCredentialOptions.Read(reader));
         Assert.Contains("IGDB__", failure.Message);
     }
@@ -40,7 +40,7 @@ public sealed class LocalEnvironmentTests
     public void Invalid_file_fails_without_echoing_its_content(string content)
     {
         using var file = new EnvironmentFile(content);
-        var failure = Assert.Throws<InvalidOperationException>(() => IgdbCredentialOptions.Read(LocalIgdbEnvironment.CreateReader(file.Path, _ => null)));
+        var failure = Assert.Throws<InvalidOperationException>(() => IgdbCredentialOptions.Read(LocalBackendEnvironment.CreateReader(file.Path, _ => null)));
         Assert.DoesNotContain("synthetic-secret", failure.ToString());
         Assert.DoesNotContain(file.Path, failure.ToString());
         Assert.Contains(".env", failure.Message);

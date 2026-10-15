@@ -14,6 +14,9 @@ public class TestApiFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder) => builder.ConfigureServices(services =>
     {
+        Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(services);
+        services.AddSingleton<Tcc.Infrastructure.Memory.HostMemory>();
+        services.AddSingleton<Tcc.Application.Memory.IHostSeed>(provider => provider.GetRequiredService<Tcc.Infrastructure.Memory.HostMemory>());
         services.AddSingleton<IExternalGameCatalog, FixtureCatalog>();
         services.AddHostedService<OpinionFixtures>();
     });
@@ -24,11 +27,11 @@ internal sealed class OpinionFixtures(IReviews reviews, IComments comments) : IH
     public Task StartAsync(CancellationToken cancellationToken)
     {
         var date = new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
-        if (reviews.TryAdd(Review.Create("review-fixture", "user-1", "igdb-3", "Review fictícia de Atlas.", date)))
+        if (reviews.TryAdd(Review.Create("review-fixture", 1, "igdb-3", "Review fictícia de Atlas.", date)))
         {
-            comments.Add(Comment.Create("comment-b", "user-1", "review-fixture", "Segundo comentário.", date.AddDays(1)));
-            comments.Add(Comment.Create("comment-a", "user-1", "review-fixture", "Primeiro no empate.", date.AddDays(1)));
-            comments.Add(Comment.Create("comment-c", "user-1", "review-fixture", "Mais antigo.", date));
+            comments.Add(Comment.Create("comment-b", 1, "review-fixture", "Segundo comentário.", date.AddDays(1)));
+            comments.Add(Comment.Create("comment-a", 1, "review-fixture", "Primeiro no empate.", date.AddDays(1)));
+            comments.Add(Comment.Create("comment-c", 1, "review-fixture", "Mais antigo.", date));
         }
         return Task.CompletedTask;
     }

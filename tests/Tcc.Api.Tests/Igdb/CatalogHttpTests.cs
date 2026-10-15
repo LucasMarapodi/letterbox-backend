@@ -99,7 +99,7 @@ public sealed class CatalogHttpTests
 
     internal static WebApplicationFactory<Program> Host(IAsyncGameCatalog source) => new WebApplicationFactory<Program>()
         .WithWebHostBuilder(builder => builder.UseEnvironment("Development")
-            .ConfigureServices(services => services.AddSingleton(source)));
+            .ConfigureServices(services => { Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(services); services.AddSingleton(source); }));
 }
 
 internal sealed class HttpCatalog : IAsyncGameCatalog

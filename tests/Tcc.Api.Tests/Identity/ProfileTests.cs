@@ -14,13 +14,13 @@ public sealed class ProfileTests
     {
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
-        using var response = await client.GetAsync("/api/v1/users/user-1");
+        using var response = await client.GetAsync("/api/v1/users/1");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var user = await response.Content.ReadFromJsonAsync<PublicUser>();
         Assert.Equal("Ana", user?.DisplayName);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal(new[] { "avatarUrl", "bio", "displayName", "id", "username" }, json.RootElement.EnumerateObject().Select(property => property.Name).Order().ToArray());
-        using var missing = await client.GetAsync("/api/v1/users/missing");
+        using var missing = await client.GetAsync("/api/v1/users/999999");
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
         Assert.Equal("not_found", (await missing.Content.ReadFromJsonAsync<ErrorResult>())?.Code);
     }
@@ -85,7 +85,7 @@ public sealed class ProfileTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("validation_failed", (await response.Content.ReadFromJsonAsync<ErrorResult>())?.Code);
         var own = await client.GetFromJsonAsync<PublicUser>($"/api/v1/users/{login.User.Id}");
-        var ana = await client.GetFromJsonAsync<PublicUser>("/api/v1/users/user-1");
+        var ana = await client.GetFromJsonAsync<PublicUser>("/api/v1/users/1");
         Assert.Equal(login.User, own);
         Assert.Equal("Ana", ana?.DisplayName);
     }
@@ -103,9 +103,9 @@ public sealed class ProfileTests
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
         using var edited = await Patch(client, "{\"displayName\":\"B edited\"}");
         Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
-        Assert.Equal("Ana", (await client.GetFromJsonAsync<PublicUser>("/api/v1/users/user-1"))?.DisplayName);
+        Assert.Equal("Ana", (await client.GetFromJsonAsync<PublicUser>("/api/v1/users/1"))?.DisplayName);
         Assert.Equal("B edited", (await client.GetFromJsonAsync<PublicUser>($"/api/v1/users/{login.User.Id}"))?.DisplayName);
-        Assert.Equal("Ana", (await otherHost.GetFromJsonAsync<PublicUser>("/api/v1/users/user-1"))?.DisplayName);
+        Assert.Equal("Ana", (await otherHost.GetFromJsonAsync<PublicUser>("/api/v1/users/1"))?.DisplayName);
         using var missing = await otherHost.GetAsync($"/api/v1/users/{login.User.Id}");
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
     }
@@ -132,7 +132,7 @@ public sealed class ProfileTests
             using var response = await Patch(client, JsonSerializer.Serialize(input, JsonSerializerOptions.Web));
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
-        Assert.Equal(baseline, await client.GetFromJsonAsync<PublicUser>("/api/v1/users/user-1"));
+        Assert.Equal(baseline, await client.GetFromJsonAsync<PublicUser>("/api/v1/users/1"));
     }
 
     private sealed record ProfileInput(string DisplayName, string Bio, string? AvatarUrl);

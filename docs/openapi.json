@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "TCC Games API",
-    "description": "Catálogo IGDB com cache e catálogo local em memória; token de sessão opaco simulado. Reiniciar descarta dados e sessões. Listagem de jogos usa envelope paginado.",
+    "description": "Contas, perfis e sessões persistidos em PostgreSQL. IDs de usuários são inteiros. Token opaco com verificador SHA-256; reiniciar preserva identidade e sessões. Catálogo local, opiniões e relações ainda em memória nesta etapa. Listagem de jogos usa envelope paginado.",
     "version": "v1"
   },
   "servers": [
@@ -121,6 +121,20 @@
               }
             }
           },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -214,6 +228,20 @@
               }
             }
           },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -273,6 +301,20 @@
               }
             }
           },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -315,6 +357,20 @@
                 "example": {
                   "code": "unauthorized",
                   "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
                 }
               }
             }
@@ -397,6 +453,20 @@
                 "example": {
                   "code": "not_found",
                   "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
                 }
               }
             }
@@ -517,6 +587,20 @@
               }
             }
           },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -619,7 +703,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -759,7 +843,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -899,7 +983,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1029,7 +1113,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1163,7 +1247,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1333,7 +1417,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1502,7 +1586,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1654,7 +1738,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1797,7 +1881,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1859,7 +1943,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -1926,6 +2016,20 @@
               }
             }
           },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -1959,7 +2063,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -2009,6 +2119,20 @@
               }
             }
           },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -2043,7 +2167,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -2096,6 +2226,20 @@
               }
             }
           },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -2130,7 +2274,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -2174,6 +2324,20 @@
                 "example": {
                   "code": "not_found",
                   "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
                 }
               }
             }
@@ -2208,7 +2372,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -2252,6 +2422,20 @@
                 "example": {
                   "code": "not_found",
                   "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
                 }
               }
             }
@@ -2631,6 +2815,20 @@
               }
             }
           },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -2762,7 +2960,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2938,7 +3136,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3131,7 +3329,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3282,7 +3480,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3422,7 +3620,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3609,7 +3807,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3670,7 +3868,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -3762,7 +3966,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3916,7 +4120,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4060,7 +4264,7 @@
             }
           },
           "503": {
-            "description": "Integração externa indisponível.",
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4117,7 +4321,13 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "minimum": 1,
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -4142,6 +4352,20 @@
               }
             }
           },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
           "404": {
             "description": "Recurso não encontrado.",
             "content": {
@@ -4152,6 +4376,20 @@
                 "example": {
                   "code": "not_found",
                   "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
                 }
               }
             }
@@ -4249,6 +4487,20 @@
               }
             }
           },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
           "500": {
             "description": "Erro interno.",
             "content": {
@@ -4298,7 +4550,12 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "displayName": {
             "type": "string"
@@ -4326,7 +4583,12 @@
             "type": "string"
           },
           "userId": {
-            "type": "string"
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "reviewId": {
             "type": "string"
@@ -4396,7 +4658,12 @@
             "type": "string"
           },
           "userId": {
-            "type": "string"
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "targetType": {
             "type": "string"
@@ -4684,10 +4951,20 @@
             "type": "string"
           },
           "userId": {
-            "type": "string"
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "actorId": {
-            "type": "string"
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "reviewId": {
             "type": "string"
@@ -4745,7 +5022,12 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "username": {
             "type": "string"
@@ -4849,7 +5131,12 @@
             "type": "string"
           },
           "userId": {
-            "type": "string"
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "gameId": {
             "type": "string"
@@ -4911,7 +5198,12 @@
             "type": "string"
           },
           "userId": {
-            "type": "string"
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "gameId": {
             "type": "string"

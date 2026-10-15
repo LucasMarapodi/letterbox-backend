@@ -77,3 +77,7 @@ Métodos, status e acesso seguem abaixo. Erros 401 são comuns a todas as opera�
 ## Limites da evidência
 
 Esta entrega comprova contratos HTTP em testes, sem consumo de negócio pela interface. O relatório da terceira fase mantém os endpoints funcionais como PLANEJADO até observação no navegador. Não há SQL, IGDB real ou autenticação de produção. [CORS.md](CORS.md) explica configuração e a validação de navegador ainda pendente.
+
+## Transição P-PR-01
+
+IDs de usuários e referências userId/actorId são JSON number. Usuários, perfis e sessões persistem no PostgreSQL; falha SQL retorna 503/storage_unavailable. Adaptação do Front é dependência de liberação. Detalhes em [POSTGRES.md](POSTGRES.md).

@@ -63,7 +63,7 @@ public sealed class ReviewQueriesTests
     [InlineData("/api/v1/games/igdb-1/reviews/me", 401)]
     [InlineData("/api/v1/games/igdb-999/reviews", 404)]
     [InlineData("/api/v1/games/igdb-999/opinions", 404)]
-    [InlineData("/api/v1/users/missing/reviews", 404)]
+    [InlineData("/api/v1/users/999999/reviews", 404)]
     [InlineData("/api/v1/reviews/missing", 404)]
     public async Task Missing_resources_and_private_queries_are_rejected(string url, int status)
     {

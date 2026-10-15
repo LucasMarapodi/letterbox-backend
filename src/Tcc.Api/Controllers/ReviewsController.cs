@@ -42,7 +42,7 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     [HttpGet("users/{userId}/reviews")]
     [ProducesResponseType<IReadOnlyList<ReviewResponse>>(200)]
     [ProducesResponseType<ApiError>(404)]
-    public async Task<ActionResult<IReadOnlyList<ReviewResponse>>> ForUser(string userId, CancellationToken cancellationToken) =>
+    public async Task<ActionResult<IReadOnlyList<ReviewResponse>>> ForUser(int userId, CancellationToken cancellationToken) =>
         Ok((await queries.ForUser(userId, cancellationToken)).Select(ReviewResponse.From).ToArray());
     [Authorize]
     [HttpGet("games/{gameId}/reviews/me")]

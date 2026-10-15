@@ -36,7 +36,7 @@ public sealed class IdentityTests
     [Fact]
     public void Account_update_preserves_identity_and_credentials()
     {
-        var account = new UserAccount("id", "user-id", Email.Create("a@example.com"), "verifier", UserProfile.Create("A"));
+        var account = new UserAccount(1, "user-id", Email.Create("a@example.com"), "verifier", UserProfile.Create("A"));
         var updated = account.UpdateProfile(new ProfileChange("B", "", false, null));
         Assert.Equal(account.Id, updated.Id);
         Assert.Equal(account.Username, updated.Username);

@@ -34,7 +34,7 @@ public sealed class BootstrapTests
         services.AddPostgresPersistence(_ => null);
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
-        var failure = Assert.Throws<InvalidOperationException>(() => scope.ServiceProvider.GetRequiredService<TccDbContext>());
+        var failure = Assert.ThrowsAny<InvalidOperationException>(() => scope.ServiceProvider.GetRequiredService<TccDbContext>());
         Assert.Contains("ConnectionStrings__TccDatabase", failure.Message);
     }
 }

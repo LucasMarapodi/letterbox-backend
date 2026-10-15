@@ -11,14 +11,15 @@ public sealed class UsersController(GetUserProfile profiles, EditUserProfile edi
 {
     [HttpGet("{userId}")]
     [ProducesResponseType<PublicUserResponse>(200)]
+    [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(404)]
-    public ActionResult<PublicUserResponse> Get(string userId) => Ok(PublicUserResponse.From(profiles.Execute(userId)));
+    public async Task<ActionResult<PublicUserResponse>> Get(int userId, CancellationToken cancellationToken) => Ok(PublicUserResponse.From(await profiles.Execute(userId, cancellationToken)));
 
     [Authorize]
     [HttpPatch("me/profile")]
     [ProducesResponseType<PublicUserResponse>(200)]
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(401)]
-    public ActionResult<PublicUserResponse> Patch(ProfilePatchRequest request) =>
-        Ok(PublicUserResponse.From(edit.Execute(request.ToChange())));
+    public async Task<ActionResult<PublicUserResponse>> Patch(ProfilePatchRequest request, CancellationToken cancellationToken) =>
+        Ok(PublicUserResponse.From(await edit.Execute(request.ToChange(), cancellationToken)));
 }

@@ -23,7 +23,7 @@ public sealed class FollowingTests
         await ApiTest.SignIn(client, "B@example.com", "p");
         var own = await ApiTest.Publish(client);
         Assert.Empty((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/feed/following")) ?? []);
-        await SocialTest.Follow(client, "user-1");
+        await SocialTest.Follow(client, 1);
         var feed = await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/feed/following?userId=user-1");
         Assert.NotNull(feed);
         Assert.Equal(new[] { ana.Id, "review-fixture" }, feed.Select(review => review.Id));
@@ -37,7 +37,7 @@ public sealed class FollowingTests
         var newest = await ApiTest.Publish(client, "igdb-2");
         await ApiTest.SignIn(client, "B@example.com", "p");
         Assert.Equal(newest.Id, (await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/feed/following"))?[0].Id);
-        using var deleted = await client.DeleteAsync("/api/v1/users/user-1/follow");
+        using var deleted = await client.DeleteAsync("/api/v1/users/1/follow");
         deleted.EnsureSuccessStatusCode();
         Assert.Equal(c.Id, Assert.Single((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/feed/following")) ?? []).Id);
         await ApiTest.SignIn(client, "C@example.com", "p");

@@ -1,6 +1,6 @@
 # Convenções HTTP
 
-DTOs públicos são tipos C# nomeados, separados das entidades. JSON usa camelCase e IDs em strings opacas preservadas sem interpretação. Envelopes de ausência e propriedades nullable usam null explícito; commentId é omitido em notificações new-review. DateTimeOffset é normalizado para UTC na entrada e saída, em ISO 8601; releaseDate usa DateOnly no formato yyyy-MM-dd.
+DTOs públicos são tipos C# nomeados, separados das entidades. JSON usa camelCase. IDs de usuários (id de PublicUserResponse/AuthorResponse, userId e actorId) são JSON number desde P-PR-01. IDs de jogos, reviews, comentários e notificações continuam strings até suas PRs de persistência. Envelopes de ausência e propriedades nullable usam null explícito; commentId é omitido em notificações new-review. DateTimeOffset é normalizado para UTC na entrada e saída, em ISO 8601; releaseDate usa DateOnly no formato yyyy-MM-dd.
 
 HealthResponse: `{"status":"ok"}`.
 
@@ -15,6 +15,7 @@ ApiError: `{"code":"validation_failed","message":"Requisição inválida."}`. Me
 | 409 | conflict |
 | 500 | internal_error |
 | 503 | integration_unavailable |
+| 503 | storage_unavailable (falha PostgreSQL; sem fallback) |
 | 502 | integration_invalid_response |
 | 504 | integration_timeout |
 | outros erros HTTP | http_error |
@@ -23,7 +24,7 @@ Model binding inválido em controllers usa ApiError; respostas de erro sem corpo
 
 ## Compatibilidade com Front
 
-Id é string opaca, DateTime é string ISO; avatarUrl, coverUrl, releaseDate, averageRating e updatedAt aceitam null. A terceira fase integrou o Front por HTTP. A G-PR-04 mudou a listagem para envelope paginado; o adaptador dessa mudança e os avisos de stale permanecem pendentes da G-PR-05, sem arquivos Front alterados. Consulte [COMPATIBILITY.md](COMPATIBILITY.md).
+IDs de usuários passam a number; as demais identidades seguem na transição descrita em [POSTGRES.md](POSTGRES.md). DateTime é string ISO; avatarUrl, coverUrl, releaseDate, averageRating e updatedAt aceitam null. A adaptação de tipos e rotas do Front é uma dependência antes da liberação deste contrato. O Front não foi alterado. Consulte [COMPATIBILITY.md](COMPATIBILITY.md).
 
 GET /api/v1/games retorna GamePageResponse: items (GameResponse[]), page, pageSize e hasNextPage. Query: term, sort (release-desc/name-asc/name-desc), page (padrão 1) e pageSize (padrão 20, máximo 100). Sort omitido usa release-desc sem termo ou name-asc com termo. Não há total artificial. IDs game-* são inválidos; use igdb-{inteiro positivo}.
 

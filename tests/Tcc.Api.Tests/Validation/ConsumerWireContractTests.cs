@@ -24,7 +24,7 @@ public sealed class ConsumerWireContractTests
     }
 
     [Theory]
-    [InlineData("/api/v1/users/user-1/follow", "/api/v1/users/user-1/follow/me", "following")]
+    [InlineData("/api/v1/users/1/follow", "/api/v1/users/1/follow/me", "following")]
     [InlineData("/api/v1/favorites/game/igdb-1", "/api/v1/favorites/game/igdb-1", "favorite")]
     public async Task Delete_returns_zero_bytes_and_personal_lookup_confirms_absence(string path, string lookup, string property)
     {

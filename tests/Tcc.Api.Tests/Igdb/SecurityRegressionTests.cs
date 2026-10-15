@@ -27,7 +27,7 @@ public sealed class SecurityRegressionTests
         const string sentinel = "synthetic-security-sentinel-GPR06";
         using var logs = new SecurityLogs();
         var calls = 0;
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
         {
             builder.ConfigureLogging(logging => logging.ClearProviders().SetMinimumLevel(LogLevel.Trace).AddProvider(logs));
             builder.ConfigureServices(services =>
@@ -68,14 +68,14 @@ public sealed class SecurityRegressionTests
     }
 
     [Fact]
-    public void Production_dependencies_exclude_storage_packages_test_assemblies_and_fake_catalog()
+    public void Production_dependencies_are_scoped_and_exclude_test_assemblies_and_fake_catalog()
     {
         var root = WorkspaceRoot();
         foreach (var path in Directory.EnumerateFiles(Path.Combine(root, "src"), "*.csproj", SearchOption.AllDirectories))
         {
             var document = XDocument.Load(path);
             var packages = document.Descendants("PackageReference").Select(item => item.Attribute("Include")?.Value).ToArray();
-            Assert.All(packages, name => Assert.True(name is "Microsoft.AspNetCore.OpenApi" or "Swashbuckle.AspNetCore.SwaggerUI", "Dependência externa inesperada no backend."));
+            Assert.All(packages, name => Assert.True(name is "Microsoft.AspNetCore.OpenApi" or "Swashbuckle.AspNetCore.SwaggerUI" or "Microsoft.EntityFrameworkCore" or "Microsoft.EntityFrameworkCore.Relational" or "Microsoft.EntityFrameworkCore.Design" or "Npgsql.EntityFrameworkCore.PostgreSQL", "Dependência externa inesperada no backend."));
             Assert.All(document.Descendants("ProjectReference"), item => Assert.DoesNotContain("Tests", item.Attribute("Include")?.Value ?? ""));
         }
         Assert.DoesNotContain(typeof(IgdbGameCatalog).Assembly.GetTypes(), type => type.Name.Contains("Fake", StringComparison.Ordinal));

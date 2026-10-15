@@ -22,8 +22,8 @@ public sealed class StorageTests
         second.EnsureSuccessStatusCode();
         var accounts = host.Services.GetRequiredService<IUserAccounts>();
         var passwords = host.Services.GetRequiredService<IPasswordHasher>();
-        var a = accounts.FindByEmail(Email.Create("a@example.com"));
-        var b = accounts.FindByEmail(Email.Create("b@example.com"));
+        var a = await accounts.FindByEmailAsync(Email.Create("a@example.com"));
+        var b = await accounts.FindByEmailAsync(Email.Create("b@example.com"));
         Assert.NotNull(a);
         Assert.NotNull(b);
         Assert.NotEqual("p", a.PasswordHash);
@@ -56,7 +56,7 @@ public sealed class StorageTests
             ProfileTests.Patch(client, "{\"bio\":\"Concurrent bio\"}"));
         try { foreach (var response in responses) Assert.Equal(HttpStatusCode.OK, response.StatusCode); }
         finally { foreach (var response in responses) response.Dispose(); }
-        var user = await client.GetFromJsonAsync<PublicUser>("/api/v1/users/user-1");
+        var user = await client.GetFromJsonAsync<PublicUser>("/api/v1/users/1");
         Assert.Equal("Concurrent", user?.DisplayName);
         Assert.Equal("Concurrent bio", user?.Bio);
     }

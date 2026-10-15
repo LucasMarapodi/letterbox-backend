@@ -59,5 +59,5 @@ public sealed class EmptyReviews : IReviews
     public bool TryAdd(Review review) => false;
     public Review? Find(string id) => null;
     public IReadOnlyList<Review> All() => [];
-    public Review? Edit(string id, string actorId, string? text, DateTimeOffset now) => null;
+    public Review? Edit(string id, int actorId, string? text, DateTimeOffset now) => null;
 }

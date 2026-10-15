@@ -5,10 +5,10 @@ using Tcc.Api.Tests.Opinions;
 namespace Tcc.Api.Tests.Social;
 
 public sealed record FollowStatus(bool Following);
-public sealed record FavoriteDto(string Id, string UserId, string TargetType, string TargetId);
+public sealed record FavoriteDto(string Id, int UserId, string TargetType, string TargetId);
 public sealed record FavoriteStatus(FavoriteDto? Favorite);
 public sealed record FavoriteLists(GameDto[] Games, ReviewDto[] Reviews);
-public sealed record NotificationDto(string Id, string UserId, string ActorId, string ReviewId,
+public sealed record NotificationDto(string Id, int UserId, int ActorId, string ReviewId,
     DateTimeOffset CreatedAt, string Type, string? CommentId, AuthorDto Actor);
 
 internal static class SocialTest
@@ -19,7 +19,7 @@ internal static class SocialTest
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<PublicUser>() ?? throw new InvalidOperationException("Usuário ausente.");
     }
-    public static async Task Follow(HttpClient client, string target)
+    public static async Task Follow(HttpClient client, int target)
     {
         using var response = await client.PutAsync($"/api/v1/users/{target}/follow", null);
         response.EnsureSuccessStatusCode();

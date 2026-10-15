@@ -16,7 +16,7 @@ public sealed class ProjectionHttpTests
     public async Task Mixed_cache_local_and_missing_games_only_send_missing_ids_to_supplier()
     {
         var source = new MissingGamesCatalog();
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.AddSingleton<IExternalGameCatalog>(source)));
         var now = host.Services.GetRequiredService<TimeProvider>().GetUtcNow();
         await host.Services.GetRequiredService<ICatalogCache>().SaveGamesAsync([
@@ -25,7 +25,7 @@ public sealed class ProjectionHttpTests
             CatalogFlow.Game("igdb-11") with { Metadata = new(now.AddDays(-2)) }], default);
         var store = host.Services.GetRequiredService<IReviews>();
         foreach (var id in new[] { "igdb-10", "igdb-11", "igdb-12" })
-            store.TryAdd(Review.Create(id, "user-1", id, "Retained", now));
+            store.TryAdd(Review.Create(id, 1, id, "Retained", now));
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/api/v1/community/reviews/recent");
         response.EnsureSuccessStatusCode();
@@ -37,10 +37,10 @@ public sealed class ProjectionHttpTests
     [Fact]
     public async Task Unavailable_missing_game_does_not_erase_review_or_turn_supplier_failure_into_not_found()
     {
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.AddSingleton<IExternalGameCatalog, OfflineCatalog>()));
         var store = host.Services.GetRequiredService<IReviews>();
-        store.TryAdd(Review.Create("retained", "user-1", "igdb-10", "Original", CatalogFlow.Metadata.FetchedAt));
+        store.TryAdd(Review.Create("retained", 1, "igdb-10", "Original", CatalogFlow.Metadata.FetchedAt));
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/api/v1/community/reviews/recent");
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
@@ -53,16 +53,16 @@ public sealed class ProjectionHttpTests
         var catalog = new BatchCatalog();
         await using var host = CatalogHttpTests.Host(catalog);
         var reviews = host.Services.GetRequiredService<IReviews>();
-        reviews.TryAdd(Review.Create("a", "user-1", "igdb-10", "A", CatalogFlow.Metadata.FetchedAt));
+        reviews.TryAdd(Review.Create("a", 1, "igdb-10", "A", CatalogFlow.Metadata.FetchedAt));
         // Use an existing author for every projection; duplicate games across separate review IDs.
-        reviews.TryAdd(Review.Create("c", "user-1", "igdb-11", "C", CatalogFlow.Metadata.FetchedAt));
+        reviews.TryAdd(Review.Create("c", 1, "igdb-11", "C", CatalogFlow.Metadata.FetchedAt));
         using var client = host.CreateClient();
         // A second author is registered locally, with no external request.
         using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "test"));
         registration.EnsureSuccessStatusCode();
         // Replace b with a valid local author's ID by using the account port.
         var accounts = host.Services.GetRequiredService<Tcc.Application.Identity.IUserAccounts>();
-        var second = accounts.FindByEmail(Tcc.Domain.Identity.Email.Create("b@example.com")) ?? throw new InvalidOperationException();
+        var second = await accounts.FindByEmailAsync(Tcc.Domain.Identity.Email.Create("b@example.com")) ?? throw new InvalidOperationException();
         reviews.TryAdd(Review.Create("d", second.Id, "igdb-10", "D", CatalogFlow.Metadata.FetchedAt));
         using var response = await client.GetAsync("/api/v1/community/reviews/recent");
         response.EnsureSuccessStatusCode();
@@ -76,12 +76,12 @@ public sealed class ProjectionHttpTests
     public async Task Known_local_review_is_readable_with_empty_cache_and_unavailable_supplier()
     {
         var external = new OfflineCatalog();
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.AddSingleton<IExternalGameCatalog>(external)));
         await host.Services.GetRequiredService<ILocalGameCatalog>().SaveGamesAsync([
             CatalogFlow.Game("igdb-10") with { Metadata = new(CatalogFlow.Metadata.FetchedAt.AddDays(-2), true) }], default);
         var reviews = host.Services.GetRequiredService<IReviews>();
-        reviews.TryAdd(Review.Create("known", "user-1", "igdb-10", "Keep me", CatalogFlow.Metadata.FetchedAt));
+        reviews.TryAdd(Review.Create("known", 1, "igdb-10", "Keep me", CatalogFlow.Metadata.FetchedAt));
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/api/v1/reviews/known");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -95,7 +95,7 @@ public sealed class ProjectionHttpTests
     {
         var catalog = new BatchCatalog();
         await using var host = CatalogHttpTests.Host(catalog);
-        host.Services.GetRequiredService<IReviews>().TryAdd(Review.Create("known", "user-1", "igdb-10", "Keep", CatalogFlow.Metadata.FetchedAt));
+        host.Services.GetRequiredService<IReviews>().TryAdd(Review.Create("known", 1, "igdb-10", "Keep", CatalogFlow.Metadata.FetchedAt));
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/api/v1/reviews/known/comments");
         response.EnsureSuccessStatusCode();

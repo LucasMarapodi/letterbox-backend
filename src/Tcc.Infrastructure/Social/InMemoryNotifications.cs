@@ -5,7 +5,7 @@ namespace Tcc.Infrastructure.Social;
 
 public sealed class InMemoryNotifications(InMemoryPublicationScope publications) : INotifications
 {
-    private readonly Dictionary<(NotificationType Type, string Event, string Recipient), Notification> notifications = [];
+    private readonly Dictionary<(NotificationType Type, string Event, int Recipient), Notification> notifications = [];
     public void AddRange(IReadOnlyList<Notification> events)
     {
         lock (publications.Gate)
@@ -19,7 +19,7 @@ public sealed class InMemoryNotifications(InMemoryPublicationScope publications)
             }
         }
     }
-    public IReadOnlyList<Notification> ForUser(string userId)
+    public IReadOnlyList<Notification> ForUser(int userId)
     {
         lock (publications.Gate) return notifications.Values.Where(item => item.UserId == userId).ToArray();
     }

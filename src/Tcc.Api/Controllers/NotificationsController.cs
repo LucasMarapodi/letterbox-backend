@@ -9,6 +9,6 @@ namespace Tcc.Api.Controllers;
 public sealed class NotificationsController(QueryNotifications notifications) : ControllerBase
 {
     [HttpGet]
-    public ActionResult<IReadOnlyList<NotificationResponse>> Get() =>
-        Ok(notifications.Execute().Select(NotificationResponse.From).ToArray());
+    public async Task<ActionResult<IReadOnlyList<NotificationResponse>>> Get(CancellationToken cancellationToken) =>
+        Ok((await notifications.Execute(cancellationToken)).Select(NotificationResponse.From).ToArray());
 }

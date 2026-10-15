@@ -17,6 +17,7 @@ public sealed class ApiExceptionHandler : IExceptionHandler
             CatalogIntegrationUnavailableException => 503,
             CatalogInvalidResponseException => 502,
             CatalogTimeoutException => 504,
+            DatabaseUnavailableException => 503,
             ReviewOwnershipException => 403,
             ResourceFailure { Kind: ResourceFailureKind.NotFound } => 404,
             ResourceFailure { Kind: ResourceFailureKind.Conflict } => 409,
@@ -28,7 +29,9 @@ public sealed class ApiExceptionHandler : IExceptionHandler
         };
         if (status == 0) return false;
         context.Response.StatusCode = status;
-        await context.Response.WriteAsJsonAsync(ApiError.FromStatus(status), cancellationToken);
+        var error = exception is DatabaseUnavailableException
+            ? new ApiError("storage_unavailable", "Persistência temporariamente indisponível.") : ApiError.FromStatus(status);
+        await context.Response.WriteAsJsonAsync(error, cancellationToken);
         return true;
     }
 }

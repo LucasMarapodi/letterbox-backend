@@ -1,9 +1,9 @@
 namespace Tcc.Api.Configuration;
 
-public static class LocalIgdbEnvironment
+public static class LocalBackendEnvironment
 {
     private static readonly HashSet<string> Names = new(StringComparer.Ordinal)
-    { "IGDB__ClientId", "IGDB__ClientSecret", "IGDB__TokenRefreshMarginSeconds" };
+    { "IGDB__ClientId", "IGDB__ClientSecret", "IGDB__TokenRefreshMarginSeconds", "ConnectionStrings__TccDatabase" };
 
     public static Func<string, string?> CreateReader(string path, Func<string, string?> processVariable)
     {
@@ -44,5 +44,5 @@ public static class LocalIgdbEnvironment
         catch (IOException) { throw InvalidFile(); }
         catch (UnauthorizedAccessException) { throw InvalidFile(); }
     }
-    private static InvalidOperationException InvalidFile() => new("Arquivo .env local inválido ou indisponível; verifique as variáveis IGDB__ sem expor seus valores.");
+    private static InvalidOperationException InvalidFile() => new("Arquivo .env local inválido ou indisponível; verifique as variáveis configuradas sem expor seus valores.");
 }

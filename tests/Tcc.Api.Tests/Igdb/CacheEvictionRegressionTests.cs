@@ -14,14 +14,14 @@ public sealed class CacheEvictionRegressionTests
     public async Task Targeted_eviction_preserves_other_entries_local_catalog_and_offline_projection()
     {
         var supplier = new OfflineCatalog();
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.AddSingleton<IExternalGameCatalog>(supplier)));
         var cache = Assert.IsType<InMemoryCatalogCache>(host.Services.GetRequiredService<ICatalogCache>());
         var local = host.Services.GetRequiredService<ILocalGameCatalog>();
         var games = new[] { CatalogFlow.Game("igdb-10"), CatalogFlow.Game("igdb-11") };
         await local.SaveGamesAsync(games, default);
         await cache.SaveGamesAsync(games, default);
-        host.Services.GetRequiredService<IReviews>().TryAdd(Review.Create("known", "user-1", "igdb-10", "Retained", CatalogFlow.Metadata.FetchedAt));
+        host.Services.GetRequiredService<IReviews>().TryAdd(Review.Create("known", 1, "igdb-10", "Retained", CatalogFlow.Metadata.FetchedAt));
         Assert.True(cache.EvictGame("igdb-10"));
         Assert.False(cache.EvictGame("igdb-10"));
         Assert.Equal("igdb-11", Assert.Single(await cache.FindGamesAsync(["igdb-10", "igdb-11"], default)).Key);

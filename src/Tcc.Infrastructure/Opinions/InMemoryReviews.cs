@@ -9,7 +9,7 @@ public sealed class InMemoryReviews : IReviews
     private readonly Lock gate;
     private readonly InMemoryPublicationScope publications;
     private readonly Dictionary<string, Review> reviews = new(StringComparer.Ordinal);
-    private readonly HashSet<(string User, string Game)> pairs = [];
+    private readonly HashSet<(int User, string Game)> pairs = [];
 
     public InMemoryReviews(InMemoryPublicationScope publications)
     {
@@ -31,7 +31,7 @@ public sealed class InMemoryReviews : IReviews
     }
     public Review? Find(string id) { lock (gate) return reviews.GetValueOrDefault(id); }
     public IReadOnlyList<Review> All() { lock (gate) return reviews.Values.ToArray(); }
-    public Review? Edit(string id, string actorId, string? text, DateTimeOffset now)
+    public Review? Edit(string id, int actorId, string? text, DateTimeOffset now)
     {
         lock (gate)
         {

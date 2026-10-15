@@ -16,7 +16,7 @@ public sealed class RegistrationTests
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var user = await response.Content.ReadFromJsonAsync<PublicUser>();
         Assert.NotNull(user);
-        Assert.False(string.IsNullOrWhiteSpace(user.Id));
+        Assert.True(user.Id > 0);
         Assert.Equal($"user-{user.Id}", user.Username);
         Assert.Equal("Lucas", user.DisplayName);
         Assert.Equal("", user.Bio);

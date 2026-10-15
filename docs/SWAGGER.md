@@ -25,7 +25,7 @@ Para chamadas privadas:
 4. Execute as operações privadas. A interface monta o header Bearer exigido pelo contrato.
 5. Ao encerrar, execute `POST /api/v1/auth/logout` para revogar a sessão e remova a autorização no Swagger.
 
-A autorização não é persistida após recarregar a página. Remover o token no botão Authorize apenas limpa a interface; a revogação exige logout. Reiniciar o backend também invalida os tokens e restaura o estado em memória. Escritas pelo Swagger usam os mesmos endpoints e alteram o estado visto pelos outros clientes.
+A autorização da interface não é persistida após recarregar a página. Remover o token no botão Authorize apenas limpa a interface; a revogação exige logout. Desde P-PR-01, reiniciar preserva usuários, perfis e sessões no PostgreSQL; conteúdo e relações ainda são transitórios. Registre sua conta antes do login: não há seed de usuários no runtime. Escritas pelo Swagger usam os mesmos endpoints e alteram o estado visto pelos outros clientes.
 
 ## Manutenção
 
