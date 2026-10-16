@@ -24,6 +24,8 @@ Leitura de `Front/src/models/index.ts`: Id é string, DateTime é string ISO; av
 
 ## OpenAPI
 
+Interface interativa em `/swagger`, servida pelo próprio backend em todos os ambientes, consumindo o documento existente em `/openapi/v1.json`. Operações privadas podem ser executadas após informar o token em Authorize; a autorização não é persistida após reload. Consulte [SWAGGER.md](SWAGGER.md).
+
 Documento OpenAPI 3.1 em `GET /openapi/v1.json`, público em todos os ambientes. São 34 operações funcionais mais health; o endpoint de documentação e probes de teste não entram no inventário. Schemas vêm dos DTOs, com status de sucesso/erros, exemplos fictícios, formatos de data e requisitos Bearer aplicados somente às operações privadas. As regras semânticas de trim/limites são descritas nas operações e contratos.
 
 Cópia exportada da API executada em Release: [openapi.json](openapi.json), com servidor relativo `/` para não fixar uma porta de verificação. Não contém credenciais reais nem dados de sessão do processo. Para atualizar, execute a API e salve a resposta de `/openapi/v1.json` em Back/docs/openapi.json; o arquivo é um artefato gerado, não a fonte das rotas. Os testes OpenApiTests comparam o documento vivo ao inventário planejado e aos requisitos de schemas/acesso.
