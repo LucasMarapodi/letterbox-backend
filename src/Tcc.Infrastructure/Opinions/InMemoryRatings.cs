@@ -6,12 +6,12 @@ namespace Tcc.Infrastructure.Opinions;
 public sealed class InMemoryRatings : IRatings
 {
     private readonly Lock gate = new();
-    private readonly Dictionary<(int User, string Game), Rating> ratings = [];
-    public Rating? Find(int userId, string gameId)
+    private readonly Dictionary<(int User, int Game), Rating> ratings = [];
+    public Rating? Find(int userId, int gameId)
     {
         lock (gate) return ratings.GetValueOrDefault((userId, gameId));
     }
-    public Rating Set(int userId, string gameId, RatingValue value)
+    public Rating Set(int userId, int gameId, RatingValue value)
     {
         lock (gate)
         {
@@ -21,7 +21,7 @@ public sealed class InMemoryRatings : IRatings
             return rating;
         }
     }
-    public IReadOnlyList<Rating> ForGame(string gameId)
+    public IReadOnlyList<Rating> ForGame(int gameId)
     {
         lock (gate) return ratings.Values.Where(rating => rating.GameId == gameId).ToArray();
     }

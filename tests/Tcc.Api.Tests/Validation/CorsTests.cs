@@ -16,7 +16,7 @@ public sealed class CorsTests
     [InlineData("/api/v1/games", 200)]
     [InlineData("/api/v1/games?sort=invalid", 400)]
     [InlineData("/api/v1/auth/me", 401)]
-    [InlineData("/api/v1/games/igdb-999", 404)]
+    [InlineData("/api/v1/games/999", 404)]
     [InlineData("/__tests/failure/403", 403)]
     [InlineData("/__tests/failure/409", 409)]
     [InlineData("/__tests/failure/500", 500)]
@@ -36,8 +36,8 @@ public sealed class CorsTests
     [Theory]
     [InlineData("POST", "/api/v1/auth/register")]
     [InlineData("PATCH", "/api/v1/users/me/profile")]
-    [InlineData("PUT", "/api/v1/games/igdb-1/rating/me")]
-    [InlineData("DELETE", "/api/v1/favorites/game/igdb-1")]
+    [InlineData("PUT", "/api/v1/games/1/rating/me")]
+    [InlineData("DELETE", "/api/v1/favorites/game/1")]
     public async Task Preflight_accepts_json_and_bearer_without_a_session(string method, string path)
     {
         await using var host = new CorsFactory(Origin);
@@ -67,7 +67,7 @@ public sealed class CorsTests
         using var response = await client.SendAsync(request);
         Assert.Equal(200, (int)response.StatusCode);
         Assert.False(response.Headers.Contains("Access-Control-Allow-Origin"));
-        using var preflight = Preflight(origin, "PUT", "/api/v1/games/igdb-1/rating/me");
+        using var preflight = Preflight(origin, "PUT", "/api/v1/games/1/rating/me");
         using var options = await client.SendAsync(preflight);
         Assert.False(options.Headers.Contains("Access-Control-Allow-Origin"));
         Assert.False(options.Headers.Contains("Access-Control-Allow-Credentials"));

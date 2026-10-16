@@ -6,21 +6,21 @@ namespace Tcc.Application.Opinions;
 
 public interface IRatings
 {
-    Rating? Find(int userId, string gameId);
-    Rating Set(int userId, string gameId, RatingValue value);
-    IReadOnlyList<Rating> ForGame(string gameId);
+    Rating? Find(int userId, int gameId);
+    Rating Set(int userId, int gameId, RatingValue value);
+    IReadOnlyList<Rating> ForGame(int gameId);
 }
 
 public sealed class PersonalRating(IRatings ratings, QueryGames games, ICurrentSession current, SessionAccess access,
     Tcc.Application.Social.IPublicationScope publications)
 {
-    public async Task<Rating?> Get(string gameId, CancellationToken cancellationToken = default)
+    public async Task<Rating?> Get(int gameId, CancellationToken cancellationToken = default)
     {
         var userId = (await access.Require(current, cancellationToken)).UserId;
         await games.GetAsync(gameId, cancellationToken);
         return ratings.Find(userId, gameId);
     }
-    public async Task<Rating> Set(string gameId, double value, CancellationToken cancellationToken = default)
+    public async Task<Rating> Set(int gameId, double value, CancellationToken cancellationToken = default)
     {
         var userId = (await access.Require(current, cancellationToken)).UserId;
         var ratingValue = RatingValue.Create(value);
@@ -37,7 +37,7 @@ public sealed class PersonalRating(IRatings ratings, QueryGames games, ICurrentS
 
 public sealed class LocalRatingAverage(IRatings ratings)
 {
-    public double? ForGame(string gameId)
+    public double? ForGame(int gameId)
     {
         var values = ratings.ForGame(gameId);
         return values.Count == 0 ? null : values.Average(rating => rating.Value.Value);

@@ -8,8 +8,14 @@ public sealed class InMemoryCatalogCache : ICatalogCache
     private readonly CatalogMemoryOptions options;
     private readonly object gate = new();
     private readonly BoundedCatalogMap<CatalogKey, CatalogPage> pages;
-    private readonly BoundedCatalogMap<string, Entry> games;
+    private readonly BoundedCatalogMap<int, Entry> games;
     private sealed record Entry(CatalogGame Data, DateTimeOffset ExpiresAt);
+    public Task InvalidateAsync(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        lock (gate) { pages.Clear(); games.Clear(); }
+        return Task.CompletedTask;
+    }
     public InMemoryCatalogCache(TimeProvider clock, CatalogMemoryOptions options)
     { options.Validate(); this.clock = clock; this.options = options; pages = new(options.CachePageLimit); games = new(options.CacheGameLimit); }
     public Task<CatalogPage?> FindPageAsync(CatalogSearch query, CancellationToken cancellationToken)
@@ -26,11 +32,11 @@ public sealed class InMemoryCatalogCache : ICatalogCache
             return Task.FromResult<CatalogPage?>(CatalogStorage.ReadPage(page, query, items, now, options));
         }
     }
-    public Task<IReadOnlyDictionary<string, CatalogGame>> FindGamesAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken)
+    public Task<IReadOnlyDictionary<int, CatalogGame>> FindGamesAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var unique = CatalogIds.Unique(ids);
-        var result = new Dictionary<string, CatalogGame>(StringComparer.Ordinal);
+        var result = new Dictionary<int, CatalogGame>();
         lock (gate)
         {
             var now = clock.GetUtcNow();
@@ -41,7 +47,7 @@ public sealed class InMemoryCatalogCache : ICatalogCache
                 result.Add(id, CatalogStorage.Read(entry.Data, now, options));
             }
         }
-        return Task.FromResult<IReadOnlyDictionary<string, CatalogGame>>(result);
+        return Task.FromResult<IReadOnlyDictionary<int, CatalogGame>>(result);
     }
     public Task SavePageAsync(CatalogPage page, CancellationToken cancellationToken)
     {
@@ -67,7 +73,7 @@ public sealed class InMemoryCatalogCache : ICatalogCache
         return Task.CompletedTask;
     }
     // Controlled maintenance on the infrastructure instance; never exposed as an HTTP endpoint.
-    public bool EvictGame(string id)
+    public bool EvictGame(int id)
     {
         CatalogIds.Parse(id);
         lock (gate)

@@ -64,7 +64,7 @@ public sealed class CredentialTests
     [Fact]
     public async Task Health_and_OpenAPI_do_not_read_credentials_or_acquire_an_external_token()
     {
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.AddSingleton<IgdbCredentialOptions>(_ =>
                 throw new InvalidOperationException("Credentials must remain lazy"))));
         using var client = host.CreateClient();
@@ -85,7 +85,7 @@ public sealed class CredentialTests
     public async Task Known_catalog_reads_do_not_activate_external_authentication_or_transport()
     {
         var calls = 0;
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services =>
             {
                 services.AddSingleton<IgdbCredentialOptions>(_ => throw new InvalidOperationException("No credentials on local lookup"));
@@ -99,12 +99,12 @@ public sealed class CredentialTests
         using var client = host.CreateClient();
         var local = host.Services.GetRequiredService<Tcc.Application.Catalog.ILocalGameCatalog>();
         var metadata = new Tcc.Application.Catalog.CatalogMetadata(DateTimeOffset.UtcNow);
-        var game = CatalogFlow.Game("igdb-1") with { Metadata = metadata };
+        var game = CatalogFlow.Game(1) with { Metadata = metadata };
         await local.SaveGamesAsync([game], default);
         await local.SavePageAsync(new(Tcc.Application.Catalog.CatalogSearch.Create(), [game], false, metadata), default);
         host.Services.GetRequiredService<Tcc.Application.Opinions.IReviews>().TryAdd(Tcc.Domain.Opinions.Review.Create(
-            "known", 1, "igdb-1", "Known real catalog game", metadata.FetchedAt));
-        foreach (var path in new[] { "/api/v1/games", "/api/v1/games/igdb-1", "/api/v1/games/igdb-1/opinions", "/api/v1/reviews/known" })
+            "known", 1, 1, "Known real catalog game", metadata.FetchedAt));
+        foreach (var path in new[] { "/api/v1/games", "/api/v1/games/1", "/api/v1/games/1/opinions", "/api/v1/reviews/known" })
         {
             using var response = await client.GetAsync(path);
             Assert.Equal(200, (int)response.StatusCode);

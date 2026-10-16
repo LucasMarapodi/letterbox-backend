@@ -17,6 +17,7 @@ internal static class EndpointInventory
         new("get", "/api/v1/users/{userId}/followers", 200, false, 404),
         new("get", "/api/v1/users/{userId}/following", 200, false, 404),
         new("get", "/api/v1/games", 200, false, 400),
+        new("get", "/api/v1/games/igdb/{igdbId}", 200, false, 400, 404),
         new("get", "/api/v1/games/{gameId}", 200, false, 404),
         new("get", "/api/v1/games/{gameId}/opinions", 200, false, 404),
         new("get", "/api/v1/games/{gameId}/rating/me", 200, true, 404),

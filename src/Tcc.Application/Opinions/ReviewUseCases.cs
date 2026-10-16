@@ -13,7 +13,7 @@ public interface IReviews
     Review? Edit(string id, int actorId, string? text, DateTimeOffset now);
 }
 public sealed record PublicAuthor(int Id, string DisplayName, string? AvatarUrl);
-public sealed record PublicGame(string Id, string Title, string? CoverUrl);
+public sealed record PublicGame(int Id, string Title, string? CoverUrl);
 public sealed record ReviewDetails(Review Review, PublicAuthor Author, PublicGame Game);
 public sealed class OpinionViews(IUserAccounts accounts, QueryGames games)
 {
@@ -43,7 +43,7 @@ public sealed class OpinionViews(IUserAccounts accounts, QueryGames games)
 public sealed class PublishReview(IReviews reviews, QueryGames games, ICurrentSession current,
     SessionAccess access, TimeProvider clock, OpinionViews views, PublicationNotifications notifications, IPublicationScope publications)
 {
-    public async Task<ReviewDetails> Execute(string gameId, string? text, CancellationToken cancellationToken = default)
+    public async Task<ReviewDetails> Execute(int gameId, string? text, CancellationToken cancellationToken = default)
     {
         var userId = (await access.Require(current, cancellationToken)).UserId;
         var draft = Review.Create(Guid.NewGuid().ToString("N"), userId, gameId, text, clock.GetUtcNow());

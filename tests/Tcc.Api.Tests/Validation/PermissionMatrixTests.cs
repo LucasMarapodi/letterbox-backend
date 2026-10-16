@@ -38,7 +38,7 @@ public sealed class PermissionMatrixTests
         }
         client.DefaultRequestHeaders.Authorization = null;
         Assert.Equal("Ana", (await client.GetFromJsonAsync<PublicUser>("/api/v1/users/1"))?.DisplayName);
-        Assert.Empty((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/igdb-1/reviews")) ?? []);
+        Assert.Empty((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/1/reviews")) ?? []);
     }
 
     [Fact]
@@ -53,6 +53,6 @@ public sealed class PermissionMatrixTests
         }
     }
 
-    private static string Resolve(string path) => path.Replace("{userId}", "1").Replace("{gameId}", "igdb-1")
-        .Replace("{reviewId}", "review-fixture").Replace("{kind}", "game").Replace("{targetId}", "igdb-1");
+    private static string Resolve(string path) => path.Replace("{igdbId}", "1").Replace("{userId}", "1").Replace("{gameId}", "1")
+        .Replace("{reviewId}", "review-fixture").Replace("{kind}", "game").Replace("{targetId}", "1");
 }

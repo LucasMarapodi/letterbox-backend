@@ -21,7 +21,7 @@ public sealed class EditReviewTests
         Assert.NotNull(updated);
         Assert.Equal(original with { Text = "Edited", UpdatedAt = clock.GetUtcNow() }, updated);
         Assert.Equal(updated, await client.GetFromJsonAsync<ReviewDto>($"/api/v1/reviews/{original.Id}"));
-        Assert.Single((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/igdb-1/reviews")) ?? []);
+        Assert.Single((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/1/reviews")) ?? []);
         using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
         registration.EnsureSuccessStatusCode();
         await ApiTest.SignIn(client, "b@example.com", "p");

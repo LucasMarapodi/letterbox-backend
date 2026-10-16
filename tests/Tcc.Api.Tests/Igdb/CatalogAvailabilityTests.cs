@@ -14,13 +14,13 @@ public sealed class CatalogAvailabilityTests
     {
         var flow = new CatalogFlow();
         var query = CatalogSearch.Create("Game");
-        var cached = new CatalogPage(query, [CatalogFlow.Game("igdb-1")], true, CatalogFlow.Metadata with { IsStale = true });
-        var local = cached with { Items = [CatalogFlow.Game("igdb-2")] };
+        var cached = new CatalogPage(query, [CatalogFlow.Game(1)], true, CatalogFlow.Metadata with { IsStale = true });
+        var local = cached with { Items = [CatalogFlow.Game(2)] };
         flow.Cache.Page = cached; flow.Local.Page = local;
         var source = new FailingSupplier(new CatalogIntegrationUnavailableException());
         var catalog = new AsyncGameCatalog(flow.Cache, flow.Local, source);
         var result = await catalog.SearchAsync(query);
-        Assert.Equal("igdb-1", Assert.Single(result.Items).Game.Id);
+        Assert.Equal(1, Assert.Single(result.Items).Game.Id);
         Assert.True(result.Metadata.IsStale);
         Assert.Equal(CatalogFlow.Metadata.FetchedAt, result.Metadata.FetchedAt);
         Assert.DoesNotContain("cache.save-page", flow.Events);
@@ -38,7 +38,7 @@ public sealed class CatalogAvailabilityTests
         var cache = new InMemoryCatalogCache(clock, options);
         var local = new InMemoryLocalGameCatalog(clock, options);
         var query = CatalogSearch.Create("Game");
-        await local.SavePageAsync(new(query, [CatalogFlow.Game("igdb-1")], false, CatalogFlow.Metadata), default);
+        await local.SavePageAsync(new(query, [CatalogFlow.Game(1)], false, CatalogFlow.Metadata), default);
         clock.Now += TimeSpan.FromMinutes(ageMinutes);
         var catalog = new AsyncGameCatalog(cache, local, new FailingSupplier(new CatalogIntegrationUnavailableException()));
         if (allowed)
@@ -48,7 +48,7 @@ public sealed class CatalogAvailabilityTests
             Assert.Equal(CatalogFlow.Metadata.FetchedAt, page.Metadata.FetchedAt);
         }
         else await Assert.ThrowsAsync<CatalogIntegrationUnavailableException>(() => catalog.SearchAsync(query));
-        Assert.NotEmpty(await local.FindGamesAsync(["igdb-1"], default));
+        Assert.NotEmpty(await local.FindGamesAsync([1], default));
     }
 
     [Fact]
@@ -69,10 +69,10 @@ public sealed class CatalogAvailabilityTests
         var clock = new TestClock { Now = CatalogFlow.Metadata.FetchedAt.AddHours(2) };
         var options = new CatalogMemoryOptions();
         var local = new InMemoryLocalGameCatalog(clock, options);
-        await local.SaveGamesAsync([CatalogFlow.Game("igdb-1")], default);
+        await local.SaveGamesAsync([CatalogFlow.Game(1)], default);
         var source = new FailingSupplier(new CatalogIntegrationUnavailableException());
         var catalog = new AsyncGameCatalog(new InMemoryCatalogCache(clock, options), local, source);
-        var game = await catalog.GetAsync("igdb-1");
+        var game = await catalog.GetAsync(1);
         Assert.NotNull(game);
         Assert.True(game.Metadata.IsStale);
         Assert.Equal(CatalogFlow.Metadata.FetchedAt, game.Metadata.FetchedAt);
@@ -86,16 +86,16 @@ public sealed class CatalogAvailabilityTests
         var options = new CatalogMemoryOptions();
         var local = new InMemoryLocalGameCatalog(clock, options);
         var cache = new InMemoryCatalogCache(clock, options);
-        await local.SaveGamesAsync([CatalogFlow.Game("igdb-1")], default);
+        await local.SaveGamesAsync([CatalogFlow.Game(1)], default);
         var offline = new AsyncGameCatalog(cache, local, new FailingSupplier(new CatalogTimeoutException()));
-        var fallback = await offline.RefreshAsync("igdb-1");
+        var fallback = await offline.RefreshAsync(1);
         Assert.NotNull(fallback);
         Assert.True(fallback.Metadata.IsStale);
         Assert.Equal(CatalogFlow.Metadata.FetchedAt, fallback.Metadata.FetchedAt);
         var empty = new CatalogFlow();
         var absent = new AsyncGameCatalog(cache, local, empty.External);
-        Assert.Null(await absent.RefreshAsync("igdb-1"));
-        Assert.NotEmpty(await local.FindGamesAsync(["igdb-1"], default));
+        Assert.Null(await absent.RefreshAsync(1));
+        Assert.NotEmpty(await local.FindGamesAsync([1], default));
     }
 
     [Theory]
@@ -134,6 +134,6 @@ internal sealed class FailingSupplier(Exception failure) : IExternalGameCatalog
     public int Calls;
     public Task<CatalogPage> SearchAsync(CatalogSearch query, CancellationToken cancellationToken)
     { Calls++; return Task.FromException<CatalogPage>(failure); }
-    public Task<IReadOnlyDictionary<string, CatalogGame>> ResolveAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken)
-    { Calls++; return Task.FromException<IReadOnlyDictionary<string, CatalogGame>>(failure); }
+    public Task<IReadOnlyDictionary<long, CatalogGame>> ResolveAsync(IReadOnlyList<long> ids, CancellationToken cancellationToken)
+    { Calls++; return Task.FromException<IReadOnlyDictionary<long, CatalogGame>>(failure); }
 }

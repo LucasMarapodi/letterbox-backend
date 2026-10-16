@@ -12,10 +12,10 @@ public sealed class CatalogHttpTests
     [Fact]
     public async Task Production_has_no_catalog_or_opinion_fixtures_and_legacy_ids_are_invalid()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices)));
         Assert.Empty(host.Services.GetRequiredService<Tcc.Application.Opinions.IReviews>().All());
         Assert.Empty(host.Services.GetRequiredService<Tcc.Application.Opinions.IComments>().ForReview("review-fixture"));
-        Assert.Empty(await host.Services.GetRequiredService<ILocalGameCatalog>().FindGamesAsync(["igdb-1"], default));
+        Assert.Empty(await host.Services.GetRequiredService<ILocalGameCatalog>().FindGamesAsync([1], default));
         Assert.DoesNotContain(typeof(Tcc.Infrastructure.Igdb.IgdbGameCatalog).Assembly.GetTypes(), type => type.Name == "FakeIgdbCatalog");
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/api/v1/games/game-1");
@@ -25,7 +25,7 @@ public sealed class CatalogHttpTests
     [Fact]
     public async Task Openapi_describes_envelope_pagination_metadata_and_supplier_errors()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices)));
         using var client = host.CreateClient();
         using var json = JsonDocument.Parse(await client.GetStringAsync("/openapi/v1.json"));
         var operation = json.RootElement.GetProperty("paths").GetProperty("/api/v1/games").GetProperty("get");
@@ -88,16 +88,16 @@ public sealed class CatalogHttpTests
     {
         await using var host = Host(new HttpCatalog());
         using var client = host.CreateClient();
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/games/igdb-1");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/games/1");
         request.Headers.Add("Origin", "http://localhost:5173");
         using var response = await client.SendAsync(request);
         response.EnsureSuccessStatusCode();
         Assert.Contains("X-Catalog-Stale", string.Join(',', response.Headers.GetValues("Access-Control-Expose-Headers")));
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal("igdb-1", json.RootElement.GetProperty("id").GetString());
+        Assert.Equal(1, json.RootElement.GetProperty("id").GetInt32());
     }
 
-    internal static WebApplicationFactory<Program> Host(IAsyncGameCatalog source) => new WebApplicationFactory<Program>()
+    internal static WebApplicationFactory<Program> Host(IAsyncGameCatalog source) => new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices)))
         .WithWebHostBuilder(builder => builder.UseEnvironment("Development")
             .ConfigureServices(services => { Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(services); services.AddSingleton(source); }));
 }
@@ -111,10 +111,10 @@ internal sealed class HttpCatalog : IAsyncGameCatalog
         Query = query;
         if (Failure != 0) throw Failure switch
         { 502 => new CatalogInvalidResponseException(), 504 => new CatalogTimeoutException(), _ => new CatalogIntegrationUnavailableException() };
-        return Task.FromResult(new CatalogPage(query, [CatalogFlow.Game("igdb-1")], false, CatalogFlow.Metadata));
+        return Task.FromResult(new CatalogPage(query, [CatalogFlow.Game(1)], false, CatalogFlow.Metadata));
     }
-    public Task<CatalogGame?> GetAsync(string id, CancellationToken cancellationToken = default) => Task.FromResult<CatalogGame?>(CatalogFlow.Game(id));
-    public Task<CatalogGame?> RefreshAsync(string id, CancellationToken cancellationToken = default) => GetAsync(id, cancellationToken);
-    public Task<IReadOnlyDictionary<string, CatalogGame>> ResolveAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyDictionary<string, CatalogGame>>(ids.Distinct().ToDictionary(id => id, CatalogFlow.Game));
+    public Task<CatalogGame?> GetAsync(int id, CancellationToken cancellationToken = default) => Task.FromResult<CatalogGame?>(CatalogFlow.Game(id));
+    public Task<CatalogGame?> RefreshAsync(int id, CancellationToken cancellationToken = default) => GetAsync(id, cancellationToken);
+    public Task<IReadOnlyDictionary<int, CatalogGame>> ResolveAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyDictionary<int, CatalogGame>>(ids.Distinct().ToDictionary(id => id, CatalogFlow.Game));
 }

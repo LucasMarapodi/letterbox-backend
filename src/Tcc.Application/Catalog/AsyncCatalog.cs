@@ -27,175 +27,156 @@ public sealed record CatalogSearch
 
 public static class CatalogIds
 {
-    public static long Parse(string id)
+    public static int Parse(int id)
+    { if (id <= 0) throw new DomainValidationException("ID local de jogo inválido."); return id; }
+    public static int[] Unique(IReadOnlyList<int> ids)
     {
-        if (id is null || !id.StartsWith("igdb-", StringComparison.Ordinal)
-            || !long.TryParse(id.AsSpan(5), NumberStyles.None, CultureInfo.InvariantCulture, out var number)
-            || number <= 0 || id != Format(number)) throw new DomainValidationException("ID de catálogo inválido.");
-        return number;
-    }
-    public static string Format(long number)
-    {
-        if (number <= 0) throw new DomainValidationException("ID de catálogo inválido.");
-        return "igdb-" + number.ToString(CultureInfo.InvariantCulture);
-    }
-    public static string[] Unique(IReadOnlyList<string> ids)
-    {
-        var unique = ids.Distinct(StringComparer.Ordinal).ToArray();
+        var unique = ids.Distinct().ToArray();
         if (unique.Length > 500) throw new DomainValidationException("Lote de catálogo excede 500 IDs.");
         foreach (var id in unique) Parse(id);
         return unique;
     }
 }
-
+public static class ExternalCatalogIds
+{
+    public static long[] Unique(IReadOnlyList<long> ids)
+    {
+        var unique = ids.Distinct().ToArray();
+        if (unique.Length > 500 || unique.Any(id => id <= 0)) throw new DomainValidationException("IDs IGDB inválidos.");
+        return unique;
+    }
+}
 public sealed record CatalogMetadata(DateTimeOffset FetchedAt, bool IsStale = false);
 public sealed record CatalogGame(Game Game, CatalogMetadata Metadata);
 public sealed record CatalogPage(CatalogSearch Query, IReadOnlyList<CatalogGame> Items, bool HasNextPage,
     CatalogMetadata Metadata, bool IsComplete = true);
-
 public interface ICatalogStore
 {
     Task<CatalogPage?> FindPageAsync(CatalogSearch query, CancellationToken cancellationToken);
-    Task<IReadOnlyDictionary<string, CatalogGame>> FindGamesAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken);
+    Task<IReadOnlyDictionary<int, CatalogGame>> FindGamesAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken);
     Task SavePageAsync(CatalogPage page, CancellationToken cancellationToken);
     Task SaveGamesAsync(IReadOnlyList<CatalogGame> games, CancellationToken cancellationToken);
 }
-public interface ICatalogCache : ICatalogStore;
-public interface ILocalGameCatalog : ICatalogStore;
+public interface ICatalogCache : ICatalogStore
+{
+    Task InvalidateAsync(CancellationToken ct) => Task.CompletedTask;
+}
+public interface ILocalGameCatalog : ICatalogStore
+{
+    async Task<IReadOnlyList<CatalogGame>> UpsertAsync(IReadOnlyList<CatalogGame> games, CancellationToken cancellationToken)
+    { await SaveGamesAsync(games, cancellationToken); return games; }
+    Task<IReadOnlyDictionary<long, CatalogGame>> FindByIgdbIdsAsync(IReadOnlyList<long> ids, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyDictionary<long, CatalogGame>>(new Dictionary<long, CatalogGame>());
+}
 public interface IExternalGameCatalog
 {
     Task<CatalogPage> SearchAsync(CatalogSearch query, CancellationToken cancellationToken);
-    Task<IReadOnlyDictionary<string, CatalogGame>> ResolveAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken);
+    Task<IReadOnlyDictionary<long, CatalogGame>> ResolveAsync(IReadOnlyList<long> ids, CancellationToken cancellationToken);
 }
 public interface IAsyncGameCatalog
 {
     Task<CatalogPage> SearchAsync(CatalogSearch query, CancellationToken cancellationToken = default);
-    Task<CatalogGame?> GetAsync(string id, CancellationToken cancellationToken = default);
-    Task<CatalogGame?> RefreshAsync(string id, CancellationToken cancellationToken = default);
-    Task<IReadOnlyDictionary<string, CatalogGame>> ResolveAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken = default);
+    Task<CatalogGame?> GetAsync(int id, CancellationToken cancellationToken = default);
+    Task<CatalogGame?> RefreshAsync(int id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyDictionary<int, CatalogGame>> ResolveAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken = default);
 }
 public interface IKnownCatalogReader
 {
     Task<CatalogPage?> FindKnownPageAsync(CatalogSearch query, CancellationToken cancellationToken);
-    Task<IReadOnlyDictionary<string, CatalogGame>> FindKnownGamesAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken);
+    Task<IReadOnlyDictionary<int, CatalogGame>> FindKnownGamesAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken);
 }
-
+public sealed class DiscoverGame(ILocalGameCatalog local, IExternalGameCatalog external, ICatalogCache cache)
+{
+    public async Task<CatalogGame?> Execute(long igdbId, CancellationToken ct = default)
+    {
+        ExternalCatalogIds.Unique([igdbId]);
+        var known = await local.FindByIgdbIdsAsync([igdbId], ct);
+        if (known.TryGetValue(igdbId, out var entry)) { await cache.SaveGamesAsync([entry], ct); return entry; }
+        var found = await external.ResolveAsync([igdbId], ct);
+        if (!found.TryGetValue(igdbId, out var game)) return null;
+        var saved = await local.UpsertAsync([game], ct);
+        await cache.InvalidateAsync(ct);
+        await cache.SaveGamesAsync(saved, ct);
+        return saved.Single();
+    }
+}
 public sealed class AsyncGameCatalog(ICatalogCache cache, ILocalGameCatalog local, IExternalGameCatalog external) : IAsyncGameCatalog, IKnownCatalogReader
 {
-    public async Task<CatalogPage?> FindKnownPageAsync(CatalogSearch query, CancellationToken cancellationToken)
+    public async Task<CatalogPage?> FindKnownPageAsync(CatalogSearch query, CancellationToken ct)
     {
-        var page = await cache.FindPageAsync(query, cancellationToken);
+        var page = await cache.FindPageAsync(query, ct);
         if (Compatible(page, query)) return page;
-        page = await local.FindPageAsync(query, cancellationToken);
+        page = await local.FindPageAsync(query, ct);
         if (!Compatible(page, query)) return null;
-        if (!page.Metadata.IsStale)
-        { await cache.SaveGamesAsync(page.Items, cancellationToken); await cache.SavePageAsync(page, cancellationToken); }
+        if (!page.Metadata.IsStale) { await cache.SaveGamesAsync(page.Items, ct); await cache.SavePageAsync(page, ct); }
         return page;
     }
-    public async Task<IReadOnlyDictionary<string, CatalogGame>> FindKnownGamesAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken)
+    public Task<IReadOnlyDictionary<int, CatalogGame>> FindKnownGamesAsync(IReadOnlyList<int> ids, CancellationToken ct) => ResolveAsync(ids, ct);
+    public async Task<CatalogGame?> RefreshAsync(int id, CancellationToken ct = default)
     {
-        var unique = CatalogIds.Unique(ids);
-        var result = new Dictionary<string, CatalogGame>(StringComparer.Ordinal);
-        AddFound(result, await cache.FindGamesAsync(unique, cancellationToken), unique);
-        var missing = unique.Where(id => !result.ContainsKey(id)).ToArray();
-        if (missing.Length > 0)
-        {
-            var found = await local.FindGamesAsync(missing, cancellationToken);
-            AddFound(result, found, missing);
-            if (found.Count > 0) await cache.SaveGamesAsync(found.Values.ToArray(), cancellationToken);
-        }
-        return result;
+        CatalogIds.Parse(id);
+        var found = await local.FindGamesAsync([id], ct);
+        if (!found.TryGetValue(id, out var known)) return null;
+        IReadOnlyDictionary<long, CatalogGame> refreshed;
+        try { refreshed = await external.ResolveAsync([known.Game.IgdbId], ct); }
+        catch (Exception failure) when (CanFallback(failure)) { return known; }
+        if (!refreshed.TryGetValue(known.Game.IgdbId, out var item)) return null;
+        var saved = await local.UpsertAsync([item], ct);
+        await cache.InvalidateAsync(ct);
+        await cache.SaveGamesAsync(saved, ct);
+        return saved.Single();
     }
-    public async Task<CatalogGame?> RefreshAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<CatalogPage> SearchAsync(CatalogSearch query, CancellationToken ct = default)
     {
-        cancellationToken.ThrowIfCancellationRequested(); CatalogIds.Parse(id);
-        await cache.FindGamesAsync([id], cancellationToken);
-        await local.FindGamesAsync([id], cancellationToken);
-        IReadOnlyDictionary<string, CatalogGame> refreshed;
-        try { refreshed = await external.ResolveAsync([id], cancellationToken); }
-        catch (Exception failure) when (CanFallback(failure))
-        {
-            var fallback = await cache.FindGamesAsync([id], cancellationToken);
-            if (fallback.TryGetValue(id, out var cached)) return cached;
-            fallback = await local.FindGamesAsync([id], cancellationToken);
-            if (fallback.TryGetValue(id, out var known)) return known;
-            throw;
-        }
-        if (!refreshed.TryGetValue(id, out var item)) return null;
-        await local.SaveGamesAsync([item], cancellationToken);
-        await cache.SaveGamesAsync([item], cancellationToken);
-        return item;
-    }
-    public async Task<CatalogPage> SearchAsync(CatalogSearch query, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var page = await cache.FindPageAsync(query, cancellationToken);
-        cancellationToken.ThrowIfCancellationRequested();
+        ct.ThrowIfCancellationRequested();
+        var page = await cache.FindPageAsync(query, ct);
         if (Usable(page, query)) return page;
-        page = await local.FindPageAsync(query, cancellationToken);
-        cancellationToken.ThrowIfCancellationRequested();
+        page = await local.FindPageAsync(query, ct);
         if (!Usable(page, query))
         {
-            try { page = await external.SearchAsync(query, cancellationToken); }
+            try { page = await external.SearchAsync(query, ct); }
             catch (Exception failure) when (CanFallback(failure))
             {
-                var fallback = await cache.FindPageAsync(query, cancellationToken);
+                var fallback = await cache.FindPageAsync(query, ct);
                 if (Compatible(fallback, query)) return fallback;
-                fallback = await local.FindPageAsync(query, cancellationToken);
+                fallback = await local.FindPageAsync(query, ct);
                 if (Compatible(fallback, query)) return fallback;
                 throw;
             }
             if (!Usable(page, query)) throw new CatalogIntegrationUnavailableException();
-            await local.SaveGamesAsync(page.Items, cancellationToken);
-            await local.SavePageAsync(page, cancellationToken);
+            var persisted = await local.UpsertAsync(page.Items, ct);
+            if (page.Items.Count > 0) await cache.InvalidateAsync(ct);
+            var metadata = new CatalogMetadata(persisted.Select(item => item.Metadata.FetchedAt).Append(page.Metadata.FetchedAt).Min(),
+                page.Metadata.IsStale || persisted.Any(item => item.Metadata.IsStale));
+            if (!ReferenceEquals(persisted, page.Items) || metadata != page.Metadata) page = page with { Items = persisted, Metadata = metadata };
+            await local.SavePageAsync(page, ct);
         }
-        await cache.SaveGamesAsync(page.Items, cancellationToken);
-        await cache.SavePageAsync(page, cancellationToken);
+        await cache.SaveGamesAsync(page.Items, ct);
+        await cache.SavePageAsync(page, ct);
         return page;
     }
-    public async Task<CatalogGame?> GetAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<CatalogGame?> GetAsync(int id, CancellationToken cancellationToken = default) =>
+        (await ResolveAsync([id], cancellationToken)).GetValueOrDefault(id);
+    public async Task<IReadOnlyDictionary<int, CatalogGame>> ResolveAsync(IReadOnlyList<int> ids, CancellationToken ct = default)
     {
-        var games = await ResolveAsync([id], cancellationToken);
-        return games.GetValueOrDefault(id);
-    }
-    public async Task<IReadOnlyDictionary<string, CatalogGame>> ResolveAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
+        ct.ThrowIfCancellationRequested();
         var unique = CatalogIds.Unique(ids);
-        var result = new Dictionary<string, CatalogGame>(StringComparer.Ordinal);
+        var result = new Dictionary<int, CatalogGame>();
         if (unique.Length == 0) return result;
-        var cached = await cache.FindGamesAsync(unique, cancellationToken);
-        cancellationToken.ThrowIfCancellationRequested();
-        AddFound(result, cached, unique);
+        AddFound(result, await cache.FindGamesAsync(unique, ct), unique);
         var missing = unique.Where(id => !result.ContainsKey(id)).ToArray();
         if (missing.Length > 0)
         {
-            var known = await local.FindGamesAsync(missing, cancellationToken);
-            cancellationToken.ThrowIfCancellationRequested();
-            AddFound(result, known, missing);
-            if (known.Count > 0) await cache.SaveGamesAsync(known.Values.ToArray(), cancellationToken);
-            missing = unique.Where(id => !result.ContainsKey(id)).ToArray();
-            if (missing.Length > 0)
-            {
-                var discovered = await external.ResolveAsync(missing, cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
-                AddFound(result, discovered, missing);
-                if (discovered.Count > 0)
-                {
-                    await local.SaveGamesAsync(discovered.Values.ToArray(), cancellationToken);
-                    await cache.SaveGamesAsync(discovered.Values.ToArray(), cancellationToken);
-                }
-            }
+            var found = await local.FindGamesAsync(missing, ct);
+            ct.ThrowIfCancellationRequested();
+            AddFound(result, found, missing);
+            if (found.Count > 0) await cache.SaveGamesAsync(found.Values.ToArray(), ct);
         }
-        return unique.Where(result.ContainsKey).ToDictionary(id => id, id => result[id], StringComparer.Ordinal);
+        return unique.Where(result.ContainsKey).ToDictionary(id => id, id => result[id]);
     }
     private static bool CanFallback(Exception failure) => failure is CatalogTimeoutException or CatalogIntegrationUnavailableException { AllowsStaleFallback: true };
     private static bool Usable([NotNullWhen(true)] CatalogPage? page, CatalogSearch query) => Compatible(page, query) && !page.Metadata.IsStale;
-    private static bool Compatible([NotNullWhen(true)] CatalogPage? page, CatalogSearch query) => page is not null && page.Query == query
-        && page.IsComplete && page.Items.Count <= query.PageSize;
-    private static void AddFound(Dictionary<string, CatalogGame> result, IReadOnlyDictionary<string, CatalogGame> source, string[] requested)
-    {
-        foreach (var id in requested)
-            if (source.TryGetValue(id, out var entry) && entry.Game.Id == id) result.Add(id, entry);
-    }
+    private static bool Compatible([NotNullWhen(true)] CatalogPage? page, CatalogSearch query) => page is not null && page.Query == query && page.IsComplete && page.Items.Count <= query.PageSize;
+    private static void AddFound(Dictionary<int, CatalogGame> result, IReadOnlyDictionary<int, CatalogGame> source, int[] ids)
+    { foreach (var id in ids) if (source.TryGetValue(id, out var entry) && entry.Game.Id == id) result.Add(id, entry); }
 }

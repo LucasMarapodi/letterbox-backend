@@ -14,7 +14,7 @@ public sealed class QueryTests
         Assert.Contains("first_release_date != null & first_release_date <= " + now.ToUnixTimeSeconds(), body);
         Assert.Contains("sort first_release_date desc;", body);
         Assert.Contains("limit 21; offset 40;", body);
-        Assert.Contains("fields id,name,summary,cover.image_id,genres.name,platforms.name,first_release_date;", body);
+        Assert.Contains("fields id,name,summary,cover.image_id,genres.id,genres.name,platforms.id,platforms.name,first_release_date;", body);
         Assert.DoesNotContain("fields *", body);
         Assert.DoesNotContain("rating", body);
         Assert.DoesNotContain("screenshots", body);
@@ -66,19 +66,16 @@ public sealed class QueryTests
     [Fact]
     public void Batch_deduplicates_and_uses_only_numeric_ids_with_explicit_limit()
     {
-        var body = IgdbQueries.Ids(["igdb-2", "igdb-1", "igdb-2"]);
+        var body = IgdbQueries.Ids([2, 1, 2]);
         Assert.Contains("where id = (2,1); limit 2;", body);
         Assert.DoesNotContain("igdb-", body);
-        Assert.Contains("where id = (9); limit 1;", IgdbQueries.Ids(["igdb-9"]));
+        Assert.Contains("where id = (9); limit 1;", IgdbQueries.Ids([9]));
     }
 
     [Theory]
-    [InlineData("game-1")]
-    [InlineData("igdb-0")]
-    [InlineData("igdb-01")]
-    [InlineData("igdb--1")]
-    [InlineData("igdb-1;fields *")]
-    public void Invalid_ids_do_not_build_a_supplier_expression(string id) =>
+    [InlineData(0L)]
+    [InlineData(-1L)]
+    public void Invalid_ids_do_not_build_a_supplier_expression(long id) =>
         Assert.Throws<DomainValidationException>(() => IgdbQueries.Ids([id]));
 
     [Fact]
@@ -86,6 +83,6 @@ public sealed class QueryTests
     {
         Assert.Throws<DomainValidationException>(() => CatalogSearch.Create(sort: "name; fields *"));
         Assert.Throws<DomainValidationException>(() => CatalogSearch.Create("a\nb"));
-        Assert.Throws<DomainValidationException>(() => IgdbQueries.Ids(Enumerable.Range(1, 501).Select(i => $"igdb-{i}").ToArray()));
+        Assert.Throws<DomainValidationException>(() => IgdbQueries.Ids(Enumerable.Range(1, 501).Select(i => (long)i).ToArray()));
     }
 }

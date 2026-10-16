@@ -8,7 +8,7 @@ using Tcc.Application.Catalog;
 
 namespace Tcc.Api.Tests.Igdb;
 
-internal sealed record SmokeStep(string Name, int Status, int OAuthRequests, int IgdbRequests, string? GameId = null,
+internal sealed record SmokeStep(string Name, int Status, int OAuthRequests, int IgdbRequests, int? GameId = null,
     bool? Stale = null, DateTimeOffset? FetchedAt = null);
 internal sealed record SmokeReport(string Mode, string Result, string Reason, DateTimeOffset At, int OAuthRequests,
     int IgdbRequests, IReadOnlyList<SmokeStep> Steps);
@@ -47,7 +47,7 @@ internal static class LiveSmokeScenario
             using var client = host.CreateClient();
             var options = host.Services.GetRequiredService<IgdbCredentialOptions>();
             var snapshots = new List<string>();
-            async Task<(string Body, CatalogMetadata Metadata)> Get(string path, string name, string? gameId = null)
+            async Task<(string Body, CatalogMetadata Metadata)> Get(string path, string name, int? gameId = null)
             {
                 using var response = await client.GetAsync(path, cancellationToken);
                 var status = (int)response.StatusCode;

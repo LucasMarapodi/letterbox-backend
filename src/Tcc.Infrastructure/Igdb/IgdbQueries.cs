@@ -6,7 +6,7 @@ namespace Tcc.Infrastructure.Igdb;
 
 public static class IgdbQueries
 {
-    private const string Fields = "fields id,name,summary,cover.image_id,genres.name,platforms.name,first_release_date; ";
+    private const string Fields = "fields id,name,summary,cover.image_id,genres.id,genres.name,platforms.id,platforms.name,first_release_date; ";
     public static string Search(CatalogSearch query, DateTimeOffset now)
     {
         var term = query.Term.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal);
@@ -19,11 +19,11 @@ public static class IgdbQueries
         return Fields + "where " + filter + "; sort " + sort + "; limit "
             + (query.PageSize + 1).ToString(CultureInfo.InvariantCulture) + "; offset " + query.Offset.ToString(CultureInfo.InvariantCulture) + ";";
     }
-    public static string Ids(IReadOnlyList<string> ids)
+    public static string Ids(IReadOnlyList<long> ids)
     {
-        var unique = CatalogIds.Unique(ids);
+        var unique = ExternalCatalogIds.Unique(ids);
         if (unique.Length == 0) throw new DomainValidationException("Lote vazio não requer consulta externa.");
-        return Fields + "where id = (" + string.Join(',', unique.Select(id => CatalogIds.Parse(id).ToString(CultureInfo.InvariantCulture)))
+        return Fields + "where id = (" + string.Join(',', unique.Select(id => id.ToString(CultureInfo.InvariantCulture)))
             + "); limit " + unique.Length.ToString(CultureInfo.InvariantCulture) + ";";
     }
 }

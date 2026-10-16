@@ -25,7 +25,7 @@ Para chamadas privadas:
 4. Execute as operações privadas. A interface monta o header Bearer exigido pelo contrato.
 5. Ao encerrar, execute `POST /api/v1/auth/logout` para revogar a sessão e remova a autorização no Swagger.
 
-A autorização da interface não é persistida após recarregar a página. Remover o token no botão Authorize apenas limpa a interface; a revogação exige logout. Desde P-PR-01, reiniciar preserva usuários, perfis e sessões no PostgreSQL; conteúdo e relações ainda são transitórios. Registre sua conta antes do login: não há seed de usuários no runtime. Escritas pelo Swagger usam os mesmos endpoints e alteram o estado visto pelos outros clientes.
+A autorização da interface não é persistida após recarregar a página. Remover o token no botão Authorize apenas limpa a interface; a revogação exige logout. Desde P-PR-01, reiniciar preserva usuários, perfis e sessões no PostgreSQL; catálogo/dimensões/associações também persistem desde P-PR-02; opiniões e relações sociais ainda são transitórias. Registre sua conta antes do login: não há seed de usuários no runtime. Escritas pelo Swagger usam os mesmos endpoints e alteram o estado visto pelos outros clientes.
 
 ## Manutenção
 
@@ -36,3 +36,5 @@ Testes em `tests/Tcc.Api.Tests/Validation/SwaggerUiTests.cs` verificam página e
 Entrega na branch `feat/backend-swagger-ui`, baseada em `a1d3d8b` da primeira PR de integração. RED com 6 falhas por rotas ausentes, commitado antes da implementação; validação final com 204 testes Release aprovados e build com analisadores sem erros ou avisos. Não houve alteração de Front ou publicação de PR remota.
 
 Referência: [documentação oficial do Swashbuckle](https://github.com/domaindrivendev/Swashbuckle.AspNetCore/blob/master/docs/configure-and-customize-swaggerui.md).
+
+Para jogos, GET /api/v1/games retorna IDs locais numéricos e igdbId externo separado. Copie o id da resposta para as rotas locais. Para importar um ID externo conhecido, use GET /api/v1/games/igdb/{igdbId}.

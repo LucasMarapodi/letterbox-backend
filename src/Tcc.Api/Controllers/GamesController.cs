@@ -7,8 +7,22 @@ namespace Tcc.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/games")]
-public sealed class GamesController(IAsyncGameCatalog games, CatalogUsage usage, LocalRatingAverage averages) : ControllerBase
+public sealed class GamesController(IAsyncGameCatalog games, DiscoverGame discovery, CatalogUsage usage, LocalRatingAverage averages) : ControllerBase
 {
+    [HttpGet("igdb/{igdbId}")]
+    [ProducesResponseType<GameResponse>(200)]
+    [ProducesResponseType<ApiError>(400)]
+    [ProducesResponseType<ApiError>(404)]
+    [ProducesResponseType<ApiError>(502)]
+    [ProducesResponseType<ApiError>(503)]
+    [ProducesResponseType<ApiError>(504)]
+    public async Task<ActionResult<GameResponse>> Discover(long igdbId, CancellationToken cancellationToken)
+    {
+        var item = await discovery.Execute(igdbId, cancellationToken) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
+        usage.Include(item.Metadata);
+        return Ok(GameResponse.From(item.Game, averages.ForGame(item.Game.Id)));
+    }
+
     [HttpGet]
     [ProducesResponseType<GamePageResponse>(200)]
     [ProducesResponseType<ApiError>(400)]
@@ -31,7 +45,7 @@ public sealed class GamesController(IAsyncGameCatalog games, CatalogUsage usage,
     [ProducesResponseType<ApiError>(502)]
     [ProducesResponseType<ApiError>(503)]
     [ProducesResponseType<ApiError>(504)]
-    public async Task<ActionResult<GameResponse>> Get(string gameId, CancellationToken cancellationToken)
+    public async Task<ActionResult<GameResponse>> Get(int gameId, CancellationToken cancellationToken)
     {
         var item = await games.GetAsync(gameId, cancellationToken) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
         usage.Include(item.Metadata);

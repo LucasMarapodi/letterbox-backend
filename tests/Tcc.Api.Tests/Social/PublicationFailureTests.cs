@@ -20,9 +20,9 @@ public sealed class PublicationFailureTests
         await ApiTest.SignIn(client, "B@example.com", "p");
         await SocialTest.Follow(client, 1);
         await ApiTest.SignIn(client);
-        using var failedReview = await client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("Review"));
+        using var failedReview = await client.PostAsJsonAsync("/api/v1/games/1/reviews", new TextInput("Review"));
         Assert.Equal(500, (int)failedReview.StatusCode);
-        Assert.Empty((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/igdb-1/reviews")) ?? []);
+        Assert.Empty((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/1/reviews")) ?? []);
         Assert.Empty(host.Services.GetRequiredService<INotifications>().ForUser(b.Id));
         await ApiTest.SignIn(client, "B@example.com", "p");
         using var failedComment = await client.PostAsJsonAsync("/api/v1/reviews/review-fixture/comments", new TextInput("Comment"));

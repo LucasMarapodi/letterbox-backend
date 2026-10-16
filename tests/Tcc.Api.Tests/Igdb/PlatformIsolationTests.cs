@@ -17,7 +17,7 @@ public sealed class PlatformIsolationTests
     {
         var oauthCalls = 0;
         var igdbCalls = 0;
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder => builder.ConfigureServices(services =>
         {
             services.AddSingleton(IgdbTest.Options());
             services.AddControllers().AddApplicationPart(typeof(IgdbFailureProbeController).Assembly);
@@ -44,7 +44,7 @@ public sealed class PlatformIsolationTests
     [Fact]
     public async Task Production_has_no_external_token_or_probe_endpoint()
     {
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices)));
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices)));
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/__tests/igdb/failure");
         Assert.Equal(404, (int)response.StatusCode);

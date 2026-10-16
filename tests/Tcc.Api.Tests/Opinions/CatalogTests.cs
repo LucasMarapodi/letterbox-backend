@@ -26,11 +26,11 @@ public sealed class CatalogTests
         var descending = await client.GetFromJsonAsync<GamePageDto>("/api/v1/games?sort=name-desc");
         Assert.NotNull(ascending);
         Assert.NotNull(descending);
-        Assert.Equal(new[] { "igdb-3", "igdb-2", "igdb-1" }, ascending.Items.Select(game => game.Id));
+        Assert.Equal(new[] { 3, 2, 1 }, ascending.Items.Select(game => game.Id));
         Assert.Equal(ascending.Items.Select(game => game.Id).Reverse(), descending.Items.Select(game => game.Id));
         var filtered = await client.GetFromJsonAsync<GamePageDto>("/api/v1/games?term=%20AURORA%20");
         Assert.NotNull(filtered);
-        Assert.Equal("igdb-2", Assert.Single(filtered.Items).Id);
+        Assert.Equal(2, Assert.Single(filtered.Items).Id);
         Assert.Empty((await client.GetFromJsonAsync<GamePageDto>("/api/v1/games?term=missing"))?.Items ?? []);
     }
 
@@ -39,7 +39,7 @@ public sealed class CatalogTests
     {
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
-        var game = await client.GetFromJsonAsync<GameDto>("/api/v1/games/igdb-3");
+        var game = await client.GetFromJsonAsync<GameDto>("/api/v1/games/3");
         Assert.NotNull(game);
         Assert.Equal("Atlas de Cinzas", game.Title);
         Assert.Null(game.CoverUrl);
@@ -50,7 +50,7 @@ public sealed class CatalogTests
     }
 
     [Theory]
-    [InlineData("/api/v1/games/igdb-999", 404)]
+    [InlineData("/api/v1/games/999", 404)]
     [InlineData("/api/v1/games?sort=invalid", 400)]
     public async Task Invalid_queries_have_expected_status(string url, int status)
     {

@@ -12,12 +12,12 @@ public sealed class LocalCatalogTests
     {
         var clock = Clock();
         var local = new InMemoryLocalGameCatalog(clock, new());
-        var old = CatalogFlow.Game("igdb-1");
+        var old = CatalogFlow.Game(1);
         await local.SaveGamesAsync([old, old], default);
         var updated = old with { Game = old.Game with { Title = "Updated" }, Metadata = new(clock.Now.AddMinutes(1)) };
         await local.SaveGamesAsync([updated], default);
         await local.SaveGamesAsync([old], default);
-        var result = Assert.Single((await local.FindGamesAsync(["igdb-1"], default)).Values);
+        var result = Assert.Single((await local.FindGamesAsync([1], default)).Values);
         Assert.Equal("Updated", result.Game.Title);
         Assert.Equal(updated.Metadata.FetchedAt, result.Metadata.FetchedAt);
     }
@@ -26,13 +26,13 @@ public sealed class LocalCatalogTests
     public async Task Snapshot_eviction_does_not_remove_games_referenced_by_local_content()
     {
         var local = new InMemoryLocalGameCatalog(Clock(), new() { SnapshotLimit = 1 });
-        var first = new CatalogPage(CatalogSearch.Create("first"), [CatalogFlow.Game("igdb-1")], true, CatalogFlow.Metadata);
-        var second = new CatalogPage(CatalogSearch.Create("second"), [CatalogFlow.Game("igdb-2")], false, CatalogFlow.Metadata);
+        var first = new CatalogPage(CatalogSearch.Create("first"), [CatalogFlow.Game(1)], true, CatalogFlow.Metadata);
+        var second = new CatalogPage(CatalogSearch.Create("second"), [CatalogFlow.Game(2)], false, CatalogFlow.Metadata);
         await local.SavePageAsync(first, default);
         await local.SavePageAsync(second, default);
         Assert.Null(await local.FindPageAsync(first.Query, default));
         Assert.NotNull(await local.FindPageAsync(second.Query, default));
-        Assert.Equal(2, (await local.FindGamesAsync(["igdb-1", "igdb-2"], default)).Count);
+        Assert.Equal(2, (await local.FindGamesAsync([1, 2], default)).Count);
     }
 
     [Fact]
@@ -40,11 +40,11 @@ public sealed class LocalCatalogTests
     {
         var local = new InMemoryLocalGameCatalog(Clock(), new());
         var query = CatalogSearch.Create("Name", page: 2, pageSize: 2);
-        var page = new CatalogPage(query, [CatalogFlow.Game("igdb-2"), CatalogFlow.Game("igdb-1")], true, CatalogFlow.Metadata);
+        var page = new CatalogPage(query, [CatalogFlow.Game(2), CatalogFlow.Game(1)], true, CatalogFlow.Metadata);
         await local.SavePageAsync(page, default);
         var result = await local.FindPageAsync(CatalogSearch.Create("name", page: 2, pageSize: 2), default);
         Assert.NotNull(result);
-        Assert.Equal(new[] { "igdb-2", "igdb-1" }, result.Items.Select(item => item.Game.Id));
+        Assert.Equal(new[] { 2, 1 }, result.Items.Select(item => item.Game.Id));
         Assert.True(result.HasNextPage);
         Assert.Null(await local.FindPageAsync(CatalogSearch.Create("Name", page: 1, pageSize: 2), default));
         var partial = page with { Query = CatalogSearch.Create("partial"), IsComplete = false };
@@ -57,13 +57,13 @@ public sealed class LocalCatalogTests
     {
         var clock = Clock();
         var local = new InMemoryLocalGameCatalog(clock, new());
-        var page = new CatalogPage(CatalogSearch.Create(), [CatalogFlow.Game("igdb-1")], false, CatalogFlow.Metadata);
+        var page = new CatalogPage(CatalogSearch.Create(), [CatalogFlow.Game(1)], false, CatalogFlow.Metadata);
         await local.SavePageAsync(page, default);
         clock.Now += TimeSpan.FromMinutes(5);
         Assert.True((await local.FindPageAsync(page.Query, default))?.Metadata.IsStale);
         clock.Now = CatalogFlow.Metadata.FetchedAt.AddMinutes(66);
         Assert.Null(await local.FindPageAsync(page.Query, default));
-        var game = Assert.Single((await local.FindGamesAsync(["igdb-1"], default)).Values);
+        var game = Assert.Single((await local.FindGamesAsync([1], default)).Values);
         Assert.True(game.Metadata.IsStale);
         Assert.Equal(CatalogFlow.Metadata.FetchedAt, game.Metadata.FetchedAt);
     }
@@ -73,9 +73,9 @@ public sealed class LocalCatalogTests
     {
         var first = new InMemoryLocalGameCatalog(Clock(), new());
         var other = new InMemoryLocalGameCatalog(Clock(), new());
-        await first.SaveGamesAsync([CatalogFlow.Game("igdb-1")], default);
-        Assert.NotEmpty(await first.FindGamesAsync(["igdb-1"], default));
-        Assert.Empty(await other.FindGamesAsync(["igdb-1"], default));
+        await first.SaveGamesAsync([CatalogFlow.Game(1)], default);
+        Assert.NotEmpty(await first.FindGamesAsync([1], default));
+        Assert.Empty(await other.FindGamesAsync([1], default));
     }
 
     [Fact]
@@ -83,14 +83,14 @@ public sealed class LocalCatalogTests
     {
         var local = new InMemoryLocalGameCatalog(Clock(), new());
         var genres = new[] { "RPG" };
-        var game = CatalogFlow.Game("igdb-1") with { Game = CatalogFlow.Game("igdb-1").Game with { Genres = genres } };
+        var game = CatalogFlow.Game(1) with { Game = CatalogFlow.Game(1).Game with { Genres = genres } };
         var items = new[] { game };
         var page = new CatalogPage(CatalogSearch.Create(), items, false, CatalogFlow.Metadata);
         await local.SavePageAsync(page, default);
-        genres[0] = "Changed"; items[0] = CatalogFlow.Game("igdb-2");
+        genres[0] = "Changed"; items[0] = CatalogFlow.Game(2);
         var stored = await local.FindPageAsync(page.Query, default);
         Assert.NotNull(stored);
-        Assert.Equal("igdb-1", Assert.Single(stored.Items).Game.Id);
+        Assert.Equal(1, Assert.Single(stored.Items).Game.Id);
         Assert.Equal("RPG", Assert.Single(stored.Items[0].Game.Genres));
     }
 }

@@ -25,10 +25,10 @@ public sealed class IntegratedFlowTests
         profile.EnsureSuccessStatusCode();
         await SocialTest.Follow(follower, 1);
         await ApiTest.SignIn(author);
-        using var rating = await author.PutAsJsonAsync("/api/v1/games/igdb-1/rating/me", new RatingInput(3.75));
+        using var rating = await author.PutAsJsonAsync("/api/v1/games/1/rating/me", new RatingInput(3.75));
         rating.EnsureSuccessStatusCode();
         var review = await ApiTest.Publish(author);
-        using var gameFavorite = await follower.PutAsync("/api/v1/favorites/game/igdb-1", null);
+        using var gameFavorite = await follower.PutAsync("/api/v1/favorites/game/1", null);
         using var reviewFavorite = await follower.PutAsync($"/api/v1/favorites/review/{review.Id}", null);
         gameFavorite.EnsureSuccessStatusCode(); reviewFavorite.EnsureSuccessStatusCode();
         var dashboard = await follower.GetFromJsonAsync<DashboardDto>("/api/v1/dashboard");
@@ -47,7 +47,7 @@ public sealed class IntegratedFlowTests
         Assert.Equal(1, Assert.Single((await author.GetFromJsonAsync<RankedGameDto[]>("/api/v1/community/games/in-discussion")) ?? []).CommentCount);
         using var logout = await follower.PostAsync("/api/v1/auth/logout", null);
         logout.EnsureSuccessStatusCode();
-        using var blocked = await follower.PutAsync("/api/v1/favorites/game/igdb-2", null);
+        using var blocked = await follower.PutAsync("/api/v1/favorites/game/2", null);
         Assert.Equal(401, (int)blocked.StatusCode);
         fresh.DefaultRequestHeaders.Authorization = oldAuthorization;
         using var oldToken = await fresh.GetAsync("/api/v1/auth/me");
@@ -55,9 +55,9 @@ public sealed class IntegratedFlowTests
         fresh.DefaultRequestHeaders.Authorization = null;
         using var missingAccount = await fresh.GetAsync($"/api/v1/users/{b.Id}");
         Assert.Equal(404, (int)missingAccount.StatusCode);
-        Assert.Empty((await fresh.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/igdb-1/reviews")) ?? []);
+        Assert.Empty((await fresh.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/1/reviews")) ?? []);
         Assert.Empty((await fresh.GetFromJsonAsync<RankedGameDto[]>("/api/v1/community/games/in-discussion")) ?? []);
-        Assert.Null((await fresh.GetFromJsonAsync<GameDto>("/api/v1/games/igdb-1"))?.AverageRating);
+        Assert.Null((await fresh.GetFromJsonAsync<GameDto>("/api/v1/games/1"))?.AverageRating);
     }
 
     [Fact]
@@ -66,8 +66,8 @@ public sealed class IntegratedFlowTests
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        var responses = await Task.WhenAll(client.PutAsJsonAsync("/api/v1/games/igdb-1/rating/me", new RatingInput(2)),
-            client.PutAsJsonAsync("/api/v1/games/igdb-1/rating/me", new RatingInput(4)));
+        var responses = await Task.WhenAll(client.PutAsJsonAsync("/api/v1/games/1/rating/me", new RatingInput(2)),
+            client.PutAsJsonAsync("/api/v1/games/1/rating/me", new RatingInput(4)));
         try
         {
             Assert.All(responses, response => response.EnsureSuccessStatusCode());
@@ -75,9 +75,9 @@ public sealed class IntegratedFlowTests
             var second = await responses[1].Content.ReadFromJsonAsync<RatingDto>();
             Assert.NotNull(first); Assert.NotNull(second);
             Assert.Equal(first.Id, second.Id);
-            var mine = (await client.GetFromJsonAsync<MyRating>("/api/v1/games/igdb-1/rating/me"))?.Rating;
+            var mine = (await client.GetFromJsonAsync<MyRating>("/api/v1/games/1/rating/me"))?.Rating;
             Assert.NotNull(mine);
-            Assert.Equal(mine.Value, (await client.GetFromJsonAsync<GameDto>("/api/v1/games/igdb-1"))?.AverageRating);
+            Assert.Equal(mine.Value, (await client.GetFromJsonAsync<GameDto>("/api/v1/games/1"))?.AverageRating);
         }
         finally { foreach (var response in responses) response.Dispose(); }
     }

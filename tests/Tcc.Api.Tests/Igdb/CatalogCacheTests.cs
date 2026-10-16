@@ -14,18 +14,18 @@ public sealed class CatalogCacheTests
         var local = new InMemoryLocalGameCatalog(clock, options);
         var flow = new CatalogFlow();
         var catalog = new AsyncGameCatalog(cache, local, flow.External);
-        await local.SaveGamesAsync([CatalogFlow.Game("igdb-1"), CatalogFlow.Game("igdb-2")], default);
-        await cache.SaveGamesAsync([CatalogFlow.Game("igdb-1"), CatalogFlow.Game("igdb-2")], default);
-        Assert.Empty(await cache.FindGamesAsync(["igdb-1"], default));
-        Assert.NotEmpty(await cache.FindGamesAsync(["igdb-2"], default));
+        await local.SaveGamesAsync([CatalogFlow.Game(1), CatalogFlow.Game(2)], default);
+        await cache.SaveGamesAsync([CatalogFlow.Game(1), CatalogFlow.Game(2)], default);
+        Assert.Empty(await cache.FindGamesAsync([1], default));
+        Assert.NotEmpty(await cache.FindGamesAsync([2], default));
         clock.Now += TimeSpan.FromMinutes(31);
-        Assert.Empty(await cache.FindGamesAsync(["igdb-2"], default));
-        var result = await catalog.GetAsync("igdb-1");
+        Assert.Empty(await cache.FindGamesAsync([2], default));
+        var result = await catalog.GetAsync(1);
         Assert.NotNull(result);
         Assert.True(result.Metadata.IsStale);
         Assert.Equal(CatalogFlow.Metadata.FetchedAt, result.Metadata.FetchedAt);
         Assert.DoesNotContain("external.games", flow.Events);
-        var repopulated = Assert.Single((await cache.FindGamesAsync(["igdb-1"], default)).Values);
+        var repopulated = Assert.Single((await cache.FindGamesAsync([1], default)).Values);
         Assert.True(repopulated.Metadata.IsStale);
         Assert.Equal(result.Metadata.FetchedAt, repopulated.Metadata.FetchedAt);
     }
@@ -104,9 +104,9 @@ public sealed class CatalogCacheTests
         var supplier = new BlockingSupplier(release.Task);
         var catalog = new SingleFlightGameCatalog(new AsyncGameCatalog(cache, local, supplier), options);
         var warm = CatalogSearch.Create("warm");
-        await local.SavePageAsync(new(warm, [CatalogFlow.Game("igdb-2")], false, CatalogFlow.Metadata), default);
+        await local.SavePageAsync(new(warm, [CatalogFlow.Game(2)], false, CatalogFlow.Metadata), default);
         var pending = catalog.SearchAsync(CatalogSearch.Create("cold"));
-        try { Assert.Equal("igdb-2", Assert.Single((await catalog.SearchAsync(warm)).Items).Game.Id); }
+        try { Assert.Equal(2, Assert.Single((await catalog.SearchAsync(warm)).Items).Game.Id); }
         finally { release.TrySetResult(); }
         await pending;
         Assert.Equal(1, supplier.Calls);
@@ -122,12 +122,12 @@ internal sealed class BlockingSupplier(Task release) : IExternalGameCatalog
         Interlocked.Increment(ref Calls);
         await release.WaitAsync(cancellationToken);
         if (Fail) throw new CatalogIntegrationUnavailableException();
-        return new(query, [CatalogFlow.Game("igdb-1")], false, CatalogFlow.Metadata);
+        return new(query, [CatalogFlow.Game(1)], false, CatalogFlow.Metadata);
     }
-    public async Task<IReadOnlyDictionary<string, CatalogGame>> ResolveAsync(IReadOnlyList<string> ids, CancellationToken cancellationToken)
+    public async Task<IReadOnlyDictionary<long, CatalogGame>> ResolveAsync(IReadOnlyList<long> ids, CancellationToken cancellationToken)
     {
         Interlocked.Increment(ref Calls); await release.WaitAsync(cancellationToken);
         if (Fail) throw new CatalogIntegrationUnavailableException();
-        return ids.ToDictionary(id => id, CatalogFlow.Game, StringComparer.Ordinal);
+        return ids.ToDictionary(id => id, CatalogFlow.ExternalGame);
     }
 }

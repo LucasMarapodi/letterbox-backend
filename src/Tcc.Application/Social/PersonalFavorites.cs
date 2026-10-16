@@ -14,15 +14,17 @@ public interface IFavorites
     IReadOnlyList<Favorite> ForUser(int userId);
 }
 public sealed record FavoriteCollections(IReadOnlyList<Game> Games, IReadOnlyList<ReviewDetails> Reviews);
-public sealed record FavoriteSnapshot(IReadOnlyList<string> GameIds, IReadOnlyList<Tcc.Domain.Opinions.Review> Reviews);
+public sealed record FavoriteSnapshot(IReadOnlyList<int> GameIds, IReadOnlyList<Tcc.Domain.Opinions.Review> Reviews);
 
 public sealed class PersonalFavorites(IFavorites favorites, QueryGames games, GetReview reviews,
     ICurrentSession current, SessionAccess access, OpinionViews views, IPublicationScope publications)
 {
+    private static int GameTarget(string value) => int.TryParse(value, System.Globalization.NumberStyles.None,
+        System.Globalization.CultureInfo.InvariantCulture, out var id) && id > 0 ? id : throw new Tcc.Domain.Identity.DomainValidationException("ID local de jogo inválido.");
     private async Task<FavoriteKind> Validate(string kind, string targetId, CancellationToken cancellationToken)
     {
         var type = Favorite.ParseKind(kind);
-        if (type == FavoriteKind.Game) await games.GetAsync(targetId, cancellationToken); else reviews.Find(targetId);
+        if (type == FavoriteKind.Game) await games.GetAsync(GameTarget(targetId), cancellationToken); else reviews.Find(targetId);
         return type;
     }
     public async Task<Favorite> Set(string kind, string targetId, CancellationToken cancellationToken = default)
@@ -64,10 +66,10 @@ public sealed class PersonalFavorites(IFavorites favorites, QueryGames games, Ge
     public FavoriteSnapshot SnapshotFor(int userId)
     {
         var items = favorites.ForUser(userId).OrderBy(item => item.TargetId, StringComparer.Ordinal).ToArray();
-        return new(items.Where(item => item.Kind == FavoriteKind.Game).Select(item => item.TargetId).ToArray(),
+        return new(items.Where(item => item.Kind == FavoriteKind.Game).Select(item => GameTarget(item.TargetId)).ToArray(),
             items.Where(item => item.Kind == FavoriteKind.Review).Select(item => reviews.Find(item.TargetId)).ToArray());
     }
-    public FavoriteCollections Project(FavoriteSnapshot snapshot, IReadOnlyDictionary<string, Game> found, IReadOnlyDictionary<int, PublicAuthor> authors) =>
+    public FavoriteCollections Project(FavoriteSnapshot snapshot, IReadOnlyDictionary<int, Game> found, IReadOnlyDictionary<int, PublicAuthor> authors) =>
         new(snapshot.GameIds.Select(id => found[id]).ToArray(), snapshot.Reviews.Select(review => views.Review(review, found[review.GameId], authors[review.UserId])).ToArray());
     public async Task<FavoriteCollections> List(CancellationToken cancellationToken = default)
     {

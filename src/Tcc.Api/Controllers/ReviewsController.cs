@@ -15,7 +15,7 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(404)]
     [ProducesResponseType<ApiError>(409)]
-    public async Task<ActionResult<ReviewResponse>> Publish(string gameId, TextRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ReviewResponse>> Publish(int gameId, TextRequest request, CancellationToken cancellationToken)
     {
         var result = ReviewResponse.From(await publish.Execute(gameId, request.Text, cancellationToken));
         return Created($"/api/v1/reviews/{result.Id}", result);
@@ -37,7 +37,7 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     [HttpGet("games/{gameId}/reviews")]
     [ProducesResponseType<IReadOnlyList<ReviewResponse>>(200)]
     [ProducesResponseType<ApiError>(404)]
-    public async Task<ActionResult<IReadOnlyList<ReviewResponse>>> ForGame(string gameId, CancellationToken cancellationToken) =>
+    public async Task<ActionResult<IReadOnlyList<ReviewResponse>>> ForGame(int gameId, CancellationToken cancellationToken) =>
         Ok((await queries.ForGame(gameId, cancellationToken)).Select(ReviewResponse.From).ToArray());
     [HttpGet("users/{userId}/reviews")]
     [ProducesResponseType<IReadOnlyList<ReviewResponse>>(200)]
@@ -48,7 +48,7 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     [HttpGet("games/{gameId}/reviews/me")]
     [ProducesResponseType<MyReviewResponse>(200)]
     [ProducesResponseType<ApiError>(404)]
-    public async Task<ActionResult<MyReviewResponse>> Mine(string gameId, CancellationToken cancellationToken)
+    public async Task<ActionResult<MyReviewResponse>> Mine(int gameId, CancellationToken cancellationToken)
     {
         var mine = await queries.Mine(gameId, cancellationToken);
         return Ok(new MyReviewResponse(mine is null ? null : ReviewResponse.From(mine)));
@@ -56,7 +56,7 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     [HttpGet("games/{gameId}/opinions")]
     [ProducesResponseType<GameOpinionsResponse>(200)]
     [ProducesResponseType<ApiError>(404)]
-    public async Task<ActionResult<GameOpinionsResponse>> Opinions(string gameId, CancellationToken cancellationToken)
+    public async Task<ActionResult<GameOpinionsResponse>> Opinions(int gameId, CancellationToken cancellationToken)
     {
         var result = await queries.Opinions(gameId, cancellationToken);
         return Ok(new GameOpinionsResponse(result.AverageRating, result.Reviews.Select(ReviewResponse.From).ToArray()));

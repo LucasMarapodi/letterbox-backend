@@ -27,8 +27,8 @@ public sealed class NotificationGenerationTests
         await ApiTest.SignIn(client, "C@example.com", "p");
         await SocialTest.Follow(client, 1);
         await ApiTest.SignIn(client);
-        var responses = await Task.WhenAll(client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("One")),
-            client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("Two")));
+        var responses = await Task.WhenAll(client.PostAsJsonAsync("/api/v1/games/1/reviews", new TextInput("One")),
+            client.PostAsJsonAsync("/api/v1/games/1/reviews", new TextInput("Two")));
         ReviewDto review;
         try
         {
@@ -55,7 +55,7 @@ public sealed class NotificationGenerationTests
         using var unfollow = await client.DeleteAsync("/api/v1/users/1/follow");
         unfollow.EnsureSuccessStatusCode();
         await ApiTest.SignIn(client);
-        await ApiTest.Publish(client, "igdb-2");
+        await ApiTest.Publish(client, 2);
         Assert.Single(Events(host, b.Id));
         Assert.Equal(2, Events(host, c.Id).Count);
     }

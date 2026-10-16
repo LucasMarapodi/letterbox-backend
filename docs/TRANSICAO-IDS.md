@@ -15,7 +15,7 @@ Não usar Guid/UUID, Guid.NewGuid ou strings como identidade final de entidade. 
 
 ## Situação real do código
 
-Após P-PR-01, UserAccount.Id, UserSession.Id/UserId e referências de usuário são int; DTOs de usuário/autor e userId/actorId são numéricos. Username textual user-{id} é calculado pelo banco e não é PK. Game, Review, Comment e demais identidades próprias continuam strings até suas PRs; seus stores ainda são transitórios. Não havia identidade SQL anterior para importar. O Front não foi alterado e sua adaptação é dependência de liberação.
+Após P-PR-01, UserAccount.Id, UserSession.Id/UserId e referências de usuário são int; DTOs de usuário/autor e userId/actorId são numéricos. Username textual user-{id} é calculado pelo banco e não é PK. Após P-PR-02, Game.Id e referências GameId são int, Game.IgdbId é long/bigint único separado e Genre/Platform têm identidade própria integer e externa bigint. GameResponse inclui id local e igdbId externo; DTOs/resumos/gameId são numéricos. Review/Comment e demais identidades próprias seguem strings até suas PRs; os stores dessas entidades continuam transitórios. O targetId polimórfico de favoritos em memória permanece texto decimal para jogos até sua normalização. Não havia identidade SQL anterior para importar. O Front não foi alterado e sua adaptação é dependência de liberação.
 
 ## Implementação por tabela
 
