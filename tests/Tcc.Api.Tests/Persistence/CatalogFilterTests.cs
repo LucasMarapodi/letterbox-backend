@@ -104,11 +104,24 @@ public sealed class CatalogFilterTests
             services.AddHttpClient(IgdbAuthenticationRegistration.IgdbClientName).ConfigurePrimaryHttpMessageHandler(() => new TestHandler(supplier.Send));
         }));
 
+    [PostgresFact]
+    public async Task Deep_release_page_does_not_require_importing_every_previous_page()
+    {
+        await PostgresCatalogTests.Reset();
+        await using var host = Host(new Transport { Releases = true, DeepPage = true });
+        using var client = host.CreateClient();
+        using var page = JsonDocument.Parse(await client.GetStringAsync("/api/v1/games?page=100&pageSize=20"));
+        Assert.Equal(2, page.RootElement.GetProperty("items").GetArrayLength());
+        Assert.False(page.RootElement.GetProperty("hasNextPage").GetBoolean());
+    }
+
     internal sealed class Transport
     {
         public int MetadataCalls { get; private set; }
         public int GameCalls { get; private set; }
         public bool Releases { get; init; }
+        public bool DeepPage { get; init; }
+        public bool InvalidMetadata { get; set; }
         public List<string> Bodies { get; } = [];
         public async Task<HttpResponseMessage> Send(HttpRequestMessage request, CancellationToken ct)
         {
@@ -117,8 +130,9 @@ public sealed class CatalogFilterTests
             if (request.RequestUri!.AbsolutePath.EndsWith("/genres", StringComparison.Ordinal))
             { MetadataCalls++; return IgdbTest.Json("""[{"id":3000000012,"name":"RPG"},{"id":3000000031,"name":"Adventure"}]"""); }
             if (request.RequestUri.AbsolutePath.EndsWith("/platforms", StringComparison.Ordinal))
-            { MetadataCalls++; return IgdbTest.Json("""[{"id":3000000006,"name":"PC"},{"id":3000000048,"name":"Console"}]"""); }
+            { MetadataCalls++; return InvalidMetadata ? IgdbTest.Json("synthetic-invalid-metadata") : IgdbTest.Json("""[{"id":3000000006,"name":"PC"},{"id":3000000048,"name":"Console"}]"""); }
             GameCalls++;
+            if (request.RequestUri.AbsolutePath.EndsWith("/count", StringComparison.Ordinal)) return IgdbTest.Json(DeepPage ? "{\"count\":1980}" : "{\"count\":0}");
             var rows = new[]
             {
                 new { id = 10L, name = "Game A", first_release_date = 1704067200L },
@@ -128,7 +142,7 @@ public sealed class CatalogFilterTests
             {
                 var offset = int.Parse(System.Text.RegularExpressions.Regex.Match(body, @"offset (\d+)").Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
                 var limit = int.Parse(System.Text.RegularExpressions.Regex.Match(body, @"limit (\d+)").Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
-                return IgdbTest.Json(JsonSerializer.Serialize(rows.Skip(offset).Take(limit)));
+                return IgdbTest.Json(JsonSerializer.Serialize(rows.Skip(DeepPage ? Math.Max(0, offset - 1980) : offset).Take(limit)));
             }
             return IgdbTest.Json("""[{"id":10,"name":"Game A","genres":[{"id":3000000012,"name":"RPG"}],"platforms":[{"id":3000000006,"name":"PC"}]}]""");
         }
