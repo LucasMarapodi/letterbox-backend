@@ -48,7 +48,7 @@ public sealed class PermissionMatrixTests
         using var client = host.CreateClient();
         foreach (var operation in EndpointInventory.All.Where(operation => !operation.Private && operation.Method == "get"))
         {
-            using var response = await client.GetAsync(Resolve(operation.Path));
+            using var response = await client.GetAsync(operation.Path == "/api/v1/search" ? "/api/v1/search?q=Atlas&scope=games" : Resolve(operation.Path));
             Assert.True((int)response.StatusCode == 200, operation.Path);
         }
     }

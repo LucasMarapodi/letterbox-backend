@@ -18,9 +18,15 @@ builder.Services.AddQueriesFeature();
 builder.Services.AddApiDocumentation();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.ConfigureHttpJsonOptions(options =>
-    options.SerializerOptions.Converters.Add(new Tcc.Api.Contracts.UtcDateTimeOffsetConverter()));
+{
+    options.SerializerOptions.Converters.Add(new Tcc.Api.Contracts.UtcDateTimeOffsetConverter());
+    options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter<Tcc.Application.Queries.SearchStatus>(System.Text.Json.JsonNamingPolicy.CamelCase, false));
+});
 builder.Services.AddControllers().AddJsonOptions(options =>
-    options.JsonSerializerOptions.Converters.Add(new Tcc.Api.Contracts.UtcDateTimeOffsetConverter()))
+{
+    options.JsonSerializerOptions.Converters.Add(new Tcc.Api.Contracts.UtcDateTimeOffsetConverter());
+    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter<Tcc.Application.Queries.SearchStatus>(System.Text.Json.JsonNamingPolicy.CamelCase, false));
+})
     .ConfigureApiBehaviorOptions(options =>
 {
     options.InvalidModelStateResponseFactory = _ =>

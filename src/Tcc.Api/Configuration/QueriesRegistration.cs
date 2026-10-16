@@ -7,6 +7,8 @@ public static class QueriesRegistration
     public static IServiceCollection AddQueriesFeature(this IServiceCollection services)
     {
         services.AddScoped<FollowingFeed>();
+        services.AddScoped<IPeopleSearch, Tcc.Infrastructure.Persistence.Repositories.PostgresPeopleSearch>();
+        services.AddScoped<AggregatedSearch>();
         services.AddScoped<PersonalDashboard>();
         services.AddScoped<RecentReviews>();
         services.AddScoped<CommentActivity>();

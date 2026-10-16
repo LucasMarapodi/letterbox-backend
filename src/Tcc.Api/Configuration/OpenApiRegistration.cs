@@ -60,6 +60,11 @@ public static class OpenApiRegistration
                     .Concat(storageOperation ? new[] { 503 } : []).Append(500).Distinct();
                 foreach (var status in errors)
                 {
+                    if (context.Description.RelativePath == "api/v1/search" && status == 503)
+                    {
+                        operation.Responses["503"].Description = "Todos os grupos solicitados indisponíveis. Mesmo envelope SearchResponse, com error.code=search_unavailable e erros públicos por grupo.";
+                        continue;
+                    }
                     var error = status == 503 && storageOperation && !catalogOperation
                         ? new ApiError("storage_unavailable", "Persistência temporariamente indisponível.") : ApiError.FromStatus(status);
                     operation.Responses[status.ToString()] = new OpenApiResponse
@@ -76,6 +81,12 @@ public static class OpenApiRegistration
                 foreach (var parameter in operation.Parameters ?? [])
                 {
                     if (parameter.Schema is not OpenApiSchema schema) continue;
+                    if (context.Description.RelativePath == "api/v1/search")
+                    {
+                        if (parameter.Name == "q") { schema.MinLength = 3; schema.MaxLength = 200; if (parameter is OpenApiParameter queryParameter) queryParameter.Required = true; }
+                        if (parameter.Name == "mode") { schema.Enum = Nodes("suggestions", "results"); schema.Default = JsonValue.Create("suggestions"); }
+                        if (parameter.Name == "scope") { schema.Enum = Nodes("all", "people", "games"); schema.Default = JsonValue.Create("all"); }
+                    }
                     if (parameter.Name == "period") { schema.Enum = Nodes("24h", "7d", "30d"); schema.Default = JsonValue.Create("7d"); }
                     if (parameter.Name == "sort") { schema.Enum = Nodes("release-desc", "name-asc", "name-desc"); schema.Description = "Omitido: release-desc sem termo, name-asc com termo."; }
                     if (parameter.Name == "page") { schema.Minimum = "1"; schema.Default = JsonValue.Create(1); }
@@ -84,7 +95,9 @@ public static class OpenApiRegistration
                     if (parameter.Name == "userId") schema.Minimum = "1";
                     if (parameter.Name is "gameId" or "igdbId" or "reviewId" or "commentId" or "targetId") schema.Minimum = "1";
                 }
-                if (context.Description.RelativePath == "api/v1/games/igdb/{igdbId}")
+                if (context.Description.RelativePath == "api/v1/search")
+                    operation.Description = "Busca pública por q com trim, 3–200 caracteres. suggestions: 5 por grupo e page=1; results: 20. scope=all|people|games controla fontes consultadas. Cada grupo: status ready (items e paginação válidos), unavailable (items vazio, paginação null e erro público) ou notRequested (items vazio, paginação null e error null). 200 quando ao menos um grupo solicitado está ready, inclusive vazio; 503 quando todos falham. Jogos inclui metadata fetchedAt/isStale do catálogo quando ready. Pessoas: username exato, prefixo em username/displayName, demais; desempate username/ID. Não pesquisa e-mail/bio. pageSize não é aceito.";
+                else if (context.Description.RelativePath == "api/v1/games/igdb/{igdbId}")
                     operation.Description = "ID externo IGDB positivo (int64). Consulta SQL por igdb_id antes do fornecedor; importação faz upsert transacional e retorna o ID local int32 para as demais rotas.";
                 else
                 if (context.Description.RelativePath?.EndsWith("comments", StringComparison.Ordinal) == true && context.Description.HttpMethod == "POST")

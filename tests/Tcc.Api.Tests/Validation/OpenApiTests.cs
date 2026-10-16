@@ -37,6 +37,11 @@ public sealed class OpenApiTests
             foreach (var status in route.Errors.Concat(route.Private ? new[] { 401 } : []).Append(500).Distinct())
             {
                 var error = responses.GetProperty(status.ToString()).GetProperty("content").GetProperty("application/json");
+                if (route.Path == "/api/v1/search" && status == 503)
+                {
+                    Assert.Contains("SearchResponse", error.GetProperty("schema").ToString());
+                    continue;
+                }
                 Assert.Contains("ApiError", error.GetProperty("schema").ToString());
                 Assert.True(error.TryGetProperty("example", out _));
             }
