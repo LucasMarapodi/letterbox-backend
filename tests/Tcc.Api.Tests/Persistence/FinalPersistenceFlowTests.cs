@@ -2,7 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Tcc.Api.Configuration;
+using Tcc.Api.DependencyInjection;
 using Tcc.Api.Tests.Identity;
 using Tcc.Application.Catalog;
 using Tcc.Application.Identity;
@@ -37,7 +37,7 @@ public sealed class FinalPersistenceFlowTests
             Assert.IsType(store, first.ServiceProvider.GetRequiredService(port));
             Assert.NotSame(first.ServiceProvider.GetRequiredService(port), second.ServiceProvider.GetRequiredService(port));
         }
-        Assert.Equal("Tcc.Api.Configuration.ScopedSqlLocalGameCatalog", host.Services.GetRequiredService<ILocalGameCatalog>().GetType().FullName);
+        Assert.Equal("Tcc.Api.Catalog.Adapters.ScopedSqlLocalGameCatalog", host.Services.GetRequiredService<ILocalGameCatalog>().GetType().FullName);
         Assert.Same(first.ServiceProvider.GetRequiredService<ICatalogCache>(), second.ServiceProvider.GetRequiredService<ICatalogCache>());
         Assert.NotSame(first.ServiceProvider.GetRequiredService<TccDbContext>(), second.ServiceProvider.GetRequiredService<TccDbContext>());
         foreach (var assembly in new[] { typeof(Tcc.Domain.Identity.UserAccount).Assembly, typeof(IUserAccounts).Assembly })

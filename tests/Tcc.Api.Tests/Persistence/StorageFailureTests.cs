@@ -2,7 +2,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Logging;
-using Tcc.Api.Configuration;
+using Tcc.Api.DependencyInjection;
 using Tcc.Api.Tests.Identity;
 using Tcc.Api.Tests.Igdb;
 

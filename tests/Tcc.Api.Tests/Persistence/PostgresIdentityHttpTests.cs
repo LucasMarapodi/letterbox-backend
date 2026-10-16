@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Tcc.Api.Configuration;
+using Tcc.Api.DependencyInjection;
 using Tcc.Api.Tests.Identity;
 using Tcc.Infrastructure.Persistence;
 
