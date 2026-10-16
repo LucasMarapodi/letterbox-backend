@@ -104,6 +104,8 @@ public static class OpenApiRegistration
                 }
                 if (context.Description.RelativePath == "api/v1/community/comments/most-liked")
                     operation.Description = "Ranking público/no-store, revalidado no PostgreSQL a cada leitura. period=24h|7d|30d (padrão 7d), page>=1 com offset int32, pageSize=10|20|50 (padrão 20). Conta likes ativos criados no intervalo UTC inclusivo [agora-período, agora], inclusive em comentários antigos e respostas. Ordena periodLikeCount DESC, lastLikeAt DESC, commentId ASC antes da paginação SQL. likeCount é o total ativo; periodLikeCount e lastLikeAt consideram só o período. Unlike retira contribuição; relike usa nova data. Retorna items/page/pageSize/hasNextPage sem estado pessoal ou dados privados de contas. Query inválida: 400; SQL indisponível: 503.";
+                else if (context.Description.RelativePath == "api/v1/comments/{commentId}/like/me")
+                    operation.Description = "Estado privado do usuário do Bearer, sem cache compartilhado (no-store). Retorna somente likedByMe; listagens públicas incluem apenas likeCount agregado em SQL, sem estado pessoal. Permite curtir o próprio comentário e respostas. Alvo inexistente: 404; ID inválido: 400; sem sessão: 401. Likes não criam notificações.";
                 else if (context.Description.RelativePath == "api/v1/reviews/{reviewId}/like/me")
                     operation.Description = "Estado privado do usuário do Bearer, sem cache compartilhado (no-store). Retorna somente likedByMe; não existe estado personalizado nas projeções públicas. Permite curtir a própria review. Alvo inexistente: 404; ID inválido: 400; sem sessão: 401. Likes não criam notificações e são independentes de favoritos.";
                 else if (context.Description.RelativePath == "api/v1/users/me/profile-completion")
@@ -195,6 +197,11 @@ public static class OpenApiRegistration
                 {
                     if (schema.Properties["likeCount"] is OpenApiSchema total) total.Minimum = "0";
                     if (schema.Properties["periodLikeCount"] is OpenApiSchema periodCount) periodCount.Minimum = "1";
+                }
+                if (type == typeof(CommentResponse) && schema.Properties["likeCount"] is OpenApiSchema commentLikeCount)
+                {
+                    commentLikeCount.Minimum = "0";
+                    commentLikeCount.Description = "Quantidade inteira de usuários que curtiram o comentário ou resposta, agregada em SQL na listagem. Estado pessoal somente em GET /comments/{commentId}/like/me, privado/no-store.";
                 }
                 if (type == typeof(CommentRequest))
                 {

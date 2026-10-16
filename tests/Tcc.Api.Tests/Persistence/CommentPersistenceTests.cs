@@ -137,7 +137,7 @@ public sealed class CommentPersistenceTests
         var login = await LoginTests.Login(client, "other-like@example.com", "synthetic-password");
         client.DefaultRequestHeaders.Authorization = new("Bearer", login.Token);
         using var status = JsonDocument.Parse(await client.GetStringAsync($"/api/v1/comments/{root}/like/me"));
-        Assert.False(status.RootElement.GetProperty("liked").GetBoolean());
+        Assert.False(status.RootElement.GetProperty("likedByMe").GetBoolean());
         using var forged = await client.PutAsJsonAsync($"/api/v1/comments/{root}/like", new { userId = 1 });
         Assert.Equal(400, (int)forged.StatusCode);
         using var second = await client.PutAsync($"/api/v1/comments/{root}/like", null);
@@ -232,7 +232,7 @@ public sealed class CommentPersistenceTests
         Assert.Equal(1, savedReply.GetProperty("likeCount").GetInt32());
         other.DefaultRequestHeaders.Authorization = new("Bearer", login.Token);
         using var status = JsonDocument.Parse(await other.GetStringAsync($"/api/v1/comments/{replyId}/like/me"));
-        Assert.True(status.RootElement.GetProperty("liked").GetBoolean());
+        Assert.True(status.RootElement.GetProperty("likedByMe").GetBoolean());
         for (var index = 0; index < 2; index++)
         {
             using var removed = await other.DeleteAsync($"/api/v1/comments/{replyId}/like");

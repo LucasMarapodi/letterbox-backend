@@ -7,6 +7,7 @@ using Tcc.Application.Opinions;
 namespace Tcc.Api.Controllers;
 
 [ApiController, Authorize, Route("api/v1/comments/{commentId}/like")]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class CommentLikesController(PersonalCommentLike likes) : ControllerBase
 {
     [HttpPut, NoBody]
