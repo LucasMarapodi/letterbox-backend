@@ -14,10 +14,6 @@ public sealed class ProfileCompletionPolicyTests
     [InlineData("Country", "State", " ", 3, false)]
     public void Completion_is_derived_from_required_fields_and_distinct_games(string? country, string? state, string? bio, int count, bool expected)
     {
-        var policy = typeof(UserProfile).Assembly.GetType("Tcc.Domain.Identity.ProfileCompletionPolicy");
-        Assert.NotNull(policy);
-        var method = policy.GetMethod("IsComplete");
-        Assert.NotNull(method);
-        Assert.Equal(expected, method.Invoke(null, [country, state, bio, Enumerable.Range(1,count).Concat(Enumerable.Range(1,count))]));
+        Assert.Equal(expected, ProfileCompletionPolicy.IsComplete(country, state, bio, Enumerable.Range(1,count).Concat(Enumerable.Range(1,count))));
     }
 }

@@ -24,6 +24,8 @@ public static class IdentityRegistration
         services.AddScoped<LogoutAccount>();
         services.AddScoped<GetUserProfile>();
         services.AddScoped<EditUserProfile>();
+        services.AddScoped<IProfileCompletionStore, PostgresProfileCompletion>();
+        services.AddScoped<ProfileCompletion>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentSession, HttpCurrentSession>();
         services.AddAuthentication(SessionBearerHandler.SchemeName)

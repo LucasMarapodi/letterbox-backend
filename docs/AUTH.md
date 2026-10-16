@@ -51,6 +51,8 @@ Content-Type: application/json
 
 ## Compatibilidade
 
+Na S-PR-16, GET/PUT autenticados `/api/v1/users/me/profile-completion` consultam/salvam país, estado, bio, avatar e conjunto completo de jogos favoritos. A conclusão exige localização, bio e pelo menos três jogos distintos existentes; avatar é opcional. PATCH de perfil também aceita country/state opcionais: omitir preserva, null/vazio limpa. País/estado não são adicionados à resposta pública, inclusive auth/me. [Contrato, transação e exemplos](S-PR-16.md).
+
 Mapeamento frontend, por leitura: RegistrationInput mantém name/email/password e PublicUserResponse mantém User. LoginResponse acrescenta token/expiresAt necessários ao futuro adaptador HTTP; ele deverá guardar token e retornar user ao AuthService. Os códigos HTTP precisam ser convertidos para invalid-credentials, duplicate-email e invalid-fields. Nenhum adaptador ou código do Front será modificado nesta PR.
 
 Implementação de autenticação usará o [mecanismo de handlers do ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/) e hashing pela [API PBKDF2 do .NET](https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.rfc2898derivebytes.pbkdf2?view=net-10.0).

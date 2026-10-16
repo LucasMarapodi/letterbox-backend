@@ -14,6 +14,8 @@ internal static class EndpointInventory
         new("get", "/api/v1/auth/me", 200, true),
         new("get", "/api/v1/users/{userId}", 200, false, 404),
         new("patch", "/api/v1/users/me/profile", 200, true, 400),
+        new("get", "/api/v1/users/me/profile-completion", 200, true, 404),
+        new("put", "/api/v1/users/me/profile-completion", 200, true, 400, 404),
         new("get", "/api/v1/users/{userId}/reviews", 200, false, 404),
         new("get", "/api/v1/users/{userId}/followers", 200, false, 404),
         new("get", "/api/v1/users/{userId}/following", 200, false, 404),

@@ -29,7 +29,8 @@ public sealed class PostgresUserAccounts(Lazy<TccDbContext> context) : IUserAcco
         Run<UserAccount?>(async db =>
         {
             await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-            var account = await db.Users.FromSqlInterpolated($"SELECT * FROM usuarios WHERE id = {id} FOR UPDATE").AsTracking().SingleOrDefaultAsync(cancellationToken);
+            await ProfileWriteLock.Acquire(db, id, cancellationToken);
+            var account = await db.Users.AsTracking().SingleOrDefaultAsync(user => user.Id == id, cancellationToken);
             if (account is null) return null;
             var updated = account.UpdateProfile(change, now);
             db.Entry(account.Profile).CurrentValues.SetValues(updated.Profile);

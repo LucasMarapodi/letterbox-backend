@@ -1,6 +1,13 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.Extensions.DependencyInjection;
+using Tcc.Application.Identity;
+using Tcc.Infrastructure.Persistence;
 
 namespace Tcc.Api.Tests.Persistence;
 
@@ -113,6 +120,136 @@ public sealed class ProfileCompletionTests
         using var unchanged = await Read(client);
         Assert.Equal(0, unchanged.RootElement.GetProperty("favoriteGameCount").GetInt32());
         Assert.Equal(JsonValueKind.Null, unchanged.RootElement.GetProperty("country").ValueKind);
+    }
+
+    [PostgresFact]
+    public async Task Failure_after_sql_save_rolls_back_profile_and_favorite_reconciliation()
+    {
+        await PostgresCatalogTests.Reset();
+        var ids = await Games();
+        await using var host = new PostgresApiFactory();
+        using var client = host.CreateClient();
+        var owner = await NotificationPersistenceTests.Register(client, "completion-rollback@example.com");
+        using (var save = await client.PutAsJsonAsync(Path, new { country = "Before", state = "State", bio = "Bio", favoriteGameIds = ids.Take(3) })) save.EnsureSuccessStatusCode();
+        using var before = await Read(client);
+        await using var db = PostgresTestDatabase.Context();
+        var favorites = await db.GameFavorites.AsNoTracking().OrderBy(item => item.Id).ToArrayAsync();
+        var profileTime = (await db.Users.AsNoTracking().SingleAsync()).Profile.UpdatedAt;
+        var failure = new FailAfterCompletionSave();
+        await using var failing = host.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+            services.AddDbContext<TccDbContext>(options => options.AddInterceptors(failure))));
+        using var other = failing.CreateClient();
+        other.DefaultRequestHeaders.Authorization = new("Bearer", owner.Token);
+        using var result = await other.PutAsJsonAsync(Path, new { country = "After", state = "State", bio = "Changed", favoriteGameIds = ids.Skip(1) });
+        Assert.True(failure.Triggered);
+        Assert.Equal(503, (int)result.StatusCode);
+        Assert.Contains("storage_unavailable", await result.Content.ReadAsStringAsync());
+        using var after = await Read(client);
+        Assert.Equal(before.RootElement.GetRawText(), after.RootElement.GetRawText());
+        Assert.Equal(favorites.Select(item => (item.Id, item.GameId, item.CreatedAt)),
+            (await db.GameFavorites.AsNoTracking().OrderBy(item => item.Id).ToArrayAsync()).Select(item => (item.Id, item.GameId, item.CreatedAt)));
+        Assert.Equal(profileTime, (await db.Users.AsNoTracking().SingleAsync()).Profile.UpdatedAt);
+    }
+
+    [PostgresFact]
+    public async Task Concurrent_completion_commands_preserve_one_whole_selection_and_leave_review_favorites_untouched()
+    {
+        await PostgresCatalogTests.Reset();
+        var ids = await Games();
+        await using var host = new PostgresApiFactory();
+        using var client = host.CreateClient();
+        await NotificationPersistenceTests.Register(client, "completion-concurrent@example.com");
+        using (var publish = await client.PostAsJsonAsync($"/api/v1/games/{ids[0]}/reviews", new { text = "Review" }))
+        {
+            publish.EnsureSuccessStatusCode();
+            using var json = JsonDocument.Parse(await publish.Content.ReadAsStringAsync());
+            using var favorite = await client.PutAsync($"/api/v1/favorites/review/{json.RootElement.GetProperty("id").GetInt32()}", null);
+            favorite.EnsureSuccessStatusCode();
+        }
+        await using var db = PostgresTestDatabase.Context();
+        var reviews = await db.ReviewFavorites.AsNoTracking().ToArrayAsync();
+        // Two games plus a review favorite still do not meet the requirement.
+        foreach (var id in ids.Take(2))
+        {
+            using var favorite = await client.PutAsync($"/api/v1/favorites/game/{id}", null);
+            favorite.EnsureSuccessStatusCode();
+        }
+        using (var current = await Read(client)) Assert.Equal(2, current.RootElement.GetProperty("favoriteGameCount").GetInt32());
+        var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(index => client.PutAsJsonAsync(Path,
+            new { country = index % 2 == 0 ? "A" : "B", state = "State", bio = "Bio", favoriteGameIds = index % 2 == 0 ? ids.Take(3) : ids.Skip(1) })));
+        try { Assert.All(results, result => Assert.Equal(200, (int)result.StatusCode)); }
+        finally { foreach (var result in results) result.Dispose(); }
+        using var saved = await Read(client);
+        var root = saved.RootElement;
+        Assert.True(root.GetProperty("isComplete").GetBoolean());
+        Assert.Equal(root.GetProperty("country").GetString() == "A" ? ids.Take(3) : ids.Skip(1),
+            root.GetProperty("favoriteGameIds").EnumerateArray().Select(item => item.GetInt32()));
+        Assert.Equal(reviews, await db.ReviewFavorites.AsNoTracking().ToArrayAsync());
+        // The ordinary editor's avatar survives completion PUTs that omit it in either order.
+        var edits = await Task.WhenAll(Enumerable.Range(0, 8).Select(index => index % 2 == 0
+            ? client.PatchAsJsonAsync("/api/v1/users/me/profile", new { avatarUrl = "https://example.com/concurrent.png" })
+            : client.PutAsJsonAsync(Path, new { country = "C", state = "State", bio = "Bio", favoriteGameIds = ids.Take(3).Concat(ids.Take(3)) })));
+        try { Assert.All(edits, result => Assert.Equal(200, (int)result.StatusCode)); }
+        finally { foreach (var result in edits) result.Dispose(); }
+        using var combined = await Read(client);
+        Assert.Equal("https://example.com/concurrent.png", combined.RootElement.GetProperty("avatarUrl").GetString());
+        Assert.Equal("C", combined.RootElement.GetProperty("country").GetString());
+        Assert.Equal(3, combined.RootElement.GetProperty("favoriteGameCount").GetInt32());
+    }
+
+    private sealed class FailAfterCompletionSave : SaveChangesInterceptor
+    {
+        public bool Triggered { get; private set; }
+        public override ValueTask<int> SavedChangesAsync(SaveChangesCompletedEventData eventData, int result, CancellationToken cancellationToken = default)
+        {
+            if (eventData.Context?.ChangeTracker.Entries<Tcc.Domain.Identity.UserProfile>().Any(entry => entry.Entity.Country == "After") == true)
+            {
+                Triggered = true;
+                throw new DatabaseUnavailableException();
+            }
+            return ValueTask.FromResult(result);
+        }
+    }
+
+    [PostgresFact]
+    public async Task Location_migration_preserves_existing_account_profile_and_favorites()
+    {
+        await PostgresCatalogTests.Reset();
+        var ids = await Games();
+        await using var host = new PostgresApiFactory();
+        using var client = host.CreateClient();
+        var owner = await NotificationPersistenceTests.Register(client, "completion-upgrade@example.com");
+        using (var patch = await client.PatchAsJsonAsync("/api/v1/users/me/profile", new { bio = "Existing bio", avatarUrl = "https://example.com/photo.png" })) patch.EnsureSuccessStatusCode();
+        foreach (var id in ids.Take(3))
+        {
+            using var favorite = await client.PutAsync($"/api/v1/favorites/game/{id}", null);
+            favorite.EnsureSuccessStatusCode();
+        }
+        await using var db = PostgresTestDatabase.Context();
+        await PostgresTestDatabase.VerifyExclusiveAsync(db);
+        var account = await db.Users.AsNoTracking().SingleAsync();
+        var favorites = await db.GameFavorites.AsNoTracking().OrderBy(item => item.Id).ToArrayAsync();
+        var migrator = db.GetService<IMigrator>();
+        await migrator.MigrateAsync(db.Database.GetMigrations().Single(name => name.EndsWith("PersistentNotifications", StringComparison.Ordinal)));
+        try
+        {
+            await db.Database.MigrateAsync();
+            var restored = await db.Users.AsNoTracking().SingleAsync();
+            Assert.Equal(account.Id, restored.Id);
+            Assert.Equal(account.Username, restored.Username);
+            Assert.True(account.Email == restored.Email && account.PasswordHash == restored.PasswordHash);
+            Assert.Equal(account.CreatedAt, restored.CreatedAt);
+            Assert.Equal(account.UpdatedAt, restored.UpdatedAt);
+            Assert.Equal(account.Profile, restored.Profile);
+            Assert.Equal(favorites, await db.GameFavorites.AsNoTracking().OrderBy(item => item.Id).ToArrayAsync());
+            client.DefaultRequestHeaders.Authorization = new("Bearer", owner.Token);
+            using var completion = await Read(client);
+            Assert.False(completion.RootElement.GetProperty("isComplete").GetBoolean());
+            Assert.Equal(3, completion.RootElement.GetProperty("favoriteGameCount").GetInt32());
+            Assert.Equal(JsonValueKind.Null, completion.RootElement.GetProperty("country").ValueKind);
+            Assert.Equal(JsonValueKind.Null, completion.RootElement.GetProperty("state").ValueKind);
+        }
+        finally { await db.Database.MigrateAsync(); }
     }
 
     internal static async Task<int[]> Games()

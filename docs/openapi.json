@@ -3439,6 +3439,222 @@
         ]
       }
     },
+    "/api/v1/users/me/profile-completion": {
+      "get": {
+        "tags": [
+          "ProfileCompletion"
+        ],
+        "summary": "GET /api/v1/users/me/profile-completion",
+        "description": "Privado, sem cache compartilhado; usuário exclusivamente do Bearer. Conclusão calculada: país, estado e bio preenchidos e pelo menos três jogos distintos existentes; avatar opcional. GET retorna todos os favoritos. PUT salva perfil e conjunto completo de favoritos atomicamente, reconciliando diferenças e preservando vínculos mantidos; repetição idempotente. Textos recebem trim, país/estado até 100, bio até 2000 caracteres. avatarUrl omitido preserva, null remove. IDs locais positivos int32; duplicados não contam para o mínimo. 400 para dados inválidos, 404 para jogo inexistente, 503 para persistência indisponível; nenhuma gravação parcial.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileCompletionDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileCompletionDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileCompletionDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão necessária ou inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "unauthorized",
+                  "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "not_found",
+                  "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "ProfileCompletion"
+        ],
+        "summary": "PUT /api/v1/users/me/profile-completion",
+        "description": "Privado, sem cache compartilhado; usuário exclusivamente do Bearer. Conclusão calculada: país, estado e bio preenchidos e pelo menos três jogos distintos existentes; avatar opcional. GET retorna todos os favoritos. PUT salva perfil e conjunto completo de favoritos atomicamente, reconciliando diferenças e preservando vínculos mantidos; repetição idempotente. Textos recebem trim, país/estado até 100, bio até 2000 caracteres. avatarUrl omitido preserva, null remove. IDs locais positivos int32; duplicados não contam para o mínimo. 400 para dados inválidos, 404 para jogo inexistente, 503 para persistência indisponível; nenhuma gravação parcial.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileCompletionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileCompletionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileCompletionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileCompletionDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileCompletionDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileCompletionDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão necessária ou inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "unauthorized",
+                  "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "not_found",
+                  "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/games/{gameId}/rating/me": {
       "get": {
         "tags": [
@@ -5872,9 +6088,111 @@
           }
         }
       },
+      "ProfileCompletionDetails": {
+        "required": [
+          "country",
+          "state",
+          "bio",
+          "avatarUrl",
+          "favoriteGameIds",
+          "favoriteGameCount",
+          "isComplete"
+        ],
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "state": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "bio": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "favoriteGameIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "favoriteGameCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isComplete": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ProfileCompletionRequest": {
+        "required": [
+          "country",
+          "state",
+          "bio",
+          "favoriteGameIds"
+        ],
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string",
+            "description": "Obrigatório e não vazio após trim; até 100 caracteres após trim."
+          },
+          "state": {
+            "type": "string",
+            "description": "Obrigatório e não vazio após trim; até 100 caracteres após trim."
+          },
+          "bio": {
+            "type": "string",
+            "description": "Obrigatório e não vazio após trim; até 2000 caracteres após trim."
+          },
+          "favoriteGameIds": {
+            "minItems": 3,
+            "type": "array",
+            "items": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Conjunto desejado completo; pelo menos três IDs distintos existentes, sem truncar favoritos adicionais."
+          },
+          "avatarUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Opcional: omissão preserva, null remove. HTTP/HTTPS até 2048 caracteres."
+          }
+        },
+        "additionalProperties": false
+      },
       "ProfilePatchRequest": {
         "type": "object",
         "properties": {
+          "country": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "state": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "displayName": {
             "type": "string"
           },
@@ -5889,7 +6207,7 @@
           }
         },
         "additionalProperties": false,
-        "description": "Campos omitidos preservam valores; displayName/bio não aceitam null, avatarUrl null limpa foto. Nome trim até 100 caracteres, bio até 2000 e avatar HTTP/HTTPS até 2048."
+        "description": "Campos omitidos preservam valores; displayName/bio não aceitam null, avatarUrl null limpa foto. Nome trim até 100 caracteres, bio até 2000 e avatar HTTP/HTTPS até 2048. country/state privados: trim até 100, null ou vazio limpa; não aparecem na resposta pública. Alterações recalculam a conclusão na próxima consulta."
       },
       "PublicUserResponse": {
         "required": [
@@ -6324,6 +6642,9 @@
     },
     {
       "name": "Notifications"
+    },
+    {
+      "name": "ProfileCompletion"
     },
     {
       "name": "Ratings"

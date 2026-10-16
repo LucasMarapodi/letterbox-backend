@@ -13,6 +13,12 @@ public sealed class ProfilePatchRequest : IValidatableObject
     private bool displayNameSpecified;
     private bool bioSpecified;
     private bool avatarSpecified;
+    private string? country;
+    private string? state;
+    private bool countrySpecified;
+    private bool stateSpecified;
+    public string? Country { get => country; set { country = value; countrySpecified = true; } }
+    public string? State { get => state; set { state = value; stateSpecified = true; } }
 
     public string? DisplayName
     {
@@ -40,5 +46,5 @@ public sealed class ProfilePatchRequest : IValidatableObject
             yield return new ValidationResult("Biografia não pode ser null.", [nameof(Bio)]);
     }
 
-    public ProfileChange ToChange() => new(DisplayName, Bio, avatarSpecified, AvatarUrl);
+    public ProfileChange ToChange() => new(DisplayName, Bio, avatarSpecified, AvatarUrl, countrySpecified, Country, stateSpecified, State);
 }
