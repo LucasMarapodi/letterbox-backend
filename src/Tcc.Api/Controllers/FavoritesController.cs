@@ -13,8 +13,7 @@ public sealed class FavoritesController(PersonalFavorites favorites, LocalRating
     public ActionResult<FavoriteListsResponse> List()
     {
         var lists = favorites.List();
-        return Ok(new FavoriteListsResponse(lists.Games.Select(game => GameResponse.From(game, averages.ForGame(game.Id))).ToArray(),
-            lists.Reviews.Select(ReviewResponse.From).ToArray()));
+        return Ok(FavoriteListsResponse.From(lists, averages.ForGame));
     }
     [HttpGet("{kind}/{targetId}")]
     public ActionResult<FavoriteStatusResponse> Get(string kind, string targetId)
