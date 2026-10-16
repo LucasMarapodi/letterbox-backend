@@ -14,6 +14,7 @@ public sealed class IdentityExceptionHandler : IExceptionHandler
         var status = exception switch
         {
             DomainValidationException => 400,
+            CatalogIntegrationUnavailableException => 503,
             ReviewOwnershipException => 403,
             ResourceFailure { Kind: ResourceFailureKind.NotFound } => 404,
             ResourceFailure { Kind: ResourceFailureKind.Conflict } => 409,
