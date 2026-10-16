@@ -17,7 +17,7 @@ namespace Tcc.Api.Tests.Persistence;
 public sealed class FinalPersistenceFlowTests
 {
     [Fact]
-    public async Task Production_ports_resolve_SQL_stores_and_only_catalog_cache_is_shared_between_scopes()
+    public async Task Production_business_ports_resolve_scoped_SQL_stores_while_catalog_cache_is_shared()
     {
         await using var host = new PostgresApiFactory().WithWebHostBuilder(builder => builder.ConfigureServices(services =>
             services.AddPostgresPersistence(_ => BootstrapTests.SyntheticConnection)));
@@ -98,6 +98,19 @@ public sealed class FinalPersistenceFlowTests
         using (var events = JsonDocument.Parse(snapshots["author-events"])) Assert.Equal(2, events.RootElement.GetArrayLength());
         using (var profile = JsonDocument.Parse(snapshots["author-me"])) Assert.Equal("Persistent author", profile.RootElement.GetProperty("displayName").GetString());
         using (var game = JsonDocument.Parse(snapshots["game"])) Assert.Equal(4.5, game.RootElement.GetProperty("averageRating").GetDouble());
+        using (var favorites = JsonDocument.Parse(snapshots["favorites"]))
+        {
+            Assert.Equal(gameId, Assert.Single(favorites.RootElement.GetProperty("games").EnumerateArray()).GetProperty("id").GetInt32());
+            Assert.Equal(reviewId, Assert.Single(favorites.RootElement.GetProperty("reviews").EnumerateArray()).GetProperty("id").GetInt32());
+        }
+        using (var feed = JsonDocument.Parse(snapshots["feed"])) Assert.Equal(reviewId, Assert.Single(feed.RootElement.EnumerateArray()).GetProperty("id").GetInt32());
+        using (var empty = JsonDocument.Parse(snapshots["reverse-feed"])) Assert.Equal(0, empty.RootElement.GetArrayLength());
+        using (var empty = JsonDocument.Parse(snapshots["author-favorites"]))
+        {
+            Assert.Equal(0, empty.RootElement.GetProperty("games").GetArrayLength());
+            Assert.Equal(0, empty.RootElement.GetProperty("reviews").GetArrayLength());
+        }
+        using (var like = JsonDocument.Parse(snapshots["like"])) Assert.True(like.RootElement.GetProperty("liked").GetBoolean());
         Assert.Equal(0, offline.Calls);
         await using var audit = PostgresTestDatabase.Context();
         foreach (var table in audit.Model.GetRelationalModel().Tables)

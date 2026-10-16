@@ -1,6 +1,6 @@
 # Matriz de modelagem e persistência — quinta fase
 
-P-PR-01–06 validadas localmente: as dezesseis tabelas possuem modelo e fonte SQL. A validação final do conjunto na P-PR-07 permanece pendente. Cada tabela só fica concluída após suas duas US e testes em PostgreSQL real.
+P-PR-01–07 validadas localmente: as dezesseis tabelas possuem modelo e fonte SQL, com migrations completas e fluxos persistentes verificados na P-PR-07. A integração com o Front depende da adaptação aos IDs numéricos. Não há PR publicada nem merge, pois Back não tem remoto configurado.
 
 | Tabela | Classe .NET relacionada | US A: modelo/DbContext | US B: SQL/retirada de memória | Estado modelo | Estado SQL |
 | --- | --- | --- | --- | --- | --- |
@@ -27,7 +27,7 @@ Por tabela, registrar classe/configuração final, nome físico, migration, repo
 
 Não marcar SQL validado apenas porque um DbSet existe, uma migration foi gerada ou um teste EF InMemory passou.
 
-## Verificações globais pendentes
+## Verificações globais
 
 - Usuarios + PerfisUsuarios gravados atomicamente: VALIDADO, incluindo rollback SQL.
 - SessoesUsuarios com token_hash e autenticação pós-restart: VALIDADO.
@@ -38,10 +38,11 @@ Não marcar SQL validado apenas porque um DbSet existe, uma migration foi gerada
 - Curtidas únicas/idempotentes e contagem SQL: VALIDADO.
 - Favoritos/seguimentos SQL e isolamento: VALIDADO.
 - Notificações na mesma transação da publicação: VALIDADO.
-- Migrations/upgrade em banco isolado e preservação de baseline: VALIDADO até PersistentNotifications; seis contas, 43 jogos e conteúdo/relações existentes mantidos no upgrade local.
+- Migrations/upgrade em banco isolado e preservação de baseline: VALIDADO na P-PR-07, com cadeia completa desde schema de negócio vazio e upgrade da fixture histórica de identidade. Schema real coincide com modelo nas 16 tabelas.
 - Todos os stores de negócio em memória ausentes do runtime: VALIDADO; cache/snapshots/token Twitch continuam transitórios.
 - Falha PostgreSQL não cai em fixture/sucesso local: VALIDADO para identidade, catálogo, opiniões, discussão, relações e notificações.
-- Testes/análises/build e PRs reais: PENDENTE.
+- Testes/análises/build: VALIDADO, 417 testes aprovados, um smoke live IGDB opt-in ignorado, build Release/analisadores sem avisos ou erros.
+- Publicação de PR real: NÃO REALIZADA, sem remoto/base. Branches, commits e descrições locais disponíveis. Sem merge.
 
 ## Limites
 
@@ -73,4 +74,33 @@ GameFavorite/ReviewFavorite/Follow, SocialConfigurations, migration FavoritesAnd
 
 ## Evidências P-PR-06
 
-Notification, NotificationConfiguration, migration PersistentNotifications, PostgresNotifications e callbacks assíncronos de IReviews/IComments. Chaves numéricas, quatro FKs RESTRICT, comentário coerente com review, CHECKs por tipo/auto-notificação e índices parciais únicos. InMemoryNotifications/InMemoryPublicationScope somente em testes. NotificationPersistenceTests prova SQL real, restart/privacidade, concorrência/deduplicação, constraints, rollback e invisibilidade antes do commit. 414 testes aprovados; build/analisadores sem avisos. Upgrade preservado e Swagger/OpenAPI atualizados. Descrição P-PR-06.md. P-PR-07 ainda pendente.
+Notification, NotificationConfiguration, migration PersistentNotifications, PostgresNotifications e callbacks assíncronos de IReviews/IComments. Chaves numéricas, quatro FKs RESTRICT, comentário coerente com review, CHECKs por tipo/auto-notificação e índices parciais únicos. InMemoryNotifications/InMemoryPublicationScope somente em testes. NotificationPersistenceTests prova SQL real, restart/privacidade, concorrência/deduplicação, constraints, rollback e invisibilidade antes do commit. 414 testes aprovados naquela entrega; build/analisadores sem avisos. Upgrade preservado e Swagger/OpenAPI atualizados. Descrição P-PR-06.md.
+
+## Auditoria final P-PR-07
+
+FinalMigrationAuditTests compara colunas/tipos/nullabilidade, constraints, colunas/destinos das FKs RESTRICT, índices/colunas/unicidade/presença de filtro e identities com PostgreSQL 17. PKs/FKs locais integer, igdb_id bigint. Sete migrations Down/Up apenas no alvo exclusivo marcado; baseline IdentityUpgradeBaseline preservada após upgrade. Testes específicos abaixo comprovam também comportamento de constraints, transações, falhas e concorrência.
+
+| Classe/configuração | Tabela física | Migration | Fonte SQL / consulta | Teste real / fluxo HTTP |
+| --- | --- | --- | --- | --- |
+| UserAccount / UserAccountConfiguration | usuarios | IdentityUsersProfiles | PostgresUserAccounts | PostgresIdentityHttpTests; cadastro/login |
+| UserProfile owned / UserAccountConfiguration | perfis_usuarios | IdentityUsersProfiles | PostgresUserAccounts | ProfilePersistenceTests; perfil/PATCH |
+| UserSession / UserSessionConfiguration | sessoes_usuarios | IdentitySessions | PostgresUserSessions | SessionPersistenceTests; login/logout/restart |
+| Genre / GenreConfiguration | generos | LocalCatalog | PostgresGameCatalog | PostgresCatalogTests; catálogo/detalhe |
+| Platform / PlatformConfiguration | plataformas | LocalCatalog | PostgresGameCatalog | PostgresCatalogTests; catálogo/detalhe |
+| Game / GameConfiguration | jogos | LocalCatalog | PostgresGameCatalog via ScopedSqlLocalGameCatalog | PostgresCatalogHttpTests; cache/SQL/IGDB |
+| GameGenre / GameGenreConfiguration | jogos_generos | LocalCatalog | PostgresGameCatalog; junção de gêneros | PostgresCatalogTests; gêneros no detalhe |
+| GamePlatform / GamePlatformConfiguration | jogos_plataformas | LocalCatalog | PostgresGameCatalog; junção de plataformas | PostgresCatalogTests; plataformas no detalhe |
+| Review / ReviewConfiguration | reviews | Opinions | PostgresReviews | OpinionPersistenceTests; publicar/editar/listar |
+| Rating / RatingConfiguration | avaliacoes | Opinions | PostgresRatings; médias SQL | OpinionPersistenceTests; nota/média |
+| Comment / CommentConfiguration | comentarios | CommentsAndLikes | PostgresComments | CommentPersistenceTests; comentários/respostas |
+| CommentLike / CommentLikeConfiguration | curtidas_comentarios | CommentsAndLikes | PostgresCommentLikes | CommentPersistenceTests; like/contagem |
+| GameFavorite / GameFavoriteConfiguration | jogos_favoritos | FavoritesAndFollows | PostgresFavorites | SocialPersistenceTests; favoritos de jogos |
+| ReviewFavorite / ReviewFavoriteConfiguration | reviews_favoritas | FavoritesAndFollows | PostgresFavorites; JOIN reviews | SocialPersistenceTests; favoritos de reviews |
+| Follow / FollowConfiguration | seguimentos_usuarios | FavoritesAndFollows | PostgresFollows; EXISTS feed | SocialPersistenceTests; seguir/feed/rede |
+| Notification / NotificationConfiguration | notificacoes | PersistentNotifications | PostgresNotifications; filtro destinatário | NotificationPersistenceTests; eventos privados |
+
+FinalPersistenceFlowTests percorre duas contas, popula as 16 tabelas, descarta a API e compara respostas com novo host/banco mantido. Sessões válidas permanecem e a sessão revogada retorna 401. Verifica conteúdo, média, hierarquia/likes, favoritos, rede, feed e notificações privadas. Nenhuma chamada IGDB no fluxo conhecido. Auditoria de DI confirma as nove portas scoped SQL, adaptador de catálogo SQL e cache compartilhado; Domain/Application sem EF/Npgsql. HostMemory legado sem registro; stores de negócio em memória somente em fixtures de testes.
+
+417 testes aprovados (27 Domain, 1 Application, 389 API), apenas live IGDB opt-in ignorado. Build/analisadores sem avisos/erros. Health/Swagger/OpenAPI 200, sete schemas públicos com id integer, igdbId int64 e notificações sem sessão 401 em instância temporária encerrada após a conferência. Desenvolvimento consultado somente por leitura nesta PR: 16 tabelas de negócio, sete migrations, seis contas, 43 jogos, uma review. Nenhum reset ou upgrade nesse alvo.
+
+Commit de testes ac50f56 antes da conclusão; falhas iniciais no próprio harness de auditoria foram corrigidas, sem alegar defeito RED de produção. Nenhuma nova migration foi necessária. Down remove dados das features e só foi usado no banco exclusivo marcado. Descrição e limites em P-PR-07.md. Backend validado localmente; publicação e adaptação do consumidor Front permanecem separadas.

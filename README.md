@@ -48,7 +48,7 @@ Configuração `Authentication:SessionMinutes` em src/Tcc.Api/appsettings.json, 
 
 - Domain: entidades e invariantes sem dependências externas.
 - Application: casos de uso e portas assíncronas para identidade.
-- Infrastructure: EF Core/Npgsql, hashing, integração IGDB e stores ainda transitórios.
+- Infrastructure: EF Core/Npgsql para os dados de negócio, hashing, integração IGDB e cache transitório de catálogo.
 - Api: composição, DTOs, autenticação Bearer e pipeline HTTP.
 - tests: fixtures isoladas, regressões HTTP e integração com PostgreSQL real.
 
@@ -59,3 +59,5 @@ A [P-PR-01](docs/P-PR-01.md) persiste usuários, perfis e sessões. Cadastro con
 IDs de usuários, jogos, reviews, avaliações, comentários, favoritos e notificações são numéricos nos contratos; jogos expõem também igdbId externo int64. GET /games/{gameId} usa ID local; GET /games/igdb/{igdbId} permite descoberta por ID externo. O Front precisa adaptar tipos/validadores/rotas; nenhum arquivo Front foi alterado. Todos os IDs locais de entidades são inteiros; tokens de autenticação permanecem textos opacos. Não há importação de identidade anterior: sua fonte era apenas memória.
 
 Confira [contratos](docs/CONTRACTS.md) e entregas [PR-1](docs/B-PR-01.md), [PR-2](docs/B-PR-02.md), [PR-3](docs/B-PR-03.md), [PR-4](docs/B-PR-04.md), [PR-5](docs/B-PR-05.md) e [PR-6](docs/B-PR-06.md).
+
+A [P-PR-07](docs/P-PR-07.md) conclui a validação local da persistência: 16 tabelas comparadas ao modelo EF, sete migrations reproduzidas no banco exclusivo, baseline de upgrade preservada e fluxo de duas contas após reiniciar a API. [Matriz final](docs/MATRIZ-PERSISTENCIA.md). 417 testes aprovados; build/analisadores sem avisos ou erros. A adaptação do consumidor Front aos IDs numéricos permanece em entrega própria.

@@ -59,18 +59,19 @@ public sealed class FinalMigrationAuditTests
                 """, table.Name);
             Assert.Equal(table.Columns.Select(column => $"{column.Name}|{column.StoreType}|{(column.IsNullable ? "nullable" : "required")}").Order(), columns);
             var expectedConstraints = table.UniqueConstraints.Select(key => key.Name)
-                .Concat(table.ForeignKeyConstraints.Select(key => key.Name)).Concat(table.CheckConstraints.Select(check => check.Name)).Order();
-            Assert.Equal(expectedConstraints, await Read(db, """
+                .Concat(table.ForeignKeyConstraints.Select(key => key.Name)).Concat(table.CheckConstraints.Select(check => check.Name)).Order(StringComparer.Ordinal);
+            Assert.Equal(expectedConstraints, (await Read(db, """
                 SELECT c.conname FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid
                 JOIN pg_namespace n ON n.oid=t.relnamespace
                 WHERE n.nspname='public' AND t.relname=@table AND c.contype IN ('p','u','f','c') ORDER BY c.conname
-                """, table.Name));
+                """, table.Name)).Order(StringComparer.Ordinal));
             foreach (var key in table.ForeignKeyConstraints)
             {
+                Assert.All(key.Columns, column => Assert.Equal("integer", column.StoreType));
                 var expected = $"{key.Name}|{string.Join(',', key.Columns.Select(column => column.Name))}|{key.PrincipalTable.Name}|{string.Join(',', key.PrincipalColumns.Select(column => column.Name))}|r";
                 Assert.Contains(expected, await Read(db, """
                     SELECT c.conname || '|' || array_to_string(ARRAY(SELECT a.attname FROM unnest(c.conkey) WITH ORDINALITY k(id,pos) JOIN pg_attribute a ON a.attrelid=c.conrelid AND a.attnum=k.id ORDER BY pos), ',')
-                     || '|' || p.relname || '|' || array_to_string(ARRAY(SELECT a.attname FROM unnest(c.confkey) WITH ORDINALITY k(id,pos) JOIN pg_attribute a ON a.attrelid=c.confrelid AND a.attnum=k.id ORDER BY pos), ',') || '|' || c.confdeltype
+                     || '|' || p.relname || '|' || array_to_string(ARRAY(SELECT a.attname FROM unnest(c.confkey) WITH ORDINALITY k(id,pos) JOIN pg_attribute a ON a.attrelid=c.confrelid AND a.attnum=k.id ORDER BY pos), ',') || '|' || c.confdeltype::text
                     FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid JOIN pg_class p ON p.oid=c.confrelid
                     JOIN pg_namespace n ON n.oid=t.relnamespace WHERE n.nspname='public' AND t.relname=@table AND c.contype='f'
                     """, table.Name));
@@ -85,6 +86,7 @@ public sealed class FinalMigrationAuditTests
                     """, table.Name));
             }
             Assert.All(table.PrimaryKey!.Columns, column => Assert.Equal("integer", column.StoreType));
+            foreach (var column in table.Columns.Where(column => column.Name == "igdb_id")) Assert.Equal("bigint", column.StoreType);
             var identities = await Read(db, """
                 SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name=@table AND is_identity='YES' ORDER BY column_name
                 """, table.Name);
