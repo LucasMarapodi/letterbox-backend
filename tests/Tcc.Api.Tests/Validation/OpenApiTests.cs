@@ -53,6 +53,12 @@ public sealed class OpenApiTests
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var root = document.RootElement;
         var schemas = root.GetProperty("components").GetProperty("schemas");
+        foreach (var name in new[] { "PublicUserResponse", "GameResponse", "ReviewResponse", "RatingResponse" })
+        {
+            var id = schemas.GetProperty(name).GetProperty("properties").GetProperty("id");
+            Assert.Equal("integer", id.GetProperty("type").GetString());
+            Assert.Equal("int32", id.GetProperty("format").GetString());
+        }
         var user = schemas.GetProperty("PublicUserResponse").GetProperty("properties");
         Assert.Equal(new[] { "avatarUrl", "bio", "displayName", "id", "username" }, user.EnumerateObject().Select(property => property.Name).Order());
         foreach (var schema in schemas.EnumerateObject().Where(schema => schema.Name.EndsWith("Response", StringComparison.Ordinal)))

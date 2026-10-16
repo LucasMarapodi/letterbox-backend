@@ -15,10 +15,10 @@ public static class OpinionsRegistration
         services.AddScoped<CatalogUsage>();
         services.AddScoped<CatalogHeadersFilter>();
         services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(options => options.Filters.AddService<CatalogHeadersFilter>());
-        services.AddSingleton<IRatings, InMemoryRatings>();
+        services.AddScoped<IRatings, Tcc.Infrastructure.Persistence.Repositories.PostgresRatings>();
         services.AddScoped<PersonalRating>();
         services.AddScoped<LocalRatingAverage>();
-        services.AddSingleton<IReviews, InMemoryReviews>();
+        services.AddScoped<IReviews, Tcc.Infrastructure.Persistence.Repositories.PostgresReviews>();
         services.AddScoped<OpinionViews>();
         services.AddScoped<PublishReview>();
         services.AddScoped<GetReview>();

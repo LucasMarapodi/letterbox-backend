@@ -19,7 +19,7 @@ public static class OpenApiRegistration
             options.AddDocumentTransformer((document, _, _) =>
             {
                 document.Info = new() { Title = "TCC Games API", Version = "v1",
-                    Description = "Usuários, perfis, sessões e catálogo normalizado persistidos em PostgreSQL. IDs locais de usuários/jogos são inteiros; igdbId é externo de 64 bits. Cache → PostgreSQL → IGDB. Opiniões e relações seguem em memória até suas PRs. Listagem de jogos usa envelope paginado." };
+                    Description = "Usuários, perfis, sessões, catálogo, reviews e avaliações persistidos em PostgreSQL. IDs locais de usuários, jogos, reviews e avaliações são inteiros; igdbId é externo de 64 bits. Cache → PostgreSQL → IGDB. Comentários e relações sociais seguem em memória até suas PRs. Listagem de jogos usa envelope paginado." };
                 document.Servers = [new OpenApiServer { Url = "/" }];
                 document.Components ??= new();
                 document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
@@ -82,7 +82,7 @@ public static class OpenApiRegistration
                     if (parameter.Name == "pageSize") { schema.Minimum = "1"; schema.Maximum = "100"; schema.Default = JsonValue.Create(20); }
                     if (parameter.Name == "kind") schema.Enum = Nodes("game", "review");
                     if (parameter.Name == "userId") schema.Minimum = "1";
-                    if (parameter.Name is "gameId" or "igdbId") schema.Minimum = "1";
+                    if (parameter.Name is "gameId" or "igdbId" or "reviewId") schema.Minimum = "1";
                 }
                 if (context.Description.RelativePath == "api/v1/games/igdb/{igdbId}")
                     operation.Description = "ID externo IGDB positivo (int64). Consulta SQL por igdb_id antes do fornecedor; importação faz upsert transacional e retorna o ID local int32 para as demais rotas.";
@@ -97,6 +97,13 @@ public static class OpenApiRegistration
             options.AddSchemaTransformer((schema, context, _) =>
             {
                 var type = Nullable.GetUnderlyingType(context.JsonTypeInfo.Type) ?? context.JsonTypeInfo.Type;
+                if (type == typeof(int) || type == typeof(long))
+                {
+                    var nullable = Nullable.GetUnderlyingType(context.JsonTypeInfo.Type) is not null;
+                    schema.Type = nullable ? JsonSchemaType.Integer | JsonSchemaType.Null : JsonSchemaType.Integer;
+                    schema.Format = type == typeof(int) ? "int32" : "int64";
+                    schema.Pattern = null;
+                }
                 if (type == typeof(DateTimeOffset))
                 {
                     var nullable = Nullable.GetUnderlyingType(context.JsonTypeInfo.Type) is not null || schema.Type?.HasFlag(JsonSchemaType.Null) == true;

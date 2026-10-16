@@ -5,14 +5,14 @@ using Tcc.Api.Tests.Identity;
 namespace Tcc.Api.Tests.Opinions;
 
 public sealed record GameDto(int Id, string Title, string Summary, string? CoverUrl, string[] Genres, string[] Platforms, DateOnly? ReleaseDate, double? AverageRating);
-public sealed record RatingDto(string Id, int UserId, int GameId, double Value);
+public sealed record RatingDto(int Id, int UserId, int GameId, double Value);
 public sealed record MyRating(RatingDto? Rating);
 public sealed record AuthorDto(int Id, string DisplayName, string? AvatarUrl);
 public sealed record GameSummaryDto(int Id, string Title, string? CoverUrl);
-public sealed record ReviewDto(string Id, int UserId, int GameId, string Text, DateTimeOffset CreatedAt, DateTimeOffset? UpdatedAt, AuthorDto Author, GameSummaryDto Game);
+public sealed record ReviewDto(int Id, int UserId, int GameId, string Text, DateTimeOffset CreatedAt, DateTimeOffset? UpdatedAt, AuthorDto Author, GameSummaryDto Game);
 public sealed record MyReview(ReviewDto? Review);
 public sealed record OpinionsDto(double? AverageRating, ReviewDto[] Reviews);
-public sealed record CommentDto(string Id, int UserId, string ReviewId, string Text, DateTimeOffset CreatedAt, AuthorDto Author);
+public sealed record CommentDto(string Id, int UserId, int ReviewId, string Text, DateTimeOffset CreatedAt, AuthorDto Author);
 public sealed record TextInput(string? Text);
 public sealed record RatingInput(double Value);
 

@@ -15,10 +15,12 @@ public sealed class InMemoryComments : IComments
         this.publications = publications;
 
     }
-    public IReadOnlyList<Comment> ForReview(string reviewId)
+    public IReadOnlyList<Comment> ForReview(int reviewId)
     {
         lock (gate) return comments.Values.Where(comment => comment.ReviewId == reviewId).ToArray();
     }
+    public IReadOnlyList<Comment> InWindow(DateTimeOffset from, DateTimeOffset to)
+    { lock (gate) return comments.Values.Where(item => item.CreatedAt >= from && item.CreatedAt <= to).ToArray(); }
     public void Add(Comment comment)
     {
         lock (gate)

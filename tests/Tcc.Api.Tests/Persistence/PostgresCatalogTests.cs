@@ -49,7 +49,7 @@ public sealed class PostgresCatalogTests
     {
         await PostgresApiFactory.ResetAsync();
         await using var db = PostgresTestDatabase.Context();
-        await db.Database.ExecuteSqlRawAsync("TRUNCATE jogos_generos, jogos_plataformas, jogos, generos, plataformas RESTART IDENTITY");
+        await db.Database.ExecuteSqlRawAsync("TRUNCATE jogos_generos, jogos_plataformas, jogos, generos, plataformas RESTART IDENTITY CASCADE");
     }
 
     [PostgresFact]

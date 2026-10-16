@@ -14,8 +14,10 @@ public interface INotifications
 public interface IPublicationScope
 {
     T Execute<T>(Func<T> action);
+    IPreparedPublication Prepare(Action action);
 }
 
+public interface IPreparedPublication : IDisposable { void Commit(); }
 public sealed class PublicationNotifications(IFollows follows, INotifications notifications)
 {
     public IReadOnlyList<Notification> ForReview(Review review) => follows.Followers(review.UserId)

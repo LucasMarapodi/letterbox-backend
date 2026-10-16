@@ -12,14 +12,14 @@ public sealed class CommentsController(QueryComments comments, PublishComment pu
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<CommentResponse>>(200)]
     [ProducesResponseType<ApiError>(404)]
-    public async Task<ActionResult<IReadOnlyList<CommentResponse>>> Get(string reviewId, CancellationToken cancellationToken) =>
+    public async Task<ActionResult<IReadOnlyList<CommentResponse>>> Get(int reviewId, CancellationToken cancellationToken) =>
         Ok((await comments.Execute(reviewId, cancellationToken)).Select(CommentResponse.From).ToArray());
     [Authorize]
     [HttpPost]
     [ProducesResponseType<CommentResponse>(201)]
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(404)]
-    public async Task<ActionResult<CommentResponse>> Post(string reviewId, TextRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<CommentResponse>> Post(int reviewId, TextRequest request, CancellationToken cancellationToken)
     {
         var comment = CommentResponse.From(await publish.Execute(reviewId, request.Text, cancellationToken));
         return Created($"/api/v1/reviews/{reviewId}/comments", comment);

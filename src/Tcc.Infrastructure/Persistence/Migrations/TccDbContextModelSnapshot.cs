@@ -266,6 +266,96 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Tcc.Domain.Opinions.Rating", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<int>("GameId")
+                        .HasColumnType("integer")
+                        .HasColumnName("jogo_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("atualizado_em");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("usuario_id");
+
+                    b.Property<double>("Value")
+                        .HasColumnType("double precision")
+                        .HasColumnName("nota");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameId");
+
+                    b.HasIndex("UserId", "GameId")
+                        .IsUnique();
+
+                    b.ToTable("avaliacoes", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_avaliacoes_nota", "nota >= 0 AND nota <= 5 AND nota <> 'NaN'::double precision");
+                        });
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Opinions.Review", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<int>("GameId")
+                        .HasColumnType("integer")
+                        .HasColumnName("jogo_id");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasColumnName("texto");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("atualizado_em");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("usuario_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt", "Id");
+
+                    b.HasIndex("UserId", "GameId")
+                        .IsUnique();
+
+                    b.HasIndex("GameId", "CreatedAt", "Id");
+
+                    b.HasIndex("UserId", "CreatedAt", "Id");
+
+                    b.ToTable("reviews", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_reviews_texto", "char_length(texto) BETWEEN 1 AND 10000 AND texto ~ '[^[:space:]]'");
+                        });
+                });
+
             modelBuilder.Entity("Tcc.Domain.Catalog.GameGenre", b =>
                 {
                     b.HasOne("Tcc.Domain.Catalog.Game", null)
@@ -339,6 +429,36 @@ namespace Tcc.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Tcc.Domain.Identity.UserSession", b =>
                 {
+                    b.HasOne("Tcc.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Opinions.Rating", b =>
+                {
+                    b.HasOne("Tcc.Domain.Catalog.Game", null)
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Opinions.Review", b =>
+                {
+                    b.HasOne("Tcc.Domain.Catalog.Game", null)
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Tcc.Domain.Identity.UserAccount", null)
                         .WithMany()
                         .HasForeignKey("UserId")

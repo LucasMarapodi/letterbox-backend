@@ -21,7 +21,7 @@ public sealed class CacheEvictionRegressionTests
         var games = new[] { CatalogFlow.Game(10), CatalogFlow.Game(11) };
         await local.SaveGamesAsync(games, default);
         await cache.SaveGamesAsync(games, default);
-        host.Services.GetRequiredService<IReviews>().TryAdd(Review.Create("known", 1, 10, "Retained", CatalogFlow.Metadata.FetchedAt));
+        host.Services.GetRequiredService<IReviews>().TryAdd(Review.Create(105, 1, 10, "Retained", CatalogFlow.Metadata.FetchedAt));
         Assert.True(cache.EvictGame(10));
         Assert.False(cache.EvictGame(10));
         Assert.Equal(11, Assert.Single(await cache.FindGamesAsync([10, 11], default)).Key);

@@ -17,38 +17,39 @@ public sealed record FavoriteCollections(IReadOnlyList<Game> Games, IReadOnlyLis
 public sealed record FavoriteSnapshot(IReadOnlyList<int> GameIds, IReadOnlyList<Tcc.Domain.Opinions.Review> Reviews);
 
 public sealed class PersonalFavorites(IFavorites favorites, QueryGames games, GetReview reviews,
-    ICurrentSession current, SessionAccess access, OpinionViews views, IPublicationScope publications)
+    ICurrentSession current, SessionAccess access, OpinionViews views, IPublicationScope publications, IReviews reviewStore)
 {
-    private static int GameTarget(string value) => int.TryParse(value, System.Globalization.NumberStyles.None,
-        System.Globalization.CultureInfo.InvariantCulture, out var id) && id > 0 ? id : throw new Tcc.Domain.Identity.DomainValidationException("ID local de jogo inválido.");
+    private static int LocalTarget(string value) => int.TryParse(value, System.Globalization.NumberStyles.None,
+        System.Globalization.CultureInfo.InvariantCulture, out var id) && id > 0 ? id : throw new Tcc.Domain.Identity.DomainValidationException("ID local inválido.");
     private async Task<FavoriteKind> Validate(string kind, string targetId, CancellationToken cancellationToken)
     {
         var type = Favorite.ParseKind(kind);
-        if (type == FavoriteKind.Game) await games.GetAsync(GameTarget(targetId), cancellationToken); else reviews.Find(targetId);
+        if (type == FavoriteKind.Game) await games.GetAsync(LocalTarget(targetId), cancellationToken); else await reviews.FindAsync(LocalTarget(targetId), cancellationToken);
         return type;
     }
     public async Task<Favorite> Set(string kind, string targetId, CancellationToken cancellationToken = default)
     {
         var userId = (await access.Require(current, cancellationToken)).UserId;
         var type = await Validate(kind, targetId, cancellationToken);
+        targetId = LocalTarget(targetId).ToString(System.Globalization.CultureInfo.InvariantCulture);
         await access.Require(current, cancellationToken);
         return publications.Execute(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-
-            if (type == FavoriteKind.Review) reviews.Find(targetId);
             return favorites.Set(userId, type, targetId);
         });
     }
     public async Task<Favorite?> Get(string kind, string targetId, CancellationToken cancellationToken = default)
     {
         var userId = (await access.Require(current, cancellationToken)).UserId;
-        return favorites.Find(userId, await Validate(kind, targetId, cancellationToken), targetId);
+        var type = await Validate(kind, targetId, cancellationToken);
+        return favorites.Find(userId, type, LocalTarget(targetId).ToString(System.Globalization.CultureInfo.InvariantCulture));
     }
     public async Task Remove(string kind, string targetId, CancellationToken cancellationToken = default)
     {
         var userId = (await access.Require(current, cancellationToken)).UserId;
         var type = await Validate(kind, targetId, cancellationToken);
+        targetId = LocalTarget(targetId).ToString(System.Globalization.CultureInfo.InvariantCulture);
         await access.Require(current, cancellationToken);
         publications.Execute(() =>
         {
@@ -61,13 +62,17 @@ public sealed class PersonalFavorites(IFavorites favorites, QueryGames games, Ge
     public async Task<FavoriteSnapshot> Snapshot(CancellationToken cancellationToken = default)
     {
         var userId = (await access.Require(current, cancellationToken)).UserId;
-        return publications.Execute(() => SnapshotFor(userId));
+        return await SnapshotFor(userId, cancellationToken);
     }
-    public FavoriteSnapshot SnapshotFor(int userId)
+    public async Task<FavoriteSnapshot> SnapshotFor(int userId, CancellationToken ct = default)
     {
-        var items = favorites.ForUser(userId).OrderBy(item => item.TargetId, StringComparer.Ordinal).ToArray();
-        return new(items.Where(item => item.Kind == FavoriteKind.Game).Select(item => GameTarget(item.TargetId)).ToArray(),
-            items.Where(item => item.Kind == FavoriteKind.Review).Select(item => reviews.Find(item.TargetId)).ToArray());
+        var items = publications.Execute(() => favorites.ForUser(userId).OrderBy(item => item.TargetId, StringComparer.Ordinal).ToArray());
+        var ids = items.Where(item => item.Kind == FavoriteKind.Review).Select(item => LocalTarget(item.TargetId)).ToArray();
+        var found = new Dictionary<int, Tcc.Domain.Opinions.Review>();
+        foreach (var chunk in ids.Distinct().Chunk(500))
+            foreach (var review in await reviewStore.QueryAsync(new(Ids: chunk), ct)) found.Add(review.Id, review);
+        return new(items.Where(item => item.Kind == FavoriteKind.Game).Select(item => LocalTarget(item.TargetId)).ToArray(),
+            ids.Select(id => found.GetValueOrDefault(id) ?? throw new ResourceFailure(ResourceFailureKind.NotFound)).ToArray());
     }
     public FavoriteCollections Project(FavoriteSnapshot snapshot, IReadOnlyDictionary<int, Game> found, IReadOnlyDictionary<int, PublicAuthor> authors) =>
         new(snapshot.GameIds.Select(id => found[id]).ToArray(), snapshot.Reviews.Select(review => views.Review(review, found[review.GameId], authors[review.UserId])).ToArray());

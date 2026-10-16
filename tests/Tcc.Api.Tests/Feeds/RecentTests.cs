@@ -25,11 +25,11 @@ public sealed class RecentTests
         var b = await ApiTest.Publish(client);
         var before = await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/community/reviews/recent");
         Assert.NotNull(before);
-        Assert.Equal(new[] { ana.Id, b.Id }.Order(StringComparer.Ordinal).Append("review-fixture"), before.Select(review => review.Id));
+        Assert.Equal(new[] { ana.Id, b.Id }.Order().Append(1), before.Select(review => review.Id));
         await ApiTest.SignIn(client);
         clock.UtcNow = clock.UtcNow.AddMinutes(1);
-        using var edit = await client.PatchAsJsonAsync("/api/v1/reviews/review-fixture", new TextInput("Edited old review"));
-        using var comment = await client.PostAsJsonAsync("/api/v1/reviews/review-fixture/comments", new TextInput("New comment"));
+        using var edit = await client.PatchAsJsonAsync("/api/v1/reviews/1", new TextInput("Edited old review"));
+        using var comment = await client.PostAsJsonAsync("/api/v1/reviews/1/comments", new TextInput("New comment"));
         edit.EnsureSuccessStatusCode(); comment.EnsureSuccessStatusCode();
         var authenticated = await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/community/reviews/recent");
         Assert.NotNull(authenticated);
@@ -56,8 +56,8 @@ public sealed class EmptyReviewsFactory : TestApiFactory
 }
 public sealed class EmptyReviews : IReviews
 {
-    public bool TryAdd(Review review) => false;
-    public Review? Find(string id) => null;
-    public IReadOnlyList<Review> All() => [];
-    public Review? Edit(string id, int actorId, string? text, DateTimeOffset now) => null;
+    public Task<Review?> AddAsync(Review review, CancellationToken ct = default, Func<Review, Tcc.Application.Social.IPreparedPublication>? prepare = null) => Task.FromResult<Review?>(null);
+    public Task<Review?> FindAsync(int id, CancellationToken ct = default) => Task.FromResult<Review?>(null);
+    public Task<IReadOnlyList<Review>> QueryAsync(ReviewQuery query, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Review>>([]);
+    public Task<Review?> EditAsync(int id, int actorId, string? text, DateTimeOffset now, CancellationToken ct = default) => Task.FromResult<Review?>(null);
 }

@@ -8,18 +8,18 @@ public sealed record ReviewActivity(Review Review, int CommentCount, DateTimeOff
 
 public sealed class CommentActivity(IReviews reviews, IComments comments, TimeProvider clock, IPublicationScope publications)
 {
-    public IReadOnlyList<ReviewActivity> Execute(string? period) => publications.Execute(() =>
+    public async Task<IReadOnlyList<ReviewActivity>> Execute(string? period, CancellationToken ct = default)
     {
         var window = RankingPeriod.Parse(period);
         var now = clock.GetUtcNow();
+        var grouped = publications.Execute(() => comments.InWindow(now - window.Duration, now).GroupBy(item => item.ReviewId)
+            .ToDictionary(group => group.Key, group => (Count: group.Count(), Last: group.Max(item => item.CreatedAt))));
         var result = new List<ReviewActivity>();
-        foreach (var review in reviews.All())
-        {
-            var eligible = comments.ForReview(review.Id).Where(comment => window.Contains(comment.CreatedAt, now)).ToArray();
-            if (eligible.Length > 0) result.Add(new(review, eligible.Length, eligible.Max(comment => comment.CreatedAt)));
-        }
-        return (IReadOnlyList<ReviewActivity>)result;
-    });
+        foreach (var chunk in grouped.Keys.Chunk(500))
+            foreach (var review in await reviews.QueryAsync(new(Ids: chunk), ct))
+                result.Add(new(review, grouped[review.Id].Count, grouped[review.Id].Last));
+        return result;
+    }
 }
 
 internal static class ActivityOrdering
@@ -34,7 +34,7 @@ public sealed class MostCommentedReviews(CommentActivity activity, OpinionViews 
 {
     public async Task<IReadOnlyList<RankedReviewDetails>> Execute(string? period, CancellationToken cancellationToken = default)
     {
-        var snapshot = ActivityOrdering.Sort(activity.Execute(period), item => item.CommentCount, item => item.LastCommentAt, item => item.Review.Id).ToArray();
+        var snapshot = ActivityOrdering.Sort(await activity.Execute(period, cancellationToken), item => item.CommentCount, item => item.LastCommentAt, item => item.Review.Id).ToArray();
         var found = await games.ResolveAsync(snapshot.Select(item => item.Review.GameId), cancellationToken);
         var authors = await views.Authors(snapshot.Select(item => item.Review.UserId), cancellationToken);
         return snapshot.Select(item => new RankedReviewDetails(views.Review(item.Review, found[item.Review.GameId], authors[item.Review.UserId]), item.CommentCount, item.LastCommentAt)).ToArray();

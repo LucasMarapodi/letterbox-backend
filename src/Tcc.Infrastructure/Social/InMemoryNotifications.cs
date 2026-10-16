@@ -10,13 +10,16 @@ public sealed class InMemoryNotifications(InMemoryPublicationScope publications)
     {
         lock (publications.Gate)
         {
-            foreach (var item in events)
+            publications.Stage(() =>
             {
-                var key = (item.Type, item.CommentId ?? item.ReviewId, item.UserId);
-                if (notifications.ContainsKey(key)) continue;
-                publications.OnRollback(() => notifications.Remove(key));
-                notifications.Add(key, item);
-            }
+                foreach (var item in events)
+                {
+                    var key = (item.Type, item.CommentId ?? item.ReviewId.ToString(System.Globalization.CultureInfo.InvariantCulture), item.UserId);
+                    if (notifications.ContainsKey(key)) continue;
+                    publications.OnRollback(() => notifications.Remove(key));
+                    notifications.Add(key, item);
+                }
+            });
         }
     }
     public IReadOnlyList<Notification> ForUser(int userId)

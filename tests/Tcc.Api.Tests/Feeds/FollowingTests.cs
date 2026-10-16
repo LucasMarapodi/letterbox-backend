@@ -26,12 +26,12 @@ public sealed class FollowingTests
         await SocialTest.Follow(client, 1);
         var feed = await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/feed/following?userId=user-1");
         Assert.NotNull(feed);
-        Assert.Equal(new[] { ana.Id, "review-fixture" }, feed.Select(review => review.Id));
+        Assert.Equal(new[] { ana.Id, 1 }, feed.Select(review => review.Id));
         Assert.DoesNotContain(feed, review => review.Id == own.Id || review.Id == c.Id);
         await SocialTest.Follow(client, c.UserId);
         feed = await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/feed/following");
         Assert.NotNull(feed);
-        Assert.Equal(new[] { ana.Id, c.Id }.Order(StringComparer.Ordinal).Append("review-fixture"), feed.Select(review => review.Id));
+        Assert.Equal(new[] { ana.Id, c.Id }.Order().Append(1), feed.Select(review => review.Id));
         await ApiTest.SignIn(client);
         clock.UtcNow = clock.UtcNow.AddMinutes(1);
         var newest = await ApiTest.Publish(client, 2);

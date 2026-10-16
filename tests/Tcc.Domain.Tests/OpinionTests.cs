@@ -18,7 +18,7 @@ public sealed class OpinionTests
     public void Review_ownership_and_text_limits_are_domain_invariants()
     {
         var now = DateTimeOffset.UtcNow;
-        var review = Review.Create("id", 1, 1, new string('a', 10000), now);
+        var review = Review.Create(1, 1, 1, new string('a', 10000), now);
         Assert.Throws<ReviewOwnershipException>(() => review.Edit(2, "Text", now));
         Assert.Throws<DomainValidationException>(() => review.Edit(1, new string('a', 10001), now));
         Assert.Throws<DomainValidationException>(() => review.Edit(1, " ", now));
@@ -34,8 +34,8 @@ public sealed class OpinionTests
     public void Comment_text_has_its_own_limit()
     {
         var now = DateTimeOffset.UtcNow;
-        Assert.Equal(2000, Comment.Create("id", 1, "review", new string('a', 2000), now).Text.Length);
-        Assert.Throws<DomainValidationException>(() => Comment.Create("id", 1, "review", new string('a', 2001), now));
-        Assert.Throws<DomainValidationException>(() => Comment.Create("id", 1, "review", " ", now));
+        Assert.Equal(2000, Comment.Create("id", 1, 1, new string('a', 2000), now).Text.Length);
+        Assert.Throws<DomainValidationException>(() => Comment.Create("id", 1, 1, new string('a', 2001), now));
+        Assert.Throws<DomainValidationException>(() => Comment.Create("id", 1, 1, " ", now));
     }
 }

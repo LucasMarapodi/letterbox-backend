@@ -25,12 +25,12 @@ public sealed class FavoriteTests
             Assert.Equal("game", a?.TargetType);
         }
         finally { foreach (var response in responses) response.Dispose(); }
-        using var review = await client.PutAsync("/api/v1/favorites/review/review-fixture", null);
+        using var review = await client.PutAsync("/api/v1/favorites/review/1", null);
         review.EnsureSuccessStatusCode();
         var lists = await client.GetFromJsonAsync<FavoriteLists>("/api/v1/favorites?userId=other");
         Assert.NotNull(lists);
         Assert.Equal(1, Assert.Single(lists.Games).Id);
-        Assert.Equal("review-fixture", Assert.Single(lists.Reviews).Id);
+        Assert.Equal(1, Assert.Single(lists.Reviews).Id);
         await ApiTest.SignIn(client, "B@example.com", "p");
         var other = await client.GetFromJsonAsync<FavoriteLists>("/api/v1/favorites?userId=user-1");
         Assert.NotNull(other);
@@ -50,7 +50,7 @@ public sealed class FavoriteTests
     [InlineData("wrong", "1", 400)]
     [InlineData("Game", "1", 400)]
     [InlineData("game", "999", 404)]
-    [InlineData("review", "missing", 404)]
+    [InlineData("review", "999999", 404)]
     public async Task Invalid_kind_or_missing_target_is_rejected_for_all_operations(string kind, string target, int expected)
     {
         await using var host = new TestApiFactory();

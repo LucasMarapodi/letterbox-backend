@@ -14,7 +14,8 @@ public sealed class FavoritesController(PersonalFavorites favorites, LocalRating
     public async Task<ActionResult<FavoriteListsResponse>> List(CancellationToken cancellationToken)
     {
         var lists = await favorites.List(cancellationToken);
-        return Ok(FavoriteListsResponse.From(lists, averages.ForGame));
+        var values = await averages.ForGames(lists.Games.Select(game => game.Id), cancellationToken);
+        return Ok(FavoriteListsResponse.From(lists, id => values.GetValueOrDefault(id)));
     }
     [HttpGet("{kind}/{targetId}")]
     [ProducesResponseType<FavoriteStatusResponse>(200)]

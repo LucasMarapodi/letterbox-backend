@@ -4,23 +4,23 @@ namespace Tcc.Domain.Opinions;
 
 public sealed record Review
 {
-    public string Id { get; }
+    public int Id { get; private set; }
     public int UserId { get; }
     public int GameId { get; }
     public string Text { get; }
     public DateTimeOffset CreatedAt { get; }
     public DateTimeOffset? UpdatedAt { get; }
 
-    private Review(string id, int userId, int gameId, string text, DateTimeOffset createdAt, DateTimeOffset? updatedAt)
+    private Review(int id, int userId, int gameId, string text, DateTimeOffset createdAt, DateTimeOffset? updatedAt)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        ArgumentOutOfRangeException.ThrowIfNegative(id);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(userId);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(gameId);
         Id = id; UserId = userId; GameId = gameId; Text = text;
         CreatedAt = createdAt.ToUniversalTime(); UpdatedAt = updatedAt?.ToUniversalTime();
     }
 
-    public static Review Create(string id, int userId, int gameId, string? text, DateTimeOffset now) =>
+    public static Review Create(int id, int userId, int gameId, string? text, DateTimeOffset now) =>
         new(id, userId, gameId, ValidateText(text), now, null);
 
     public Review Edit(int actorId, string? text, DateTimeOffset now)

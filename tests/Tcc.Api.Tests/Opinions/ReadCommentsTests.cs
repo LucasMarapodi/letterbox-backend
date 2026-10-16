@@ -11,11 +11,11 @@ public sealed class ReadCommentsTests
     {
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
-        var comments = await client.GetFromJsonAsync<CommentDto[]>("/api/v1/reviews/review-fixture/comments");
+        var comments = await client.GetFromJsonAsync<CommentDto[]>("/api/v1/reviews/1/comments");
         Assert.NotNull(comments);
         Assert.Equal(new[] { "comment-c", "comment-a", "comment-b" }, comments.Select(comment => comment.Id));
-        Assert.All(comments, comment => Assert.Equal("review-fixture", comment.ReviewId));
-        using var response = await client.GetAsync("/api/v1/reviews/review-fixture/comments");
+        Assert.All(comments, comment => Assert.Equal(1, comment.ReviewId));
+        using var response = await client.GetAsync("/api/v1/reviews/1/comments");
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal(new[] { "avatarUrl", "displayName", "id" }, json.RootElement[0].GetProperty("author").EnumerateObject().Select(property => property.Name).Order());
         Assert.Equal(new[] { "author", "createdAt", "id", "reviewId", "text", "userId" }, json.RootElement[0].EnumerateObject().Select(property => property.Name).Order());
@@ -32,7 +32,7 @@ public sealed class ReadCommentsTests
         var comments = await client.GetFromJsonAsync<CommentDto[]>($"/api/v1/reviews/{review.Id}/comments");
         Assert.NotNull(comments);
         Assert.Empty(comments);
-        using var missing = await client.GetAsync("/api/v1/reviews/missing/comments");
+        using var missing = await client.GetAsync("/api/v1/reviews/999999/comments");
         Assert.Equal(404, (int)missing.StatusCode);
     }
 }

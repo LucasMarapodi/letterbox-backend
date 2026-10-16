@@ -1,6 +1,6 @@
 # Matriz de modelagem e persistência — quinta fase
 
-P-PR-01 e P-PR-02 validadas localmente: identidade e catálogo (oito tabelas). Demais tabelas permanecem planejadas. Cada tabela só fica concluída após suas duas US e testes em PostgreSQL real.
+P-PR-01, P-PR-02 e P-PR-03 validadas localmente: identidade, catálogo e opiniões (dez tabelas). Demais tabelas permanecem planejadas. Cada tabela só fica concluída após suas duas US e testes em PostgreSQL real.
 
 | Tabela | Classe .NET relacionada | US A: modelo/DbContext | US B: SQL/retirada de memória | Estado modelo | Estado SQL |
 | --- | --- | --- | --- | --- | --- |
@@ -12,8 +12,8 @@ P-PR-01 e P-PR-02 validadas localmente: identidade e catálogo (oito tabelas). D
 | Jogos | Game adaptada e metadados do catálogo | P-US-12 | P-US-13 | VALIDADO | VALIDADO |
 | JogosGeneros | GameGenre nova associação | P-US-14 | P-US-15 | VALIDADO | VALIDADO |
 | JogosPlataformas | GamePlatform nova associação | P-US-16 | P-US-17 | VALIDADO | VALIDADO |
-| Reviews | Review existente | P-US-18 | P-US-19 | PLANEJADO | PLANEJADO |
-| Avaliacoes | Rating e RatingValue existentes | P-US-20 | P-US-21 | PLANEJADO | PLANEJADO |
+| Reviews | Review existente | P-US-18 | P-US-19 | VALIDADO | VALIDADO |
+| Avaliacoes | Rating e RatingValue existentes | P-US-20 | P-US-21 | VALIDADO | VALIDADO |
 | Comentarios | Comment adaptada com ParentCommentId | P-US-22 | P-US-23 | PLANEJADO | PLANEJADO |
 | CurtidasComentarios | CommentLike nova entidade | P-US-24 | P-US-25 | PLANEJADO | PLANEJADO |
 | JogosFavoritos | GameFavorite nova; adaptador do Favorite atual | P-US-26 | P-US-27 | PLANEJADO | PLANEJADO |
@@ -33,14 +33,14 @@ Não marcar SQL validado apenas porque um DbSet existe, uma migration foi gerada
 - SessoesUsuarios com token_hash e autenticação pós-restart: VALIDADO.
 - Catálogo segue cache -> PostgreSQL -> IGDB: VALIDADO com SQL real e smoke live.
 - Jogos/gêneros/plataformas e associações persistentes: VALIDADO.
-- Reviews/notas e médias SQL, unicidade e autoria: PENDENTE.
+- Reviews/notas e médias SQL, unicidade e autoria: VALIDADO.
 - Comentários principais e respostas de uma camada na mesma review: PENDENTE.
 - Curtidas únicas/idempotentes e contagem SQL: PENDENTE.
 - Favoritos/seguimentos SQL e isolamento: PENDENTE.
 - Notificações na mesma transação da publicação: PENDENTE.
-- Migrations/upgrade em banco isolado e preservação de baseline: VALIDADO até LocalCatalog; cinco contas mantidas no upgrade local.
+- Migrations/upgrade em banco isolado e preservação de baseline: VALIDADO até Opinions; cinco contas e 42 jogos mantidos no upgrade local.
 - Todos os stores de negócio em memória ausentes do runtime: PENDENTE.
-- Falha PostgreSQL não cai em fixture/sucesso local: VALIDADO para identidade e catálogo.
+- Falha PostgreSQL não cai em fixture/sucesso local: VALIDADO para identidade, catálogo e opiniões.
 - Testes/análises/build e PRs reais: PENDENTE.
 
 ## Limites
@@ -58,3 +58,7 @@ Testes PostgresModelTests, PostgresIdentityHttpTests, ProfilePersistenceTests, S
 ## Evidências P-PR-02
 
 Game/Genre/Platform/GameGenre/GamePlatform, configurações CatalogConfigurations e migration LocalCatalog. Fonte: PostgresGameCatalog por ScopedSqlLocalGameCatalog; InMemoryLocalGameCatalog está somente no assembly de testes. Projeções de nomes são derivadas das junções SQL. Testes CatalogModelTests, PostgresCatalogTests, PostgresCatalogHttpTests e regressões existentes. Smoke real de seis passos aprovado, sem segredo em evidência. Oito tabelas prontas, demais grupos em transição. Detalhes em P-PR-02.md e IGDB-CATALOG.md.
+
+## Evidências P-PR-03
+
+Review/Rating, OpinionConfigurations, migration Opinions, PostgresReviews/PostgresRatings, IReviews/IRatings assíncronos. Reviews/avaliacoes com integer identity, FKs RESTRICT, constraints e unicidade. OpinionPersistenceTests verifica SQL real, autoria, concorrência, upsert, médias, timestamps, rollback e reinício. Memória somente em fixtures para essas entidades. Notificações duráveis continuam pendentes da respectiva PR. 397 testes aprovados e build/analisadores sem avisos; Swagger/OpenAPI local atualizado. Descrição em P-PR-03.md.

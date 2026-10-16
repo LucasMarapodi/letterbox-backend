@@ -7,7 +7,7 @@ namespace Tcc.Api.Tests.Fixtures;
 public static class TestCatalogRegistration
 {
     public static IServiceCollection AddTestCatalog(this IServiceCollection services)
-    { services.AddSingleton<ILocalGameCatalog, TestLocalGameCatalog>(); return services; }
+    { Tcc.Application.Opinions.TestOpinionAccess.AddTestOpinions(services); services.AddSingleton<ILocalGameCatalog, TestLocalGameCatalog>(); return services; }
 }
 internal sealed class TestLocalGameCatalog(TimeProvider clock, CatalogMemoryOptions options) : ILocalGameCatalog
 {

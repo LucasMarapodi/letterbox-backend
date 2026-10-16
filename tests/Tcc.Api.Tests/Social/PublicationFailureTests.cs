@@ -25,9 +25,9 @@ public sealed class PublicationFailureTests
         Assert.Empty((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/1/reviews")) ?? []);
         Assert.Empty(host.Services.GetRequiredService<INotifications>().ForUser(b.Id));
         await ApiTest.SignIn(client, "B@example.com", "p");
-        using var failedComment = await client.PostAsJsonAsync("/api/v1/reviews/review-fixture/comments", new TextInput("Comment"));
+        using var failedComment = await client.PostAsJsonAsync("/api/v1/reviews/1/comments", new TextInput("Comment"));
         Assert.Equal(500, (int)failedComment.StatusCode);
-        Assert.Equal(3, (await client.GetFromJsonAsync<CommentDto[]>("/api/v1/reviews/review-fixture/comments"))?.Length);
+        Assert.Equal(3, (await client.GetFromJsonAsync<CommentDto[]>("/api/v1/reviews/1/comments"))?.Length);
         Assert.Empty(host.Services.GetRequiredService<INotifications>().ForUser(1));
     }
 }

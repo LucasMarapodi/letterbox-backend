@@ -20,15 +20,15 @@ public sealed class RankedReviewTests
         await using var host = new IdentityFactory(new MutableClock(now));
         using var client = host.CreateClient();
         await RankingFixture.SeedReviews(host, client, now);
-        RankingFixture.Comment(host, "lower", "rank-a", now.AddHours(-hours));
-        RankingFixture.Comment(host, "upper", "rank-a", now);
-        RankingFixture.Comment(host, "before", "rank-a", now.AddHours(-hours).AddTicks(-1));
-        RankingFixture.Comment(host, "future", "rank-a", now.AddTicks(1));
-        RankingFixture.Comment(host, "b", "rank-b", now);
-        RankingFixture.Comment(host, "c", "rank-c", now);
+        RankingFixture.Comment(host, "lower", 101, now.AddHours(-hours));
+        RankingFixture.Comment(host, "upper", 101, now);
+        RankingFixture.Comment(host, "before", 101, now.AddHours(-hours).AddTicks(-1));
+        RankingFixture.Comment(host, "future", 101, now.AddTicks(1));
+        RankingFixture.Comment(host, "b", 102, now);
+        RankingFixture.Comment(host, "c", 103, now);
         var results = await client.GetFromJsonAsync<RankedReviewDto[]>($"/api/v1/community/reviews/most-commented?period={period}");
         Assert.NotNull(results);
-        Assert.Equal(new[] { "rank-a", "rank-b", "rank-c" }, results.Select(item => item.Review.Id));
+        Assert.Equal(new[] { 101, 102, 103 }, results.Select(item => item.Review.Id));
         Assert.Equal(new[] { 2, 1, 1 }, results.Select(item => item.CommentCount));
         Assert.All(results, item => Assert.Equal(now, item.LastCommentAt));
         Assert.True(results[0].Review.CreatedAt < now.AddDays(-30));
@@ -42,15 +42,15 @@ public sealed class RankedReviewTests
         await using var host = new IdentityFactory(new MutableClock(now));
         using var client = host.CreateClient();
         await RankingFixture.SeedReviews(host, client, now);
-        RankingFixture.Comment(host, "a", "rank-a", now.AddDays(-8));
-        RankingFixture.Comment(host, "b", "rank-b", now.AddDays(-2));
-        RankingFixture.Comment(host, "c", "rank-c", now.AddDays(-1));
+        RankingFixture.Comment(host, "a", 101, now.AddDays(-8));
+        RankingFixture.Comment(host, "b", 102, now.AddDays(-2));
+        RankingFixture.Comment(host, "c", 103, now.AddDays(-1));
         var day = await client.GetFromJsonAsync<RankedReviewDto[]>("/api/v1/community/reviews/most-commented?period=24h");
-        Assert.Equal("rank-c", Assert.Single(day ?? []).Review.Id);
+        Assert.Equal(103, Assert.Single(day ?? []).Review.Id);
         var week = await client.GetFromJsonAsync<RankedReviewDto[]>("/api/v1/community/reviews/most-commented");
-        Assert.Equal(new[] { "rank-c", "rank-b" }, (week ?? []).Select(item => item.Review.Id));
+        Assert.Equal(new[] { 103, 102 }, (week ?? []).Select(item => item.Review.Id));
         var month = await client.GetFromJsonAsync<RankedReviewDto[]>("/api/v1/community/reviews/most-commented?period=30d");
-        Assert.Equal(new[] { "rank-c", "rank-b", "rank-a" }, (month ?? []).Select(item => item.Review.Id));
+        Assert.Equal(new[] { 103, 102, 101 }, (month ?? []).Select(item => item.Review.Id));
     }
 
     [Theory]

@@ -1,3 +1,4 @@
+using Tcc.Application.Opinions;
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -14,7 +15,7 @@ public sealed class CatalogHttpTests
     {
         await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices)));
         Assert.Empty(host.Services.GetRequiredService<Tcc.Application.Opinions.IReviews>().All());
-        Assert.Empty(host.Services.GetRequiredService<Tcc.Application.Opinions.IComments>().ForReview("review-fixture"));
+        Assert.Empty(host.Services.GetRequiredService<Tcc.Application.Opinions.IComments>().ForReview(1));
         Assert.Empty(await host.Services.GetRequiredService<ILocalGameCatalog>().FindGamesAsync([1], default));
         Assert.DoesNotContain(typeof(Tcc.Infrastructure.Igdb.IgdbGameCatalog).Assembly.GetTypes(), type => type.Name == "FakeIgdbCatalog");
         using var client = host.CreateClient();

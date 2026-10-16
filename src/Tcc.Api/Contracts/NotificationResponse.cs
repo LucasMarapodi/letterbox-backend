@@ -4,7 +4,7 @@ using Tcc.Domain.Social;
 
 namespace Tcc.Api.Contracts;
 
-public sealed record NotificationResponse(string Id, int UserId, int ActorId, string ReviewId,
+public sealed record NotificationResponse(string Id, int UserId, int ActorId, int ReviewId,
     DateTimeOffset CreatedAt, string Type, AuthorResponse Actor,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? CommentId)
 {
