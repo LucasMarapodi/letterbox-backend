@@ -15,6 +15,7 @@ ApiError: `{"code":"validation_failed","message":"Requisição inválida."}`. Me
 | 409 | conflict |
 | 500 | internal_error |
 | 503 | integration_unavailable |
+| 502 | integration_invalid_response |
 | outros erros HTTP | http_error |
 
 Model binding inválido em controllers usa ApiError; respostas de erro sem corpo usam o mesmo contrato. Exceções inesperadas retornam 500 seguro. Futuros casos de uso devem mapear falhas conhecidas para status e DTO nomeados. Minimal APIs futuras devem usar a mesma convenção de validação, sem depender do pipeline MVC.
