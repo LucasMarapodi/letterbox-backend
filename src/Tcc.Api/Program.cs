@@ -1,4 +1,7 @@
+using Tcc.Api.Authentication;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddIdentityFeature();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<Tcc.Infrastructure.Memory.HostMemory>();
 builder.Services.AddSingleton<Tcc.Application.Memory.IHostSeed>(services =>
@@ -22,6 +25,8 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
 app.UseStatusCodePages(async statusContext =>
     await statusContext.HttpContext.Response.WriteAsJsonAsync(
         Tcc.Api.Contracts.ApiError.FromStatus(statusContext.HttpContext.Response.StatusCode)));
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 
 app.MapGet("/health", () => TypedResults.Ok(new Tcc.Api.Contracts.HealthResponse("ok")));

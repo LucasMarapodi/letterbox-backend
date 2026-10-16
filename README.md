@@ -1,6 +1,6 @@
 # Backend TCC
 
-Fundação .NET 10 da plataforma de avaliações e reviews de jogos. Código exclusivamente em Back.
+API .NET 10 da plataforma de avaliações e reviews de jogos. Fundação, identidade e perfil em memória. Código exclusivamente em Back.
 
 ## Executar
 
@@ -13,7 +13,7 @@ dotnet build --no-restore -c Release
 dotnet run --project src/Tcc.Api --urls http://localhost:5080
 ```
 
-`GET /health` retorna `200 {"status":"ok"}`. Rotas de negócio serão adicionadas nas próximas PRs em `/api/v1`.
+`GET /health` retorna `200 {"status":"ok"}`. Cadastro, login, sessão e perfil estão em `/api/v1`; contratos e exemplos em [AUTH.md](docs/AUTH.md).
 
 ## Camadas
 
@@ -23,6 +23,6 @@ dotnet run --project src/Tcc.Api --urls http://localhost:5080
 - Api: composição, DTOs e pipeline HTTP.
 - tests: testes HTTP com WebApplicationFactory e verificação das dependências das camadas.
 
-`TimeProvider` é a porta de relógio nativa do .NET. Está registrada como singleton e pode ser substituída por host. `HostMemory` coordena o seed com exclusão mútua; a marca de inicialização só é gravada após sucesso. Repositórios de negócio terão seus próprios dados em memória e serão introduzidos nas próximas US. Não há fixtures de usuários ou jogos nesta fundação.
+`TimeProvider` é a porta de relógio nativa do .NET. Está registrada como singleton e pode ser substituída por host. `HostMemory` coordena o seed com exclusão mútua; a marca de inicialização só é gravada após sucesso. Contas e perfis são gravados atomicamente; sessões ficam em um store próprio. Cada host tem suas próprias instâncias, e reiniciar restaura a fixture de Ana e apaga contas criadas, edições e tokens. Ainda não há catálogo de jogos.
 
-Confira [contratos](docs/CONTRACTS.md) e [descrição da primeira PR](docs/B-PR-01.md).
+Confira [contratos](docs/CONTRACTS.md), [primeira PR](docs/B-PR-01.md) e [segunda PR](docs/B-PR-02.md).
