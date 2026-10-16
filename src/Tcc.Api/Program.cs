@@ -6,6 +6,7 @@ builder.Services.AddIdentityFeature();
 builder.Services.AddOpinionsFeature();
 builder.Services.AddSocialFeature();
 builder.Services.AddQueriesFeature();
+builder.Services.AddApiDocumentation();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<Tcc.Infrastructure.Memory.HostMemory>();
 builder.Services.AddSingleton<Tcc.Application.Memory.IHostSeed>(services =>
@@ -32,6 +33,7 @@ app.UseStatusCodePages(async statusContext =>
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapOpenApi();
 
 app.MapGet("/health", () => TypedResults.Ok(new Tcc.Api.Contracts.HealthResponse("ok")));
 app.Run();
