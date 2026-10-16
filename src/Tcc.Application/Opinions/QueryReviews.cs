@@ -13,8 +13,7 @@ public sealed class QueryReviews(IReviews reviews, QueryGames games, IUserAccoun
         var game = await games.GetAsync(gameId, cancellationToken);
         var authors = await views.Authors(snapshot.Select(review => review.UserId), cancellationToken);
         var counts = await views.LikeCounts(snapshot, cancellationToken);
-        return snapshot.OrderByDescending(review => review.CreatedAt).ThenBy(review => review.Id)
-            .Select(review => views.Review(review, game, authors[review.UserId], counts.GetValueOrDefault(review.Id))).ToArray();
+        return snapshot.Select(review => views.Review(review, game, authors[review.UserId], counts.GetValueOrDefault(review.Id))).ToArray();
     }
     public async Task<IReadOnlyList<ReviewDetails>> ForUser(int userId, CancellationToken cancellationToken = default)
     {

@@ -31,12 +31,12 @@ public sealed class PostgresReviews(Lazy<TccDbContext> context) : IReviews
         if (review is not null && command.CreateOnly) throw new ResourceFailure(ResourceFailureKind.Conflict);
         if (review is null)
         {
-            review = Review.CreateRated(command.UserId, command.GameId, command.Text, command.Rating, command.Now);
+            review = Review.CreateRated(command.UserId, command.GameId, command.Text, command.Rating, command.Now, command.Title);
             db.Reviews.Add(review);
         }
         else
         {
-            var updated = review.EditRated(command.UserId, command.TextSpecified, command.Text, command.Rating, command.Now);
+            var updated = review.EditRated(command.UserId, command.TextSpecified, command.Text, command.Rating, command.Now, command.TitleSpecified, command.Title);
             db.Entry(review).CurrentValues.SetValues(updated);
             if (review.Evaluation is null) db.Ratings.Add(updated.Evaluation!);
             else db.Entry(review.Evaluation).CurrentValues.SetValues(updated.Evaluation!);
@@ -56,7 +56,7 @@ public sealed class PostgresReviews(Lazy<TccDbContext> context) : IReviews
         if (query.UserId is int userId) rows = rows.Where(item => item.UserId == userId);
         if (query.Authors is not null) rows = rows.Where(item => query.Authors.Contains(item.UserId));
         if (query.Ids is not null) rows = rows.Where(item => query.Ids.Contains(item.Id));
-        return await rows.OrderByDescending(item => item.CreatedAt).ThenBy(item => item.Id).ToArrayAsync(ct);
+        return await ReviewOrdering.Common(rows).ToArrayAsync(ct);
     });
 }
 public sealed class PostgresRatings(Lazy<TccDbContext> context) : IRatings

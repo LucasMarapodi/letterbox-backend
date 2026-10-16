@@ -6,7 +6,7 @@ public sealed class ReviewProjection(OpinionViews views, Tcc.Application.Catalog
 {
     public async Task<IReadOnlyList<ReviewDetails>> ExecuteAsync(IEnumerable<Review> reviews, CancellationToken cancellationToken = default)
     {
-        var snapshot = reviews.OrderByDescending(review => review.CreatedAt).ThenBy(review => review.Id).ToArray();
+        var snapshot = reviews.ToArray();
         var found = await games.ResolveAsync(snapshot.Select(review => review.GameId), cancellationToken);
         var authors = await views.Authors(snapshot.Select(review => review.UserId), cancellationToken);
         var counts = await views.LikeCounts(snapshot, cancellationToken);

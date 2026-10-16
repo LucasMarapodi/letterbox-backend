@@ -17,7 +17,7 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     [ProducesResponseType<ApiError>(409)]
     public async Task<ActionResult<ReviewResponse>> Publish(int gameId, ReviewCreateRequest request, CancellationToken cancellationToken)
     {
-        var result = ReviewResponse.From(await publish.Execute(gameId, request.Text, request.Rating, cancellationToken));
+        var result = ReviewResponse.From(await publish.Execute(gameId, request.Text, request.Rating, cancellationToken, title: request.Title));
         return Created($"/api/v1/reviews/{result.Id}", result);
     }
     [HttpGet("reviews/{reviewId}")]
@@ -34,7 +34,7 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     public async Task<ActionResult<ReviewResponse>> Edit(int reviewId, ReviewPatchRequest request, CancellationToken cancellationToken)
     {
         if (request.RatingSpecified && request.Rating is null) throw new Tcc.Domain.Identity.DomainValidationException("Nota não pode ser null.");
-        return Ok(ReviewResponse.From(await edit.Execute(reviewId, request.TextSpecified, request.Text, request.Rating, cancellationToken)));
+        return Ok(ReviewResponse.From(await edit.Execute(reviewId, request.TextSpecified, request.Text, request.Rating, cancellationToken, request.TitleSpecified, request.Title)));
     }
 
     [HttpGet("games/{gameId}/reviews")]

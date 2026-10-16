@@ -66,7 +66,7 @@ public sealed class OpenApiTests
         Assert.False(create.GetProperty("additionalProperties").GetBoolean());
         var patch = schemas.GetProperty("ReviewPatchRequest");
         Assert.False(patch.TryGetProperty("required", out var required) && required.GetArrayLength() > 0);
-        Assert.Equal(new[] { "rating", "text" }, patch.GetProperty("properties").EnumerateObject().Select(property => property.Name).Order());
+        Assert.Equal(new[] { "rating", "text", "title" }, patch.GetProperty("properties").EnumerateObject().Select(property => property.Name).Order());
         var nullable = schemas.GetProperty("ReviewResponse").GetProperty("properties").GetProperty("rating");
         Assert.Contains("null", nullable.GetProperty("type").EnumerateArray().Select(item => item.GetString()));
     }

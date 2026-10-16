@@ -45,7 +45,7 @@ internal sealed class OpinionFixtures(IReviews reviews, IComments comments) : IH
     public Task StartAsync(CancellationToken cancellationToken)
     {
         var date = new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
-        if (reviews.TryAdd(Review.Create(1, 1, 3, "Review fictícia de Atlas.", date)))
+        if (reviews.TryAdd(Review.Create(1, 1, 3, "Review fictícia de Atlas.", date, "Fixture review")))
         {
             comments.Add(Comment.Create(2, 1, 1, "Segundo comentário.", date.AddDays(1)));
             comments.Add(Comment.Create(1, 1, 1, "Primeiro no empate.", date.AddDays(1)));

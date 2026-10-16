@@ -20,6 +20,7 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<Review>
         entity.Property(item => item.UserId).HasColumnName("usuario_id");
         entity.Property(item => item.GameId).HasColumnName("jogo_id");
         entity.Property(item => item.Text).HasColumnName("texto").HasMaxLength(10000).IsRequired();
+        entity.Property(item => item.Title).HasColumnName("titulo").HasMaxLength(150);
         entity.Property(item => item.CreatedAt).HasColumnName("criado_em");
         entity.Property(item => item.UpdatedAt).HasColumnName("atualizado_em");
         entity.HasIndex(item => new { item.UserId, item.GameId }).IsUnique();

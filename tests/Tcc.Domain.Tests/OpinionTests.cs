@@ -31,7 +31,7 @@ public sealed class OpinionTests
     public void Review_ownership_and_text_limits_are_domain_invariants()
     {
         var now = DateTimeOffset.UtcNow;
-        var review = Review.Create(1, 1, 1, new string('a', 10000), now);
+        var review = Review.Create(1, 1, 1, new string('a', 10000), now, "Fixture review");
         Assert.Throws<ReviewOwnershipException>(() => review.Edit(2, "Text", now));
         Assert.Throws<DomainValidationException>(() => review.Edit(1, new string('a', 10001), now));
         Assert.Equal("", review.Edit(1, " ", now).Text);

@@ -3820,7 +3820,7 @@
           "Ratings"
         ],
         "summary": "PUT /api/v1/games/{gameId}/rating/me",
-        "description": "Compatibilidade: delega ao fluxo unificado. Cria review real sem descrição quando ausente ou altera a nota preservando texto/ID da existente, atomicamente. Não cria avaliação órfã. O novo formulário deve usar POST/PATCH de reviews.",
+        "description": "Compatibilidade: delega ao fluxo unificado. Cria review real somente com nota quando ausente ou altera a nota preservando texto/título/ID da existente, atomicamente. Histórico textual sem título exige regularização por PATCH antes de alterar a nota; não contorna a regra título/descrição. Não cria avaliação órfã.",
         "parameters": [
           {
             "name": "gameId",
@@ -4319,7 +4319,7 @@
           "Reviews"
         ],
         "summary": "POST /api/v1/games/{gameId}/reviews",
-        "description": "Review e nota salvas na mesma transação. POST exige rating numérico finito de 0 a 5 (zero válido); text omitido/null/espaços vira vazio, até 10.000 caracteres após trim. PATCH preserva campos omitidos, text null limpa e rating null é inválido; legado sem nota exige informá-la antes de salvar. Uma review por usuário/jogo; apenas o autor edita, preservando identidade/publicação/vínculos. rating nullable na resposta somente para histórico sem nota. Publicação notifica uma vez; edição não publica novamente.",
+        "description": "Review e nota salvas na mesma transação. POST exige rating numérico finito de 0 a 5 (zero válido). Title opcional/nullable, trim e até 150; obrigatório quando o texto final não está vazio. Text omitido/null/espaços vira vazio, até 10.000. PATCH: omissão preserva, title/text null limpam; remover título mantendo descrição retorna 400 review_title_required; limite retorna 400 review_title_too_long. Rating null é inválido. Histórico textual sem título continua legível, mas exige título ao editar mantendo texto; legado sem nota também deve informá-la. Uma review por usuário/jogo; apenas autor edita, preservando identidade/publicação/vínculos. Edição não publica novamente.",
         "parameters": [
           {
             "name": "gameId",
@@ -4803,7 +4803,7 @@
           "Reviews"
         ],
         "summary": "PATCH /api/v1/reviews/{reviewId}",
-        "description": "Review e nota salvas na mesma transação. POST exige rating numérico finito de 0 a 5 (zero válido); text omitido/null/espaços vira vazio, até 10.000 caracteres após trim. PATCH preserva campos omitidos, text null limpa e rating null é inválido; legado sem nota exige informá-la antes de salvar. Uma review por usuário/jogo; apenas o autor edita, preservando identidade/publicação/vínculos. rating nullable na resposta somente para histórico sem nota. Publicação notifica uma vez; edição não publica novamente.",
+        "description": "Review e nota salvas na mesma transação. POST exige rating numérico finito de 0 a 5 (zero válido). Title opcional/nullable, trim e até 150; obrigatório quando o texto final não está vazio. Text omitido/null/espaços vira vazio, até 10.000. PATCH: omissão preserva, title/text null limpam; remover título mantendo descrição retorna 400 review_title_required; limite retorna 400 review_title_too_long. Rating null é inválido. Histórico textual sem título continua legível, mas exige título ao editar mantendo texto; legado sem nota também deve informá-la. Uma review por usuário/jogo; apenas autor edita, preservando identidade/publicação/vínculos. Edição não publica novamente.",
         "parameters": [
           {
             "name": "reviewId",
@@ -6778,7 +6778,15 @@
               "null",
               "string"
             ],
-            "description": "Opcional e nullable, até 10.000 caracteres após trim. POST: omissão/null/espaços = vazio. PATCH: omissão preserva, null limpa."
+            "description": "Opcional e nullable, até 10.000 caracteres após trim. Quando preenchido, exige title final. POST: omissão/null/espaços = vazio. PATCH: omissão preserva, null limpa."
+          },
+          "title": {
+            "maxLength": 150,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Título após trim, nullable; obrigatório para novas gravações com descrição. PATCH omitido preserva, null/vazio limpa apenas se descrição final vazia. Histórico sem título permanece legível. Erros: review_title_required ou review_title_too_long."
           }
         },
         "additionalProperties": false
@@ -6797,12 +6805,20 @@
       "ReviewPatchRequest": {
         "type": "object",
         "properties": {
+          "title": {
+            "maxLength": 150,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Título após trim, nullable; obrigatório para novas gravações com descrição. PATCH omitido preserva, null/vazio limpa apenas se descrição final vazia. Histórico sem título permanece legível. Erros: review_title_required ou review_title_too_long."
+          },
           "text": {
             "type": [
               "null",
               "string"
             ],
-            "description": "Opcional e nullable, até 10.000 caracteres após trim. POST: omissão/null/espaços = vazio. PATCH: omissão preserva, null limpa."
+            "description": "Opcional e nullable, até 10.000 caracteres após trim. Quando preenchido, exige title final. POST: omissão/null/espaços = vazio. PATCH: omissão preserva, null limpa."
           },
           "rating": {
             "maximum": 5,
@@ -6826,7 +6842,8 @@
           "author",
           "game",
           "rating",
-          "likeCount"
+          "likeCount",
+          "title"
         ],
         "type": "object",
         "properties": {
@@ -6881,6 +6898,14 @@
             "type": "integer",
             "description": "Quantidade inteira de usuários que curtiram a review, agregada em SQL. Favoritos não entram no contador; estado do usuário está somente em GET /reviews/{reviewId}/like/me.",
             "format": "int32"
+          },
+          "title": {
+            "maxLength": 150,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Título após trim, nullable; obrigatório para novas gravações com descrição. PATCH omitido preserva, null/vazio limpa apenas se descrição final vazia. Histórico sem título permanece legível. Erros: review_title_required ou review_title_too_long."
           }
         }
       },

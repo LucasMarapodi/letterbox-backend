@@ -159,7 +159,7 @@ public sealed class ProfileCompletionTests
         await using var host = new PostgresApiFactory();
         using var client = host.CreateClient();
         await NotificationPersistenceTests.Register(client, "completion-concurrent@example.com");
-        using (var publish = await client.PostAsJsonAsync($"/api/v1/games/{ids[0]}/reviews", new { rating = 3, text = "Review" }))
+        using (var publish = await client.PostAsJsonAsync($"/api/v1/games/{ids[0]}/reviews", new { title = "Fixture review", rating = 3, text = "Review" }))
         {
             publish.EnsureSuccessStatusCode();
             using var json = JsonDocument.Parse(await publish.Content.ReadAsStringAsync());

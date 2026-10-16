@@ -88,7 +88,7 @@ public sealed class AsyncWriteTests
         source.Release.TrySetResult();
         await using var host = CatalogHttpTests.Host(source);
         var store = host.Services.GetRequiredService<IReviews>();
-        store.TryAdd(Review.Create(104, 1, 10, "Original", CatalogFlow.Metadata.FetchedAt));
+        store.TryAdd(Review.Create(104, 1, 10, "Original", CatalogFlow.Metadata.FetchedAt, "Fixture review"));
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
         using var failed = await client.PatchAsJsonAsync("/api/v1/reviews/104", new ReviewInput("Changed"));

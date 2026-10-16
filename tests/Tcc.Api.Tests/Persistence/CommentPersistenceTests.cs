@@ -25,7 +25,7 @@ public sealed class CommentPersistenceTests
         registered.EnsureSuccessStatusCode();
         var login = await LoginTests.Login(client, "discussion@example.com", "synthetic-password");
         client.DefaultRequestHeaders.Authorization = new("Bearer", login.Token);
-        using var response = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { rating = 3, text = "Review" });
+        using var response = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { title = "Fixture review", rating = 3, text = "Review" });
         response.EnsureSuccessStatusCode();
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         return (login.User.Id, json.RootElement.GetProperty("id").GetInt32());
@@ -91,7 +91,7 @@ public sealed class CommentPersistenceTests
         var reply = await Publish(client, reviewId, root);
         await using var db = PostgresTestDatabase.Context();
         var game = Assert.Single(await PostgresCatalogTests.Repository(db).UpsertAsync([PostgresCatalogTests.Payload(4_000_000_001)], default)).Game;
-        db.Reviews.Add(Review.Create(0, userId, game.Id, "Other review", DateTimeOffset.UtcNow));
+        db.Reviews.Add(Review.Create(0, userId, game.Id, "Other review", DateTimeOffset.UtcNow, "Fixture review"));
         await db.SaveChangesAsync();
         var otherReview = await db.Reviews.SingleAsync(item => item.GameId == game.Id && item.UserId == userId);
         using var cross = await client.PostAsJsonAsync($"/api/v1/reviews/{otherReview.Id}/comments", new { text = "Cross review", parentCommentId = root });
@@ -204,7 +204,7 @@ public sealed class CommentPersistenceTests
         registered.EnsureSuccessStatusCode();
         var login = await LoginTests.Login(client, "commenter@example.com", "synthetic-password");
         client.DefaultRequestHeaders.Authorization = new("Bearer", login.Token);
-        using var review = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { rating = 3, text = "Review" });
+        using var review = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { title = "Fixture review", rating = 3, text = "Review" });
         review.EnsureSuccessStatusCode();
         using var reviewJson = JsonDocument.Parse(await review.Content.ReadAsStringAsync());
         var reviewId = reviewJson.RootElement.GetProperty("id").GetInt32();
