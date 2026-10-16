@@ -19,7 +19,7 @@ Campos: id, name, summary, cover.image_id, genres.id/genres.name, platforms.id/p
 
 - ID externo positivo → IgdbId long; ID local atribuído pelo PostgreSQL após commit.
 - name obrigatório → title trim; summary ausente → vazio.
-- cover.image_id validado → URL HTTPS fixa de imagem; ausência → null.
+- cover.image_id validado → URL sob IGDB__ImagesBaseUrl com t_cover_big/{image_id}.jpg; ausência → null. Configuração e limites em [S-PR-07](S-PR-07.md).
 - gêneros/plataformas preservam ID externo e nome. Repetição consistente do ID é deduplicada; IDs ausentes/inválidos ou nomes conflitantes são rejeitados.
 - lançamento Unix → DateOnly UTC; ausência → null.
 - ratings externos/enums/campos extras não são importados; média usa avaliações locais.

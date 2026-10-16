@@ -28,6 +28,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.SuppressMapClientErrors = true;
 });
 var app = builder.Build();
+_ = app.Services.GetRequiredService<Tcc.Infrastructure.Igdb.ExternalEndpointOptions>();
 app.UseExceptionHandler(handler => handler.Run(async context =>
 {
     context.Response.StatusCode = 500;

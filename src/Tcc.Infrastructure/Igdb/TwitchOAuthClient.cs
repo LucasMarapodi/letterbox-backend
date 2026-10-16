@@ -4,15 +4,17 @@ using System.Text.Json.Serialization;
 
 namespace Tcc.Infrastructure.Igdb;
 
-public sealed class TwitchOAuthClient(HttpClient http, IgdbCredentialOptions options, TimeProvider clock)
+public sealed class TwitchOAuthClient(HttpClient http, IgdbCredentialOptions options, TimeProvider clock,
+    ExternalEndpointOptions? endpoints = null)
 {
+    private readonly Uri tokenEndpoint = (endpoints ?? ExternalEndpointOptions.Default).TokenEndpoint;
     public async Task<TwitchAppToken> AcquireAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var startedAt = clock.GetUtcNow();
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, "https://id.twitch.tv/oauth2/token");
+            using var request = new HttpRequestMessage(HttpMethod.Post, tokenEndpoint);
             request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["client_id"] = options.ClientId,

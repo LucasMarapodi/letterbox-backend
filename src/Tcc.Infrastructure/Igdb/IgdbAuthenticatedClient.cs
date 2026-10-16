@@ -6,8 +6,9 @@ using Tcc.Application.Catalog;
 namespace Tcc.Infrastructure.Igdb;
 
 public sealed class IgdbAuthenticatedClient(HttpClient http, IgdbCredentialOptions options, TwitchTokenProvider tokens,
-    IgdbResiliencePolicy? resilience = null) : IDisposable
+    IgdbResiliencePolicy? resilience = null, ExternalEndpointOptions? endpoints = null) : IDisposable
 {
+    private readonly Uri gamesEndpoint = new((endpoints ?? ExternalEndpointOptions.Default).BaseUrl, "games");
     private readonly IgdbResiliencePolicy policy = resilience ?? new(new(), new SystemIgdbScheduler(TimeProvider.System));
     public async Task<HttpResponseMessage> PostGamesAsync(string query, CancellationToken cancellationToken = default)
     {
@@ -20,7 +21,7 @@ public sealed class IgdbAuthenticatedClient(HttpClient http, IgdbCredentialOptio
             {
                 var response = await policy.SendAsync(async ct =>
                 {
-                    using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.igdb.com/v4/games");
+                    using var request = new HttpRequestMessage(HttpMethod.Post, gamesEndpoint);
                     request.Headers.Add("Client-ID", options.ClientId);
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Value);
                     request.Content = new StringContent(query, Encoding.UTF8, "text/plain");

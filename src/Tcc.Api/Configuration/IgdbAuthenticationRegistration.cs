@@ -12,6 +12,15 @@ public static class IgdbAuthenticationRegistration
     public static IServiceCollection AddIgdbAuthentication(this IServiceCollection services, IConfiguration? configuration = null)
     {
         services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton(provider =>
+        {
+            var environment = provider.GetRequiredService<IHostEnvironment>();
+            Func<string, string?> read = Environment.GetEnvironmentVariable;
+            if (environment.IsDevelopment())
+                read = LocalBackendEnvironment.CreateReader(LocalBackendEnvironment.PathFor(environment.ContentRootPath), read);
+            return ExternalEndpointOptions.Read(name => read(name) ?? configuration?[name.Replace("__", ":", StringComparison.Ordinal)]);
+        });
+        services.AddSingleton<IgdbGameMapper>();
         IgdbResilienceOptions resilience;
         try { resilience = configuration?.GetSection("IGDB:Resilience").Get<IgdbResilienceOptions>() ?? new(); resilience.Validate(); }
         catch (Exception) { throw new InvalidOperationException("Configuração de resiliência IGDB inválida."); }
@@ -44,13 +53,14 @@ public static class IgdbAuthenticationRegistration
             return new TwitchTokenProvider(async cancellationToken =>
             {
                 using var http = factory.CreateClient(OAuthClientName);
-                return await new TwitchOAuthClient(http, options, clock).AcquireAsync(cancellationToken);
+                return await new TwitchOAuthClient(http, options, clock,
+                    services.GetRequiredService<ExternalEndpointOptions>()).AcquireAsync(cancellationToken);
             }, clock);
         });
         services.AddScoped(services => new IgdbAuthenticatedClient(
             services.GetRequiredService<IHttpClientFactory>().CreateClient(IgdbClientName),
             services.GetRequiredService<IgdbCredentialOptions>(), services.GetRequiredService<TwitchTokenProvider>(),
-            services.GetRequiredService<IgdbResiliencePolicy>()));
+            services.GetRequiredService<IgdbResiliencePolicy>(), services.GetRequiredService<ExternalEndpointOptions>()));
         services.AddSingleton<IExternalGameCatalog, ScopedExternalGameCatalog>();
         return services;
     }

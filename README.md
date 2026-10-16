@@ -4,6 +4,8 @@ API .NET 10 da plataforma de avaliações e reviews de jogos. Catálogo IGDB ass
 
 ## Executar
 
+URLs externas são centralizadas por [S-PR-07](docs/S-PR-07.md): IGDB__BaseUrl, IGDB__ImagesBaseUrl e Twitch__TokenEndpoint. Configure no ambiente backend ou `.env` de Development e reinicie a API. Opções tipadas validam HTTPS na inicialização; exemplos públicos em appsettings.Development.json.
+
 Na raiz Back, com SDK 10.0.401:
 
 ```powershell

@@ -24,10 +24,13 @@ public sealed class EndpointConfigurationTests
     }
 
     [Theory]
-    [InlineData("")]
-    [InlineData("/")]
-    [InlineData("///")]
-    public async Task Configured_paths_preserve_prefixes_images_headers_and_refresh_rejected_token(string trailing)
+    [InlineData("", false)]
+    [InlineData("/", false)]
+    [InlineData("///", false)]
+    [InlineData("", true)]
+    [InlineData("/", true)]
+    [InlineData("///", true)]
+    public async Task Configured_paths_preserve_prefixes_images_headers_and_refresh_rejected_token(string trailing, bool search)
     {
         var oauth = 0;
         var games = 0;
@@ -65,9 +68,10 @@ public sealed class EndpointConfigurationTests
         });
         using var scope = host.Services.CreateScope();
         var source = scope.ServiceProvider.GetRequiredService<IExternalGameCatalog>();
-        var result = await source.ResolveAsync([3_000_000_001], default);
-        Assert.Equal("https://covers.example/assets/igdb/image/upload/t_cover_big/co_test.jpg", result[3_000_000_001].Game.CoverUrl);
-        Assert.Equal(0, result[3_000_000_001].Game.Id);
+        var result = search ? Assert.Single((await source.SearchAsync(CatalogSearch.Create("Configured"), default)).Items)
+            : (await source.ResolveAsync([3_000_000_001], default))[3_000_000_001];
+        Assert.Equal("https://covers.example/assets/igdb/image/upload/t_cover_big/co_test.jpg", result.Game.CoverUrl);
+        Assert.Equal(0, result.Game.Id);
         Assert.Equal(2, oauth);
         Assert.Equal(2, games);
     }
@@ -77,7 +81,8 @@ public sealed class EndpointConfigurationTests
         foreach (var name in new[] { "IGDB:BaseUrl", "IGDB:ImagesBaseUrl", "Twitch:TokenEndpoint" })
             foreach (var value in new[] { "", "/relative", "http://supplier.example/path", "ftp://supplier.example/path",
                 "https://user:synthetic-sentinel@supplier.example/path", "https://supplier.example/path?synthetic-sentinel=x",
-                "https://supplier.example/path#synthetic-sentinel", "not-a-uri-synthetic-sentinel" })
+                "https://supplier.example/path#synthetic-sentinel", "not-a-uri-synthetic-sentinel",
+                "https://supplier.example/path?", "https://supplier.example/path#", "https://supplier.example/path\\other" })
                 yield return [name, value];
     }
 
