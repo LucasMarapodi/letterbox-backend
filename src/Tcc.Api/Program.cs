@@ -4,6 +4,7 @@ using Tcc.Api;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddIdentityFeature();
 builder.Services.AddOpinionsFeature();
+builder.Services.AddSocialFeature();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<Tcc.Infrastructure.Memory.HostMemory>();
 builder.Services.AddSingleton<Tcc.Application.Memory.IHostSeed>(services =>

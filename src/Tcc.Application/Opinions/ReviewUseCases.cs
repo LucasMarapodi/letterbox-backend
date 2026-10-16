@@ -1,6 +1,7 @@
 using Tcc.Application.Catalog;
 using Tcc.Application.Identity;
 using Tcc.Domain.Opinions;
+using Tcc.Application.Social;
 
 namespace Tcc.Application.Opinions;
 
@@ -31,16 +32,19 @@ public sealed class OpinionViews(IUserAccounts accounts, QueryGames games)
 }
 
 public sealed class PublishReview(IReviews reviews, QueryGames games, ICurrentSession current,
-    SessionAccess access, TimeProvider clock, OpinionViews views)
+    SessionAccess access, TimeProvider clock, OpinionViews views, PublicationNotifications notifications, IPublicationScope publications)
 {
-    public ReviewDetails Execute(string gameId, string? text)
+    public ReviewDetails Execute(string gameId, string? text) => publications.Execute(() =>
     {
         var userId = access.Require(current).UserId;
         games.Get(gameId);
         var review = Review.Create(Guid.NewGuid().ToString("N"), userId, gameId, text, clock.GetUtcNow());
+        var result = views.Review(review);
+        var events = notifications.ForReview(review);
         if (!reviews.TryAdd(review)) throw new ResourceFailure(ResourceFailureKind.Conflict);
-        return views.Review(review);
-    }
+        notifications.Send(events);
+        return result;
+    });
 }
 
 public sealed class GetReview(IReviews reviews, OpinionViews views)

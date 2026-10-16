@@ -1,5 +1,6 @@
 using Tcc.Domain.Opinions;
 using Tcc.Application.Identity;
+using Tcc.Application.Social;
 
 namespace Tcc.Application.Opinions;
 
@@ -10,16 +11,19 @@ public interface IComments
 }
 
 public sealed class PublishComment(IComments comments, GetReview reviews, OpinionViews views,
-    ICurrentSession current, SessionAccess access, TimeProvider clock)
+    ICurrentSession current, SessionAccess access, TimeProvider clock, PublicationNotifications notifications, IPublicationScope publications)
 {
-    public CommentDetails Execute(string reviewId, string? text)
+    public CommentDetails Execute(string reviewId, string? text) => publications.Execute(() =>
     {
         var userId = access.Require(current).UserId;
-        reviews.Execute(reviewId);
+        var review = reviews.Execute(reviewId);
         var comment = Comment.Create(Guid.NewGuid().ToString("N"), userId, reviewId, text, clock.GetUtcNow());
+        var result = new CommentDetails(comment, views.Author(userId));
+        var events = notifications.ForComment(comment, review.Review.UserId);
         comments.Add(comment);
-        return new(comment, views.Author(userId));
-    }
+        notifications.Send(events);
+        return result;
+    });
 }
 public sealed record CommentDetails(Comment Comment, PublicAuthor Author);
 
