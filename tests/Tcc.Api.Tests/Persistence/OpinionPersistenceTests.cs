@@ -34,12 +34,13 @@ public sealed class OpinionPersistenceTests
             var failure = await Assert.ThrowsAsync<PostgresException>(() => db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO avaliacoes(usuario_id,jogo_id,nota,criado_em,atualizado_em) VALUES({userId},{game.Id},{value},now(),now())"));
             Assert.Equal(PostgresErrorCodes.CheckViolation, failure.SqlState);
         }
-        var textFailure = await Assert.ThrowsAsync<PostgresException>(() => db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO reviews(usuario_id,jogo_id,texto,criado_em) VALUES({userId},{game.Id},{"   "},now())"));
-        Assert.Equal(PostgresErrorCodes.CheckViolation, textFailure.SqlState);
+        var textFailure = await Assert.ThrowsAsync<PostgresException>(() => db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO reviews(usuario_id,jogo_id,texto,criado_em) VALUES({userId},{game.Id},{new string('x',10001)},now())"));
+        Assert.Equal(PostgresErrorCodes.StringDataRightTruncation, textFailure.SqlState);
         var missingUser = int.MaxValue;
         var fkFailure = await Assert.ThrowsAsync<PostgresException>(() => db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO reviews(usuario_id,jogo_id,texto,criado_em) VALUES({missingUser},{game.Id},{"Invalid FK"},now())"));
         Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, fkFailure.SqlState);
         Assert.Equal(0, await db.Reviews.CountAsync());
+        Assert.Equal(0, await db.Ratings.CountAsync());
         Assert.Equal(0, await db.Ratings.CountAsync());
     }
 
@@ -57,7 +58,7 @@ public sealed class OpinionPersistenceTests
         registered.EnsureSuccessStatusCode();
         var login = await LoginTests.Login(client, "rollback@example.com", "synthetic-password");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
-        using var failed = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { text = "Must roll back" });
+        using var failed = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { rating = 3, text = "Must roll back" });
         Assert.Equal(500, (int)failed.StatusCode);
         Assert.Equal(0, await db.Reviews.CountAsync());
         Assert.Equal(0, await db.Notifications.CountAsync());
@@ -82,6 +83,9 @@ public sealed class OpinionPersistenceTests
         using var scope = host.Services.CreateScope();
         var ratings = scope.ServiceProvider.GetRequiredService<IRatings>();
         var now = DateTimeOffset.UtcNow;
+        // Seed legacy review-only pairs to exercise the rating repository under its new FK.
+        db.Reviews.AddRange(users.Select(userId => Review.Create(0, userId, game.Id, "Legacy", now)));
+        await db.SaveChangesAsync();
         var first = await ratings.SetAsync(users[0], game.Id, RatingValue.Create(0), now);
         await ratings.SetAsync(users[1], game.Id, RatingValue.Create(5), now);
         var averages = await ratings.AveragesAsync([game.Id, int.MaxValue]);
@@ -104,7 +108,7 @@ public sealed class OpinionPersistenceTests
             Assert.NotNull(model);
             Assert.Equal(typeof(int), Assert.Single(model.FindPrimaryKey()!.Properties).ClrType);
             Assert.Contains(model.GetIndexes(), index => index.IsUnique && index.Properties.Select(property => property.Name).SequenceEqual(new[] { "UserId", "GameId" }));
-            Assert.Equal(2, model.GetForeignKeys().Count());
+            Assert.Equal(type == typeof(Rating) ? 3 : 2, model.GetForeignKeys().Count());
             Assert.All(model.GetForeignKeys(), key => Assert.Equal(DeleteBehavior.Restrict, key.DeleteBehavior));
         }
         Assert.False(db.Database.HasPendingModelChanges());
@@ -122,7 +126,7 @@ public sealed class OpinionPersistenceTests
         registered.EnsureSuccessStatusCode();
         var login = await LoginTests.Login(client, "writer@example.com", "synthetic-password");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
-        var responses = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { text = "Persisted review" })));
+        var responses = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { rating = 3, text = "Persisted review" })));
         int id;
         try
         {
@@ -134,7 +138,7 @@ public sealed class OpinionPersistenceTests
         finally { foreach (var response in responses) response.Dispose(); }
         using var edited = await client.PatchAsJsonAsync($"/api/v1/reviews/{id}", new { text = "Edited in SQL" });
         Assert.Equal(200, (int)edited.StatusCode);
-        using var invalid = await client.PatchAsJsonAsync($"/api/v1/reviews/{id}", new { text = "   " });
+        using var invalid = await client.PatchAsJsonAsync($"/api/v1/reviews/{id}", new { rating = 6 });
         Assert.Equal(400, (int)invalid.StatusCode);
         using var outsider = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Other", "other@example.com", "synthetic-password"));
         outsider.EnsureSuccessStatusCode();

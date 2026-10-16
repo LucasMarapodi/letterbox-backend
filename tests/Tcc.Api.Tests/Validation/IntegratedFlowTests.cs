@@ -25,9 +25,9 @@ public sealed class IntegratedFlowTests
         profile.EnsureSuccessStatusCode();
         await SocialTest.Follow(follower, 1);
         await ApiTest.SignIn(author);
+        var review = await ApiTest.Publish(author);
         using var rating = await author.PutAsJsonAsync("/api/v1/games/1/rating/me", new RatingInput(3.75));
         rating.EnsureSuccessStatusCode();
-        var review = await ApiTest.Publish(author);
         using var gameFavorite = await follower.PutAsync("/api/v1/favorites/game/1", null);
         using var reviewFavorite = await follower.PutAsync($"/api/v1/favorites/review/{review.Id}", null);
         gameFavorite.EnsureSuccessStatusCode(); reviewFavorite.EnsureSuccessStatusCode();

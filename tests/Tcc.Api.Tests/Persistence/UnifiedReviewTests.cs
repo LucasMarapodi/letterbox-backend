@@ -10,6 +10,103 @@ namespace Tcc.Api.Tests.Persistence;
 public sealed class UnifiedReviewTests
 {
     [PostgresFact]
+    public async Task Invalid_commands_do_not_write_and_concurrent_partial_edits_preserve_omitted_fields()
+    {
+        await PostgresCatalogTests.Reset();
+        var game = (await ProfileCompletionTests.Games())[0];
+        await using var host = new PostgresApiFactory();
+        using var client = host.CreateClient();
+        var author = await NotificationPersistenceTests.Register(client, "unified-validation@example.com");
+        var route = $"/api/v1/games/{game}/reviews";
+        foreach (var body in new object[] { new { rating = -1 }, new { rating = 5.01 }, new { rating = (double?)null }, new { rating = "3" }, new { rating = 3, text = new string('x',10001) }, new { rating = 3, userId = author.Id } })
+        {
+            using var invalid = await client.PostAsJsonAsync(route, body);
+            Assert.Equal(400, (int)invalid.StatusCode);
+        }
+        await using var db = PostgresTestDatabase.Context();
+        Assert.Equal(0, await db.Ratings.CountAsync());
+        Assert.Equal(0, await db.Reviews.CountAsync());
+        using var created = await client.PostAsJsonAsync(route, new { rating = 0, text = "Original" });
+        created.EnsureSuccessStatusCode();
+        using var first = JsonDocument.Parse(await created.Content.ReadAsStringAsync());
+        var id = first.RootElement.GetProperty("id").GetInt32();
+        var ratingId = (await db.Ratings.AsNoTracking().SingleAsync()).Id;
+        var edits = await Task.WhenAll(client.PatchAsJsonAsync($"/api/v1/reviews/{id}", new { rating = 3.25 }),
+            client.PatchAsJsonAsync($"/api/v1/reviews/{id}", new { text = "Changed" }));
+        try { Assert.All(edits, result => Assert.Equal(200, (int)result.StatusCode)); }
+        finally { foreach (var response in edits) response.Dispose(); }
+        using var result = JsonDocument.Parse(await client.GetStringAsync($"/api/v1/reviews/{id}"));
+        Assert.Equal("Changed", result.RootElement.GetProperty("text").GetString());
+        Assert.Equal(3.25, result.RootElement.GetProperty("rating").GetDouble());
+        Assert.Equal(first.RootElement.GetProperty("createdAt").GetString(), result.RootElement.GetProperty("createdAt").GetString());
+        Assert.Equal(ratingId, (await db.Ratings.AsNoTracking().SingleAsync()).Id);
+        using (var clear = await client.PatchAsJsonAsync($"/api/v1/reviews/{id}", new { text = (string?)null })) clear.EnsureSuccessStatusCode();
+        await NotificationPersistenceTests.Register(client, "unified-outsider@example.com");
+        using var forbidden = await client.PatchAsJsonAsync($"/api/v1/reviews/{id}", new { rating = 5 });
+        Assert.Equal(403, (int)forbidden.StatusCode);
+        using var missing = await client.PostAsJsonAsync("/api/v1/games/2147483647/reviews", new { rating = 5 });
+        Assert.Equal(404, (int)missing.StatusCode);
+    }
+
+    [PostgresFact]
+    public async Task Rating_only_review_is_present_in_every_projection_and_keeps_comments_likes_favorites_and_events_on_edit()
+    {
+        await PostgresCatalogTests.Reset();
+        var game = (await ProfileCompletionTests.Games())[0];
+        await using var host = new PostgresApiFactory();
+        using var client = host.CreateClient();
+        var author = await NotificationPersistenceTests.Register(client, "unified-author@example.com");
+        var reader = await NotificationPersistenceTests.Register(client, "unified-reader@example.com");
+        using (var follow = await client.PutAsync($"/api/v1/users/{author.Id}/follow", null)) follow.EnsureSuccessStatusCode();
+        client.DefaultRequestHeaders.Authorization = new("Bearer", author.Token);
+        using var created = await client.PostAsJsonAsync($"/api/v1/games/{game}/reviews", new { rating = 0, text = " " });
+        created.EnsureSuccessStatusCode();
+        using var published = JsonDocument.Parse(await created.Content.ReadAsStringAsync());
+        var id = published.RootElement.GetProperty("id").GetInt32();
+        client.DefaultRequestHeaders.Authorization = new("Bearer", reader.Token);
+        using (var favorite = await client.PutAsync($"/api/v1/favorites/review/{id}", null)) favorite.EnsureSuccessStatusCode();
+        using var comment = await client.PostAsJsonAsync($"/api/v1/reviews/{id}/comments", new { text = "Comment" });
+        comment.EnsureSuccessStatusCode();
+        using var commentJson = JsonDocument.Parse(await comment.Content.ReadAsStringAsync());
+        using (var like = await client.PutAsync($"/api/v1/comments/{commentJson.RootElement.GetProperty("id").GetInt32()}/like", null)) like.EnsureSuccessStatusCode();
+        var reads = new[] { $"/api/v1/reviews/{id}", $"/api/v1/users/{author.Id}/reviews", $"/api/v1/games/{game}/reviews", $"/api/v1/games/{game}/opinions", "/api/v1/community/reviews/recent", "/api/v1/community/reviews/most-commented", "/api/v1/feed/following", "/api/v1/favorites", "/api/v1/dashboard" };
+        foreach (var path in reads)
+        {
+            using var json = JsonDocument.Parse(await client.GetStringAsync(path));
+            var reviews = FindReviews(json.RootElement).ToArray();
+            Assert.NotEmpty(reviews);
+            Assert.All(reviews, review => { Assert.Equal(0, review.GetProperty("rating").GetDouble()); Assert.Equal("", review.GetProperty("text").GetString()); });
+        }
+        await using var db = PostgresTestDatabase.Context();
+        var events = await db.Notifications.AsNoTracking().ToArrayAsync();
+        var favoriteRows = await db.ReviewFavorites.AsNoTracking().ToArrayAsync();
+        client.DefaultRequestHeaders.Authorization = new("Bearer", author.Token);
+        using (var mine = JsonDocument.Parse(await client.GetStringAsync($"/api/v1/games/{game}/reviews/me"))) Assert.Equal(0, mine.RootElement.GetProperty("review").GetProperty("rating").GetDouble());
+        using (var update = await client.PatchAsJsonAsync($"/api/v1/reviews/{id}", new { rating = 4.5 })) update.EnsureSuccessStatusCode();
+        Assert.Equal(events, await db.Notifications.AsNoTracking().ToArrayAsync());
+        Assert.Equal(favoriteRows, await db.ReviewFavorites.AsNoTracking().ToArrayAsync());
+        Assert.Equal(1, await db.Comments.CountAsync());
+        Assert.Equal(1, await db.CommentLikes.CountAsync());
+        await using var restarted = new PostgresApiFactory();
+        using var other = restarted.CreateClient();
+        using var restored = JsonDocument.Parse(await other.GetStringAsync($"/api/v1/reviews/{id}"));
+        Assert.Equal(4.5, restored.RootElement.GetProperty("rating").GetDouble());
+        using var opinions = JsonDocument.Parse(await other.GetStringAsync($"/api/v1/games/{game}/opinions"));
+        Assert.Equal(4.5, opinions.RootElement.GetProperty("averageRating").GetDouble());
+    }
+
+    private static IEnumerable<JsonElement> FindReviews(JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.Object)
+        {
+            if (value.TryGetProperty("author", out _) && value.TryGetProperty("gameId", out _)) yield return value;
+            foreach (var property in value.EnumerateObject()) foreach (var review in FindReviews(property.Value)) yield return review;
+        }
+        if (value.ValueKind == JsonValueKind.Array)
+            foreach (var item in value.EnumerateArray()) foreach (var review in FindReviews(item)) yield return review;
+    }
+
+    [PostgresFact]
     public async Task Migration_preserves_all_three_legacy_pairs_and_their_relationships_without_notifications()
     {
         await PostgresCatalogTests.Reset();
@@ -26,11 +123,26 @@ public sealed class UnifiedReviewTests
         await db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO avaliacoes(usuario_id,jogo_id,nota,criado_em,atualizado_em) VALUES({owner.Id},{games[0]},3.25,{now},{now}),({owner.Id},{games[1]},0,{now},{now})");
         var reviewIds = await db.Reviews.AsNoTracking().OrderBy(item => item.GameId).Select(item => item.Id).ToArrayAsync();
         await db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO reviews_favoritas(usuario_id,review_id,criado_em) VALUES({owner.Id},{reviewIds[0]},{now})");
+        using (var comment = await client.PostAsJsonAsync($"/api/v1/reviews/{reviewIds[0]}/comments", new { text = "Preserved legacy comment" })) comment.EnsureSuccessStatusCode();
+        var commentId = (await db.Comments.AsNoTracking().SingleAsync()).Id;
+        using (var like = await client.PutAsync($"/api/v1/comments/{commentId}/like", null)) like.EnsureSuccessStatusCode();
+        var ratingsBefore = await db.Ratings.AsNoTracking().OrderBy(item => item.Id).ToArrayAsync();
+        var commentsBefore = await db.Comments.AsNoTracking().ToArrayAsync();
+        var likesBefore = await db.CommentLikes.AsNoTracking().ToArrayAsync();
+        var favoritesBefore = await db.ReviewFavorites.AsNoTracking().ToArrayAsync();
         try
         {
             await db.Database.MigrateAsync();
             Assert.Equal(3, await db.Reviews.CountAsync());
             Assert.Equal(2, await db.Ratings.CountAsync());
+            Assert.Equal(ratingsBefore, await db.Ratings.AsNoTracking().OrderBy(item => item.Id).ToArrayAsync());
+            Assert.Equal(commentsBefore, await db.Comments.AsNoTracking().ToArrayAsync());
+            Assert.Equal(likesBefore, await db.CommentLikes.AsNoTracking().ToArrayAsync());
+            Assert.Equal(favoritesBefore, await db.ReviewFavorites.AsNoTracking().ToArrayAsync());
+            var imported = await db.Reviews.AsNoTracking().SingleAsync(item => item.GameId == games[1]);
+            Assert.Equal("", imported.Text);
+            Assert.Equal(ratingsBefore[1].CreatedAt, imported.CreatedAt);
+            Assert.Equal(ratingsBefore[1].UpdatedAt, imported.UpdatedAt);
             Assert.Equal(reviewIds[0], (await db.ReviewFavorites.SingleAsync()).ReviewId);
             Assert.Equal(0, await db.Notifications.CountAsync());
             using var rated = JsonDocument.Parse(await client.GetStringAsync($"/api/v1/reviews/{reviewIds[0]}"));

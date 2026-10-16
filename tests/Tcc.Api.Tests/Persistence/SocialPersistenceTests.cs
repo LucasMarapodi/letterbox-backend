@@ -97,7 +97,7 @@ public sealed class SocialPersistenceTests
         using var follow = await client.PutAsync($"/api/v1/users/{author.User}/follow", null);
         follow.EnsureSuccessStatusCode();
         client.DefaultRequestHeaders.Authorization = new("Bearer", author.Token);
-        using var published = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { text = "For SQL followers" });
+        using var published = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { rating = 3, text = "For SQL followers" });
         Assert.Equal(201, (int)published.StatusCode);
         using var review = JsonDocument.Parse(await published.Content.ReadAsStringAsync());
         var notification = Assert.Single(await db.Notifications.AsNoTracking().Where(item => item.UserId == reader.User).ToArrayAsync());
@@ -115,15 +115,15 @@ public sealed class SocialPersistenceTests
         await using var host = new PostgresApiFactory();
         using var client = host.CreateClient();
         var author = await Register(client, "social-author@example.com");
-        using var published = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { text = "Persisted social review" });
+        using var published = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { rating = 3, text = "Persisted social review" });
         published.EnsureSuccessStatusCode();
         using var body = JsonDocument.Parse(await published.Content.ReadAsStringAsync());
         var reviewId = body.RootElement.GetProperty("id").GetInt32();
         var reader = await Register(client, "social-reader@example.com");
-        using var ownReview = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { text = "Own review must not enter followed feed" });
+        using var ownReview = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { rating = 3, text = "Own review must not enter followed feed" });
         ownReview.EnsureSuccessStatusCode();
         await Register(client, "social-outsider@example.com");
-        using var unrelated = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { text = "Unfollowed review" });
+        using var unrelated = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { rating = 3, text = "Unfollowed review" });
         unrelated.EnsureSuccessStatusCode();
         client.DefaultRequestHeaders.Authorization = new("Bearer", reader.Token);
         foreach (var path in new[] { $"/api/v1/favorites/game/{game.Id}", $"/api/v1/favorites/review/{reviewId}" })

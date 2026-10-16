@@ -36,12 +36,12 @@ public sealed class AsyncWriteTests
         await using var host = CatalogHttpTests.Host(source);
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        var first = client.PostAsJsonAsync("/api/v1/games/10/reviews", new TextInput("A"));
+        var first = client.PostAsJsonAsync("/api/v1/games/10/reviews", new ReviewInput("A"));
         await source.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
         var read = Task.Run(() => host.Services.GetRequiredService<IPublicationScope>().Execute(() =>
             host.Services.GetRequiredService<IReviews>().All().Count));
         await read.WaitAsync(TimeSpan.FromSeconds(3));
-        var second = client.PostAsJsonAsync("/api/v1/games/10/reviews", new TextInput("B"));
+        var second = client.PostAsJsonAsync("/api/v1/games/10/reviews", new ReviewInput("B"));
         source.Release.TrySetResult();
         var responses = await Task.WhenAll(first, second);
         try { Assert.Equal(new[] { 201, 409 }, responses.Select(response => (int)response.StatusCode).Order()); }
@@ -56,7 +56,7 @@ public sealed class AsyncWriteTests
         await using var host = CatalogHttpTests.Host(source);
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        var publish = client.PostAsJsonAsync("/api/v1/games/10/reviews", new TextInput("A"));
+        var publish = client.PostAsJsonAsync("/api/v1/games/10/reviews", new ReviewInput("A"));
         await source.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
         using var logout = await client.PostAsync("/api/v1/auth/logout", null);
         source.Release.TrySetResult();
@@ -73,7 +73,7 @@ public sealed class AsyncWriteTests
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
         using var cancellation = new CancellationTokenSource();
-        var publish = client.PostAsJsonAsync("/api/v1/games/10/reviews", new TextInput("A"), cancellation.Token);
+        var publish = client.PostAsJsonAsync("/api/v1/games/10/reviews", new ReviewInput("A"), cancellation.Token);
         await source.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
         cancellation.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => publish);
@@ -91,12 +91,12 @@ public sealed class AsyncWriteTests
         store.TryAdd(Review.Create(104, 1, 10, "Original", CatalogFlow.Metadata.FetchedAt));
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        using var failed = await client.PatchAsJsonAsync("/api/v1/reviews/104", new TextInput("Changed"));
+        using var failed = await client.PatchAsJsonAsync("/api/v1/reviews/104", new ReviewInput("Changed"));
         Assert.Equal(503, (int)failed.StatusCode);
         Assert.Equal("Original", store.Find(104)?.Text);
         source.Fail = false;
         var calls = source.Calls;
-        using var success = await client.PatchAsJsonAsync("/api/v1/reviews/104", new TextInput("Changed"));
+        using var success = await client.PatchAsJsonAsync("/api/v1/reviews/104", new ReviewInput("Changed"));
         Assert.Equal(200, (int)success.StatusCode);
         Assert.Equal(calls + 1, source.Calls);
         Assert.Equal("Changed", store.Find(104)?.Text);

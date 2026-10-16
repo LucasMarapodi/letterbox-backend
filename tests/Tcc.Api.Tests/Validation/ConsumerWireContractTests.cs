@@ -52,11 +52,11 @@ public sealed class ConsumerWireContractTests
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        using var published = await client.PostAsJsonAsync("/api/v1/games/1/reviews", new TextInput("Consumer contract"));
+        using var published = await client.PostAsJsonAsync("/api/v1/games/1/reviews", new ReviewInput("Consumer contract"));
         Assert.Equal(201, (int)published.StatusCode);
         using var review = JsonDocument.Parse(await published.Content.ReadAsStringAsync());
         var root = review.RootElement;
-        Assert.Equal(new[] { "author", "createdAt", "game", "gameId", "id", "text", "updatedAt", "userId" },
+        Assert.Equal(new[] { "author", "createdAt", "game", "gameId", "id", "rating", "text", "updatedAt", "userId" },
             root.EnumerateObject().Select(property => property.Name).Order());
         Assert.True(root.GetProperty("id").GetInt32() > 0);
         Assert.Equal(JsonValueKind.Null, root.GetProperty("updatedAt").ValueKind);
@@ -68,7 +68,7 @@ public sealed class ConsumerWireContractTests
         using var response = await client.GetAsync("/api/v1/games/1");
         Assert.Equal(200, (int)response.StatusCode);
         using var game = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal(JsonValueKind.Null, game.RootElement.GetProperty("averageRating").ValueKind);
+        Assert.Equal(3, game.RootElement.GetProperty("averageRating").GetDouble());
         Assert.Equal(JsonValueKind.Null, game.RootElement.GetProperty("coverUrl").ValueKind);
         Assert.True(DateOnly.TryParseExact(game.RootElement.GetProperty("releaseDate").GetString(), "yyyy-MM-dd", out _));
     }

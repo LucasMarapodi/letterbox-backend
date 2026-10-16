@@ -20,7 +20,7 @@ public sealed class PublicationFailureTests
         await ApiTest.SignIn(client, "B@example.com", "p");
         await SocialTest.Follow(client, 1);
         await ApiTest.SignIn(client);
-        using var failedReview = await client.PostAsJsonAsync("/api/v1/games/1/reviews", new TextInput("Review"));
+        using var failedReview = await client.PostAsJsonAsync("/api/v1/games/1/reviews", new ReviewInput("Review"));
         Assert.Equal(500, (int)failedReview.StatusCode);
         Assert.Empty((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/1/reviews")) ?? []);
         Assert.Empty(await host.Services.GetRequiredService<INotifications>().ForUserAsync(b.Id));

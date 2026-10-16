@@ -14,6 +14,7 @@ public sealed record MyReview(ReviewDto? Review);
 public sealed record OpinionsDto(double? AverageRating, ReviewDto[] Reviews);
 public sealed record CommentDto(int Id, int UserId, int ReviewId, string Text, DateTimeOffset CreatedAt, AuthorDto Author);
 public sealed record TextInput(string? Text);
+public sealed record ReviewInput(string? Text, double Rating = 3);
 public sealed record RatingInput(double Value);
 
 internal static class ApiTest
@@ -33,7 +34,7 @@ internal static class ApiTest
 
     public static async Task<ReviewDto> Publish(HttpClient client, int game = 1, string text = "Review")
     {
-        using var response = await client.PostAsJsonAsync($"/api/v1/games/{game}/reviews", new TextInput(text));
+        using var response = await client.PostAsJsonAsync($"/api/v1/games/{game}/reviews", new ReviewInput(text));
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<ReviewDto>() ?? throw new InvalidOperationException("Review ausente.");
     }

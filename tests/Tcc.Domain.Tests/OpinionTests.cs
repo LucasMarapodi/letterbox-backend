@@ -34,7 +34,7 @@ public sealed class OpinionTests
         var review = Review.Create(1, 1, 1, new string('a', 10000), now);
         Assert.Throws<ReviewOwnershipException>(() => review.Edit(2, "Text", now));
         Assert.Throws<DomainValidationException>(() => review.Edit(1, new string('a', 10001), now));
-        Assert.Throws<DomainValidationException>(() => review.Edit(1, " ", now));
+        Assert.Equal("", review.Edit(1, " ", now).Text);
         var edited = review.Edit(1, "Edited", now.AddMinutes(1));
         Assert.Equal(review.CreatedAt, edited.CreatedAt);
         Assert.Equal(review.Id, edited.Id);

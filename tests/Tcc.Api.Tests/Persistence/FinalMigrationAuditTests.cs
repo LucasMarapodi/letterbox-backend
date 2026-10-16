@@ -17,7 +17,7 @@ public sealed class FinalMigrationAuditTests
         await PostgresTestDatabase.VerifyExclusiveAsync(db);
         var migrator = db.GetService<IMigrator>();
         var migrations = db.Database.GetMigrations().ToArray();
-        Assert.Equal(8, migrations.Length);
+        Assert.Equal(9, migrations.Length);
         await migrator.MigrateAsync("0");
         try
         {

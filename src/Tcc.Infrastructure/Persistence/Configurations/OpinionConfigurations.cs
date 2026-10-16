@@ -10,7 +10,11 @@ public sealed class ReviewConfiguration : IEntityTypeConfiguration<Review>
 {
     public void Configure(EntityTypeBuilder<Review> entity)
     {
-        entity.ToTable("reviews", table => table.HasCheckConstraint("ck_reviews_texto", "char_length(texto) BETWEEN 1 AND 10000 AND texto ~ '[^[:space:]]'"));
+        entity.ToTable("reviews", table => table.HasCheckConstraint("ck_reviews_texto", "char_length(texto) <= 10000"));
+        entity.HasAlternateKey(item => new { item.UserId, item.GameId });
+        entity.HasOne(item => item.Evaluation).WithOne().HasForeignKey<Rating>(item => new { item.UserId, item.GameId })
+            .HasPrincipalKey<Review>(item => new { item.UserId, item.GameId }).OnDelete(DeleteBehavior.Restrict);
+        entity.Navigation(item => item.Evaluation).AutoInclude();
         entity.HasKey(item => item.Id);
         entity.Property(item => item.Id).HasColumnName("id").UseIdentityByDefaultColumn();
         entity.Property(item => item.UserId).HasColumnName("usuario_id");

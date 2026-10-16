@@ -3,7 +3,7 @@ using Tcc.Application.Social;
 using Tcc.Domain.Opinions;
 using Tcc.Infrastructure.Social;
 namespace Tcc.Infrastructure.Opinions;
-public sealed class InMemoryReviews(InMemoryPublicationScope publications) : IReviews
+public sealed class InMemoryReviews(InMemoryPublicationScope publications, IRatings ratings) : IReviews
 {
     private readonly Dictionary<int, Review> reviews = [];
     private int next = 2000;
@@ -17,16 +17,18 @@ public sealed class InMemoryReviews(InMemoryPublicationScope publications) : IRe
     }
     public Review? Find(int id) { lock (publications.Gate) return reviews.GetValueOrDefault(id); }
     public IReadOnlyList<Review> All() { lock (publications.Gate) return reviews.Values.ToArray(); }
-    public Task<Review?> AddAsync(Review review, CancellationToken ct = default, Func<Review, CancellationToken, Task>? publish = null) => publications.ExecuteAsync<Review?>(async () =>
+    public Task<Review> WriteAsync(ReviewWrite command, Func<Review, CancellationToken, Task> publish, CancellationToken ct = default) => publications.ExecuteAsync(async () =>
     {
-        Review saved;
-        lock (publications.Gate)
-        {
-            if (reviews.Values.Any(item => item.UserId == review.UserId && item.GameId == review.GameId)) return null;
-            saved = Review.Create(review.Id == 0 ? ++next : review.Id, review.UserId, review.GameId, review.Text, review.CreatedAt);
-        }
-        if (publish is not null) await publish(saved, ct);
-        return TryAdd(saved) ? saved : null;
+        var original = All().SingleOrDefault(item => item.UserId == command.UserId && item.GameId == command.GameId);
+        if (command.ReviewId is int id && original?.Id != id) throw new Tcc.Application.Catalog.ResourceFailure(Tcc.Application.Catalog.ResourceFailureKind.NotFound);
+        if (original is not null && command.CreateOnly) throw new Tcc.Application.Catalog.ResourceFailure(Tcc.Application.Catalog.ResourceFailureKind.Conflict);
+        var saved = original is null
+            ? Review.Create(++next, command.UserId, command.GameId, command.Text, command.Now) with { Evaluation = Review.CreateRated(command.UserId, command.GameId, command.Text, command.Rating, command.Now).Evaluation }
+            : original.EditRated(command.UserId, command.TextSpecified, command.Text, command.Rating, command.Now);
+        if (original is null) await publish(saved, ct);
+        saved = saved with { Evaluation = await ratings.SetAsync(command.UserId, command.GameId, saved.Evaluation!.Value, command.Now, ct) };
+        lock (publications.Gate) reviews[saved.Id] = saved;
+        return saved;
     }, ct);
     public Task<Review?> FindAsync(int id, CancellationToken ct = default) { ct.ThrowIfCancellationRequested(); return Task.FromResult(Find(id)); }
     public Task<IReadOnlyList<Review>> QueryAsync(ReviewQuery query, CancellationToken ct = default)
@@ -35,14 +37,5 @@ public sealed class InMemoryReviews(InMemoryPublicationScope publications) : IRe
         return Task.FromResult<IReadOnlyList<Review>>(All().Where(item => (query.GameId is null || item.GameId == query.GameId)
             && (query.UserId is null || item.UserId == query.UserId) && (query.Authors is null || query.Authors.Contains(item.UserId))
             && (query.Ids is null || query.Ids.Contains(item.Id))).OrderByDescending(item => item.CreatedAt).ThenBy(item => item.Id).ToArray());
-    }
-    public Task<Review?> EditAsync(int id, int actorId, string? text, DateTimeOffset now, CancellationToken ct = default)
-    {
-        ct.ThrowIfCancellationRequested();
-        lock (publications.Gate)
-        {
-            if (!reviews.TryGetValue(id, out var review)) return Task.FromResult<Review?>(null);
-            return Task.FromResult<Review?>(reviews[id] = review.Edit(actorId, text, now));
-        }
     }
 }

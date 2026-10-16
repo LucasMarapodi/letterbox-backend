@@ -111,7 +111,9 @@ public static class OpenApiRegistration
                 if (context.Description.RelativePath?.EndsWith("comments", StringComparison.Ordinal) == true && context.Description.HttpMethod == "POST")
                     operation.Description = "Texto obrigatório não vazio após trim; até 2.000 caracteres. parentCommentId omitido/null cria principal; inteiro positivo responde a principal da mesma review, sem segundo nível. Autoria vem do Bearer. Lista plana inclui parentCommentId e likeCount SQL. Vínculo de review/pai é imutável após publicação.";
                 else if (context.Description.HttpMethod is "POST" or "PATCH" && context.Description.RelativePath?.Contains("reviews", StringComparison.Ordinal) == true)
-                    operation.Description = "Texto obrigatório não vazio após trim; até 10.000 caracteres após trim. Uma review por usuário/jogo. Apenas o autor edita; preserva identidade e publicação.";
+                    operation.Description = "Review e nota salvas na mesma transação. POST exige rating numérico finito de 0 a 5 (zero válido); text omitido/null/espaços vira vazio, até 10.000 caracteres após trim. PATCH preserva campos omitidos, text null limpa e rating null é inválido; legado sem nota exige informá-la antes de salvar. Uma review por usuário/jogo; apenas o autor edita, preservando identidade/publicação/vínculos. rating nullable na resposta somente para histórico sem nota. Publicação notifica uma vez; edição não publica novamente.";
+                else if (context.Description.RelativePath == "api/v1/games/{gameId}/rating/me" && context.Description.HttpMethod == "PUT")
+                    operation.Description = "Compatibilidade: delega ao fluxo unificado. Cria review real sem descrição quando ausente ou altera a nota preservando texto/ID da existente, atomicamente. Não cria avaliação órfã. O novo formulário deve usar POST/PATCH de reviews.";
                 else if (context.Description.ActionDescriptor.EndpointMetadata.OfType<NoBodyAttribute>().Any())
                     operation.Description = "Comando idempotente, sem corpo. Identidade exclusivamente pelo Bearer; enviar corpo retorna 400.";
             });
@@ -152,6 +154,24 @@ public static class OpenApiRegistration
                 if (type == typeof(RatingRequest) && schema.Properties["value"] is OpenApiSchema value)
                 { value.Minimum = "0"; value.Maximum = "5"; value.Description = "Número finito entre 0 e 5, decimais permitidos."; }
                 if (type == typeof(TextRequest)) schema.Examples = [Example(new TextRequest("Texto fictício."))];
+                if (type == typeof(ReviewCreateRequest) || type == typeof(ReviewPatchRequest))
+                {
+                    schema.Required = type == typeof(ReviewCreateRequest) ? new HashSet<string> { "rating" } : new HashSet<string>();
+                    schema.AdditionalPropertiesAllowed = false;
+                    if (schema.Properties["rating"] is OpenApiSchema rating)
+                    {
+                        rating.Type = JsonSchemaType.Number;
+                        rating.Minimum = "0"; rating.Maximum = "5";
+                        rating.Description = "Nota finita obrigatória na criação; zero válido. PATCH: omitir preserva, null inválido; legado sem nota deve informá-la.";
+                    }
+                    if (schema.Properties["text"] is OpenApiSchema text)
+                        text.Description = "Opcional e nullable, até 10.000 caracteres após trim. POST: omissão/null/espaços = vazio. PATCH: omissão preserva, null limpa.";
+                }
+                if (type == typeof(ReviewResponse) && schema.Properties["rating"] is OpenApiSchema reviewRating)
+                {
+                    reviewRating.Minimum = "0"; reviewRating.Maximum = "5";
+                    reviewRating.Description = "Nota da avaliação única do autor/jogo; null somente para legado ainda não regularizado pelo autor.";
+                }
                 if (type == typeof(CommentRequest))
                 {
                     schema.Required = new HashSet<string> { "text" };
