@@ -51,6 +51,7 @@ internal static class EndpointInventory
         new("get", "/api/v1/community/reviews/recent", 200, false),
         new("get", "/api/v1/community/reviews/most-commented", 200, false, 400),
         new("get", "/api/v1/community/games/in-discussion", 200, false, 400),
+        new("get", "/api/v1/community/comments/most-liked", 200, false, 400, 503),
         new("get", "/api/v1/notifications", 200, true)
     };
 }

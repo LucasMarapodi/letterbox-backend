@@ -12,4 +12,4 @@ public sealed record CommentResponse(int Id, int UserId, int ReviewId, string Te
 
 [System.Text.Json.Serialization.JsonUnmappedMemberHandling(System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow)]
 public sealed record CommentRequest([System.ComponentModel.DataAnnotations.Required] string? Text, int? ParentCommentId = null);
-public sealed record CommentLikeStatusResponse(bool Liked);
+public sealed record CommentLikeStatusResponse(bool LikedByMe);
