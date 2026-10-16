@@ -112,7 +112,7 @@ public sealed class FinalPersistenceFlowTests
             Assert.Equal(0, empty.RootElement.GetProperty("games").GetArrayLength());
             Assert.Equal(0, empty.RootElement.GetProperty("reviews").GetArrayLength());
         }
-        using (var like = JsonDocument.Parse(snapshots["like"])) Assert.True(like.RootElement.GetProperty("liked").GetBoolean());
+        using (var like = JsonDocument.Parse(snapshots["like"])) Assert.True(like.RootElement.GetProperty("likedByMe").GetBoolean());
         Assert.Equal(0, offline.Calls);
         await using var audit = PostgresTestDatabase.Context();
         foreach (var table in audit.Model.GetRelationalModel().Tables)

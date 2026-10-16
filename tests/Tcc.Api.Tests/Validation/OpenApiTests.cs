@@ -6,6 +6,44 @@ namespace Tcc.Api.Tests.Validation;
 public sealed class OpenApiTests
 {
     [Fact]
+    public async Task Comment_like_contract_has_private_likedByMe_no_write_body_and_public_nonnegative_count()
+    {
+        await using var host = new TestApiFactory();
+        using var client = host.CreateClient();
+        using var document = JsonDocument.Parse(await client.GetStringAsync("/openapi/v1.json"));
+        var root = document.RootElement;
+        var paths = root.GetProperty("paths");
+        var writes = paths.GetProperty("/api/v1/comments/{commentId}/like");
+        foreach (var method in new[] { "put", "delete", "get" })
+        {
+            var operation = method == "get" ? paths.GetProperty("/api/v1/comments/{commentId}/like/me").GetProperty(method) : writes.GetProperty(method);
+            Assert.NotEmpty(operation.GetProperty("security").EnumerateArray());
+            var responses = operation.GetProperty("responses");
+            foreach (var statusCode in new[] { "400", "401", "404", "503" }) Assert.True(responses.TryGetProperty(statusCode, out _));
+            var id = Assert.Single(operation.GetProperty("parameters").EnumerateArray(), parameter => parameter.GetProperty("name").GetString() == "commentId").GetProperty("schema");
+            Assert.Equal("integer", id.GetProperty("type").GetString());
+            Assert.Equal("int32", id.GetProperty("format").GetString());
+            Assert.Equal(1, id.GetProperty("minimum").GetInt32());
+            if (method == "get") Assert.Contains("no-store", operation.GetProperty("description").GetString());
+            else
+            {
+                Assert.False(operation.TryGetProperty("requestBody", out _));
+                Assert.False(responses.GetProperty("204").TryGetProperty("content", out _));
+            }
+        }
+        var schemas = root.GetProperty("components").GetProperty("schemas");
+        var status = schemas.GetProperty("CommentLikeStatusResponse").GetProperty("properties");
+        Assert.Equal("likedByMe", Assert.Single(status.EnumerateObject()).Name);
+        Assert.Equal("boolean", status.GetProperty("likedByMe").GetProperty("type").GetString());
+        var comment = schemas.GetProperty("CommentResponse").GetProperty("properties");
+        Assert.False(comment.TryGetProperty("likedByMe", out _));
+        var count = comment.GetProperty("likeCount");
+        Assert.Equal("integer", count.GetProperty("type").GetString());
+        Assert.Equal("int32", count.GetProperty("format").GetString());
+        Assert.Equal(0, count.GetProperty("minimum").GetInt32());
+    }
+
+    [Fact]
     public async Task Profile_patch_is_partial_and_returns_private_completion_without_changing_public_user_schema()
     {
         await using var host = new TestApiFactory();
