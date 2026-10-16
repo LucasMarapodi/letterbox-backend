@@ -6,6 +6,26 @@ namespace Tcc.Api.Tests.Validation;
 public sealed class OpenApiTests
 {
     [Fact]
+    public async Task Completion_contract_distinguishes_optional_avatar_from_required_private_fields()
+    {
+        await using var host = new TestApiFactory();
+        using var client = host.CreateClient();
+        using var document = JsonDocument.Parse(await client.GetStringAsync("/openapi/v1.json"));
+        var schemas = document.RootElement.GetProperty("components").GetProperty("schemas");
+        var input = schemas.GetProperty("ProfileCompletionRequest");
+        Assert.Equal(new[] { "bio", "country", "favoriteGameIds", "state" }, input.GetProperty("required").EnumerateArray().Select(item => item.GetString()).Order());
+        Assert.False(input.GetProperty("additionalProperties").GetBoolean());
+        var properties = input.GetProperty("properties");
+        Assert.False(properties.TryGetProperty("avatarSpecified", out _));
+        var ids = properties.GetProperty("favoriteGameIds");
+        Assert.Equal(3, ids.GetProperty("minItems").GetInt32());
+        Assert.Equal("integer", ids.GetProperty("items").GetProperty("type").GetString());
+        var output = schemas.GetProperty("ProfileCompletionDetails");
+        Assert.Equal(new[] { "avatarUrl", "bio", "country", "favoriteGameCount", "favoriteGameIds", "isComplete", "state" }, output.GetProperty("required").EnumerateArray().Select(item => item.GetString()).Order());
+        Assert.Equal("boolean", output.GetProperty("properties").GetProperty("isComplete").GetProperty("type").GetString());
+    }
+
+    [Fact]
     public async Task Openapi_documents_all_operations_success_errors_and_exact_access_requirements()
     {
         await using var host = new TestApiFactory();

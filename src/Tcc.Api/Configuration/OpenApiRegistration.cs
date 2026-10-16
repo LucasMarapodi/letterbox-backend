@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 using Tcc.Api.Contracts;
 using Tcc.Api.Filters;
+using Tcc.Application.Identity;
 
 namespace Tcc.Api.Configuration;
 
@@ -96,7 +97,9 @@ public static class OpenApiRegistration
                     if (parameter.Name is "gameId" or "igdbId" or "reviewId" or "commentId" or "targetId") schema.Minimum = "1";
                     if (parameter.Name is "genreId" or "platformId") { schema.Minimum = "1"; schema.Description = "ID local int32 de GET /api/v1/games/filters; omissão significa Todos. Inválido/inexistente retorna 400 invalid_filter."; }
                 }
-                if (context.Description.RelativePath == "api/v1/games/filters")
+                if (context.Description.RelativePath == "api/v1/users/me/profile-completion")
+                    operation.Description = "Privado, sem cache compartilhado; usuário exclusivamente do Bearer. Conclusão calculada: país, estado e bio preenchidos e pelo menos três jogos distintos existentes; avatar opcional. GET retorna todos os favoritos. PUT salva perfil e conjunto completo de favoritos atomicamente, reconciliando diferenças e preservando vínculos mantidos; repetição idempotente. Textos recebem trim, país/estado até 100, bio até 2000 caracteres. avatarUrl omitido preserva, null remove. IDs locais positivos int32; duplicados não contam para o mínimo. 400 para dados inválidos, 404 para jogo inexistente, 503 para persistência indisponível; nenhuma gravação parcial.";
+                else if (context.Description.RelativePath == "api/v1/games/filters")
                     operation.Description = "Opções públicas completas de gêneros/plataformas, com IDs locais int32 estáveis. Sincroniza metadados IGDB com cursor/limites e persiste no SQL; cache completo por uma hora. Não deriva opções da página exibida. Falha sem cobertura completa retorna erro, sem lista parcial como sucesso.";
                 else if (context.Description.RelativePath == "api/v1/games")
                     operation.Description = "Combina termo AND gênero AND plataforma antes da paginação. genreId/platformId são IDs locais opcionais obtidos em /games/filters; inválidos/inexistentes retornam 400 invalid_filter. Sem termo: release-desc. Últimos lançados exclui futuros/sem data, ordena data decrescente e ID local crescente. Usa contagem de lançamentos mais novos para páginas avançadas e completa dias de fronteira: janela limitada a 2.000 candidatos, 20 chamadas e 30 segundos; se não comprovar o desempate, falha sem página parcial. Catálogo SQL parcial não equivale a cobertura global.";
@@ -136,7 +139,7 @@ public static class OpenApiRegistration
                     foreach (var property in schema.Properties.Values.OfType<OpenApiSchema>())
                         if (property.Type is not null) property.Type &= ~JsonSchemaType.Null;
                 }
-                if (type.Name.EndsWith("Response", StringComparison.Ordinal))
+                if (type.Name.EndsWith("Response", StringComparison.Ordinal) || type == typeof(ProfileCompletionDetails))
                     schema.Required = schema.Properties.Keys.Where(key => type != typeof(NotificationResponse) || key != "commentId").ToHashSet(StringComparer.Ordinal);
                 if (type == typeof(RegisterRequest) || type == typeof(LoginRequest))
                 {
@@ -159,9 +162,29 @@ public static class OpenApiRegistration
                 if (type == typeof(ProfilePatchRequest))
                 {
                     schema.Required = new HashSet<string>();
-                    schema.Description = "Campos omitidos preservam valores; displayName/bio não aceitam null, avatarUrl null limpa foto. Nome trim até 100 caracteres, bio até 2000 e avatar HTTP/HTTPS até 2048.";
+                    schema.Description = "Campos omitidos preservam valores; displayName/bio não aceitam null, avatarUrl null limpa foto. Nome trim até 100 caracteres, bio até 2000 e avatar HTTP/HTTPS até 2048. country/state privados: trim até 100, null ou vazio limpa; não aparecem na resposta pública. Alterações recalculam a conclusão na próxima consulta.";
                     foreach (var key in new[] { "displayName", "bio" })
                         if (schema.Properties[key] is OpenApiSchema property) property.Type = JsonSchemaType.String;
+                }
+                if (type == typeof(ProfileCompletionRequest))
+                {
+                    schema.Required = new HashSet<string> { "country", "state", "bio", "favoriteGameIds" };
+                    foreach (var key in new[] { "country", "state", "bio" })
+                        if (schema.Properties[key] is OpenApiSchema text)
+                        {
+                            text.Type = JsonSchemaType.String;
+                            text.Description = $"Obrigatório e não vazio após trim; até {(key == "bio" ? 2000 : 100)} caracteres após trim.";
+                        }
+                    if (schema.Properties["favoriteGameIds"] is OpenApiSchema ids)
+                    {
+                        ids.Type = JsonSchemaType.Array;
+                        ids.MinItems = 3;
+                        ids.Description = "Conjunto desejado completo; pelo menos três IDs distintos existentes, sem truncar favoritos adicionais.";
+                        if (ids.Items is OpenApiSchema item) item.Minimum = "1";
+                    }
+                    if (schema.Properties["avatarUrl"] is OpenApiSchema avatar)
+                        avatar.Description = "Opcional: omissão preserva, null remove. HTTP/HTTPS até 2048 caracteres.";
+                    schema.AdditionalPropertiesAllowed = false;
                 }
                 if (type == typeof(FavoriteResponse) && schema.Properties["targetType"] is OpenApiSchema kind) kind.Enum = Nodes("game", "review");
                 if (type == typeof(NotificationResponse) && schema.Properties["type"] is OpenApiSchema notificationType) notificationType.Enum = Nodes("new-review", "review-comment");

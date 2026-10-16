@@ -620,11 +620,21 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                                 .HasColumnType("character varying(2000)")
                                 .HasColumnName("biografia");
 
+                            b1.Property<string>("Country")
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)")
+                                .HasColumnName("pais");
+
                             b1.Property<string>("DisplayName")
                                 .IsRequired()
                                 .HasMaxLength(100)
                                 .HasColumnType("character varying(100)")
                                 .HasColumnName("nome_exibicao");
+
+                            b1.Property<string>("State")
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)")
+                                .HasColumnName("estado");
 
                             b1.Property<DateTimeOffset>("UpdatedAt")
                                 .HasColumnType("timestamp with time zone")

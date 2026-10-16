@@ -23,7 +23,9 @@ dotnet tool restore
 dotnet ef database update --project src/Tcc.Infrastructure --startup-project src/Tcc.Infrastructure --configuration EfDesign
 ```
 
-Não passar conexão por argumento de CLI. Migrations: `IdentityUsersProfiles`, `IdentitySessions`, `LocalCatalog`, `Opinions`, `CommentsAndLikes`, `FavoritesAndFollows` e `PersistentNotifications`. `usuarios.id` e `sessoes_usuarios.id` são integer identity. `perfis_usuarios.usuario_id` é PK/FK integer sem identity. As FKs usam RESTRICT. Datas são timestamp with time zone; email normalizado, username e token_hash têm índices únicos.
+Não passar conexão por argumento de CLI. Migrations: `IdentityUsersProfiles`, `IdentitySessions`, `LocalCatalog`, `Opinions`, `CommentsAndLikes`, `FavoritesAndFollows`, `PersistentNotifications` e `ProfileCompletionLocation`. `usuarios.id` e `sessoes_usuarios.id` são integer identity. `perfis_usuarios.usuario_id` é PK/FK integer sem identity. As FKs usam RESTRICT. Datas são timestamp with time zone; email normalizado, username e token_hash têm índices únicos.
+
+`ProfileCompletionLocation` adiciona somente `pais` e `estado`, varchar(100) nullable em `perfis_usuarios`. Contas existentes permanecem incompletas sem perder perfil/favoritos. Não há coluna de conclusão: a regra é calculada. PUT de conclusão, PATCH de perfil e escrita comum de jogos favoritos serializam pela linha da conta. O PUT reconcilia somente diferenças na mesma transação do perfil, preservando identidade/data dos favoritos mantidos. País/estado são privados. [Contrato e validações S-PR-16](S-PR-16.md). Down remove apenas as duas colunas e perde os valores de localização; não é necessário para atualizar.
 
 EF Core omite o DeleteBehavior customizado de ownership ao gerar snapshots ([issue 23496](https://github.com/dotnet/efcore/issues/23496)). Os Designers e snapshot incluem explicitamente `WithOwner().HasForeignKey("UserId").Metadata.DeleteBehavior = DeleteBehavior.Restrict`. Revisar essa linha em novas migrations; `IdentityModelTests` exige ausência de alterações pendentes, sem suprimir o aviso.
 

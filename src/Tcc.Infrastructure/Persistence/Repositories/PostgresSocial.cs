@@ -14,10 +14,13 @@ public sealed class PostgresFavorites(Lazy<TccDbContext> context) : IFavorites
         var timestamp = now.ToUniversalTime();
         if (kind == FavoriteKind.Game)
         {
+            await using var tx = await db.Database.BeginTransactionAsync(ct);
+            await ProfileWriteLock.Acquire(db, userId, ct);
             var rows = await db.GameFavorites.FromSqlInterpolated($"""
                 INSERT INTO jogos_favoritos(usuario_id,jogo_id,criado_em) VALUES({userId},{targetId},{timestamp})
                 ON CONFLICT (usuario_id,jogo_id) DO UPDATE SET usuario_id=EXCLUDED.usuario_id RETURNING *
                 """).AsNoTracking().ToArrayAsync(ct);
+            await tx.CommitAsync(ct);
             return new Favorite(rows.Single().Id, userId, kind, targetId);
         }
         var reviews = await db.ReviewFavorites.FromSqlInterpolated($"""
@@ -36,9 +39,15 @@ public sealed class PostgresFavorites(Lazy<TccDbContext> context) : IFavorites
                 .Select(item => new Favorite(item.Id, item.UserId, kind, item.ReviewId)).SingleOrDefaultAsync(ct);
     });
     public Task RemoveAsync(int userId, FavoriteKind kind, int targetId, CancellationToken ct = default) => OpinionStorage.Run(async () =>
-        kind == FavoriteKind.Game
-            ? await context.Value.GameFavorites.Where(item => item.UserId == userId && item.GameId == targetId).ExecuteDeleteAsync(ct)
-            : await context.Value.ReviewFavorites.Where(item => item.UserId == userId && item.ReviewId == targetId).ExecuteDeleteAsync(ct));
+    {
+        var db = context.Value;
+        if (kind != FavoriteKind.Game) return await db.ReviewFavorites.Where(item => item.UserId == userId && item.ReviewId == targetId).ExecuteDeleteAsync(ct);
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        await ProfileWriteLock.Acquire(db, userId, ct);
+        var deleted = await db.GameFavorites.Where(item => item.UserId == userId && item.GameId == targetId).ExecuteDeleteAsync(ct);
+        await tx.CommitAsync(ct);
+        return deleted;
+    });
     public Task<FavoriteSnapshot> SnapshotAsync(int userId, CancellationToken ct = default) => OpinionStorage.Run(async () =>
     {
         var db = context.Value;
