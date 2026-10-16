@@ -62,3 +62,9 @@ FavoritesAndFollows adiciona jogos_favoritos, reviews_favoritas e seguimentos_us
 ## Eventos P-PR-06
 
 PersistentNotifications adiciona notificacoes, com FKs de usuário/ator/review e FK composta coerente com comentário. CHECKs por tipo/auto-notificação e índices únicos parciais impedem eventos inválidos/duplicados. Publicação e eventos usam um único DbContext e transação. Nenhum store de notificações ou lock de publicação de negócio em memória no runtime. Detalhes em [P-PR-06.md](P-PR-06.md).
+
+## Validação final P-PR-07
+
+FinalMigrationAuditTests reverte a cadeia completa até zero e reconstrói as 16 tabelas somente no alvo exclusivo marcado. Também aplica a fixture histórica IdentityUpgradeBaseline e verifica sua preservação no upgrade. Portanto a suíte SQL pode apagar todo conteúdo sintético de tcc_pr01_tests; não use uma base compartilhada. A guarda de nome/host/comentário é obrigatória antes da reversão. Down das migrations remove tabelas/dados da feature; não é procedimento de atualização de desenvolvimento ou produção.
+
+FinalPersistenceFlowTests valida duas contas, conteúdo/relações e sessões após descartar o host da API mantendo o banco. 417 testes aprovados, um smoke live IGDB opt-in ignorado e build/analisadores sem avisos/erros. Nenhuma nova migration ou alteração em gamesdb foi necessária nesta PR. [Relatório](P-PR-07.md) e [matriz final](MATRIZ-PERSISTENCIA.md).
