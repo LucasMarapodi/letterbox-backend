@@ -2,3 +2,6 @@
 **/obj/
 .vs/
 TestResults/
+.env
+.env.*
+!.env.example

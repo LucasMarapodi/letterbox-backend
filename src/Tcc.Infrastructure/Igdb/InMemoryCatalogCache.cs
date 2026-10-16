@@ -66,4 +66,15 @@ public sealed class InMemoryCatalogCache : ICatalogCache
                     games.Set(item.Game.Id, new(item, clock.GetUtcNow() + options.DetailFreshFor));
         return Task.CompletedTask;
     }
+    // Controlled maintenance on the infrastructure instance; never exposed as an HTTP endpoint.
+    public bool EvictGame(string id)
+    {
+        CatalogIds.Parse(id);
+        lock (gate)
+        {
+            if (!games.TryGet(id, out _)) return false;
+            games.Remove(id);
+            return true;
+        }
+    }
 }

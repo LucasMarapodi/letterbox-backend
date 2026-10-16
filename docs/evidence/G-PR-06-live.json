@@ -1,0 +1,64 @@
+{
+  "mode": "live",
+  "result": "PASSED",
+  "reason": "catalog_cache_local_token_and_search_verified",
+  "at": "2026-10-14T19:57:41.4041504+00:00",
+  "oAuthRequests": 1,
+  "igdbRequests": 3,
+  "steps": [
+    {
+      "name": "recent_page",
+      "status": 200,
+      "oAuthRequests": 1,
+      "igdbRequests": 1,
+      "gameId": null,
+      "stale": false,
+      "fetchedAt": "2026-10-14T19:57:38.8866144+00:00"
+    },
+    {
+      "name": "cache_hit",
+      "status": 200,
+      "oAuthRequests": 1,
+      "igdbRequests": 1,
+      "gameId": null,
+      "stale": false,
+      "fetchedAt": "2026-10-14T19:57:38.8866144+00:00"
+    },
+    {
+      "name": "detail",
+      "status": 200,
+      "oAuthRequests": 1,
+      "igdbRequests": 1,
+      "gameId": "igdb-423196",
+      "stale": false,
+      "fetchedAt": "2026-10-14T19:57:38.8866144+00:00"
+    },
+    {
+      "name": "local_hit_after_eviction",
+      "status": 200,
+      "oAuthRequests": 1,
+      "igdbRequests": 1,
+      "gameId": "igdb-423196",
+      "stale": false,
+      "fetchedAt": "2026-10-14T19:57:38.8866144+00:00"
+    },
+    {
+      "name": "next_page",
+      "status": 200,
+      "oAuthRequests": 1,
+      "igdbRequests": 2,
+      "gameId": null,
+      "stale": false,
+      "fetchedAt": "2026-10-14T19:57:39.3554967+00:00"
+    },
+    {
+      "name": "term_search",
+      "status": 200,
+      "oAuthRequests": 1,
+      "igdbRequests": 3,
+      "gameId": null,
+      "stale": false,
+      "fetchedAt": "2026-10-14T19:57:40.9861864+00:00"
+    }
+  ]
+}

@@ -4,7 +4,9 @@ G-PR-01 implementou a autenticação externa no servidor. Desde G-PR-04 o catál
 
 ## Configuração
 
-Defina somente no processo que executa Back:
+Em desenvolvimento local, preencha `.env` na raiz de Back. O arquivo é ignorado pelo Git; `.env.example` contém somente placeholders. Os perfis http/https de launchSettings usam Development e ativam essa leitura. Reinicie a API após preencher ou alterar o arquivo.
+
+Em outros ambientes, defina no processo que executa Back:
 
 | Variável | Uso |
 | --- | --- |
@@ -12,7 +14,9 @@ Defina somente no processo que executa Back:
 | IGDB__ClientSecret | Segredo da aplicação Twitch |
 | IGDB__TokenRefreshMarginSeconds | Opcional: inteiro de 0 a 3600; padrão 30 segundos |
 
-`IgdbCredentialOptions` lê diretamente essas variáveis com `EnvironmentVariableTarget.Process`; não lê credenciais de appsettings, argumentos HTTP, query, arquivos Front ou IConfiguration. Não versionar valores reais ou copiá-los para logs, comandos compartilhados ou relatórios. Valores ausentes/inválidos geram mensagem com os nomes das variáveis, sem seus conteúdos. Objetos de opções e token ocultam valores em ToString e serialização JSON.
+`IgdbCredentialOptions` recebe um leitor tipado da composição Api. Variáveis do processo têm prioridade; somente em Development, LocalIgdbEnvironment usa `.env` como fallback lazy para IGDB__ClientId, IGDB__ClientSecret e IGDB__TokenRefreshMarginSeconds. Não altera variáveis globais do processo nem lê credenciais de appsettings, argumentos HTTP, query, arquivos Front ou IConfiguration. Em execução publicada de Development, o fallback fica no content root da API; no workspace, na raiz Back.
+
+Formato local: linhas chave=valor, comentários iniciados por # e aspas simples/duplas opcionais. Valores com = ou # são preservados; não há expansão de variáveis, interpolação, execução de comandos ou comentários inline. Chaves IGDB duplicadas/aspas inválidas geram erro seguro sem conteúdo ou caminho do arquivo. Não versionar valores reais nem copiá-los para logs, comandos compartilhados ou relatórios. Opções e token ocultam valores em ToString e serialização JSON.
 
 As opções são resolvidas somente quando a integração externa é solicitada. Health, OpenAPI, Swagger, login local e consultas atendidas pelo cache/catálogo local não adquirem token nem exigem credenciais externas. Jogos/páginas desconhecidos precisam da configuração. Reinicie Back após alterar credenciais ou margem. Não existe endpoint de emissão/consulta de token Twitch.
 

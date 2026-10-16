@@ -18,7 +18,14 @@ public static class IgdbAuthenticationRegistration
         services.AddSingleton(resilience);
         services.AddSingleton<IIgdbScheduler, SystemIgdbScheduler>();
         services.AddSingleton<IgdbResiliencePolicy>();
-        services.AddSingleton(_ => IgdbCredentialOptions.Read(name => Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process)));
+        services.AddSingleton(provider =>
+        {
+            var environment = provider.GetRequiredService<IHostEnvironment>();
+            Func<string, string?> read = name => Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
+            if (environment.IsDevelopment())
+                read = LocalIgdbEnvironment.CreateReader(LocalIgdbEnvironment.PathFor(environment.ContentRootPath), read);
+            return IgdbCredentialOptions.Read(read);
+        });
         services.AddHttpClient(OAuthClientName, client =>
         {
             client.Timeout = TimeSpan.FromSeconds(30);
