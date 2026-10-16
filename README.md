@@ -27,6 +27,8 @@ A G-PR-01 prepara [autenticação Twitch/IGDB no servidor](docs/IGDB-AUTH.md), c
 
 A [G-PR-02](docs/G-PR-02.md) prepara portas assíncronas, resolução cache/local/IGDB e [consultas e normalização](docs/IGDB-CATALOG.md). A ativação nos endpoints e o cache/local concretos pertencem às próximas PRs; a listagem HTTP atual ainda não mudou.
 
+A [G-PR-03](docs/G-PR-03.md) implementa cache/local em memória, limites de IGDB, consultas compartilhadas e fallback stale. A ativação do catálogo assíncrono nos endpoints permanece na G-PR-04; Front e contrato HTTP atual foram preservados.
+
 Para validar a entrega completa:
 
 ```powershell

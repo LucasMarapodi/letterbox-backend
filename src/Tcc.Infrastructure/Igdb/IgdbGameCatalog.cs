@@ -32,7 +32,12 @@ public sealed class IgdbGameCatalog(Func<IgdbAuthenticatedClient> getClient, Tim
     {
         cancellationToken.ThrowIfCancellationRequested();
         using var response = await getClient().PostGamesAsync(query, cancellationToken);
-        if (response.StatusCode != HttpStatusCode.OK) throw new ExternalIntegrationUnavailableException();
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            if (response.StatusCode == HttpStatusCode.TooManyRequests || (int)response.StatusCode >= 500)
+                throw new ExternalIntegrationUnavailableException();
+            throw new CatalogInvalidResponseException();
+        }
         try
         {
             var rows = JsonSerializer.Deserialize<IgdbGameDto[]>(await response.Content.ReadAsStringAsync(cancellationToken));

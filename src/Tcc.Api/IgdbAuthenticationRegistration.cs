@@ -1,5 +1,6 @@
 using Tcc.Infrastructure.Igdb;
 using Tcc.Application.Catalog;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Tcc.Api;
 
@@ -8,8 +9,15 @@ public static class IgdbAuthenticationRegistration
     public const string OAuthClientName = "TwitchOAuth";
     public const string IgdbClientName = "IgdbExternal";
 
-    public static IServiceCollection AddIgdbAuthentication(this IServiceCollection services)
+    public static IServiceCollection AddIgdbAuthentication(this IServiceCollection services, IConfiguration? configuration = null)
     {
+        services.TryAddSingleton(TimeProvider.System);
+        IgdbResilienceOptions resilience;
+        try { resilience = configuration?.GetSection("IGDB:Resilience").Get<IgdbResilienceOptions>() ?? new(); resilience.Validate(); }
+        catch (Exception) { throw new InvalidOperationException("Configuração de resiliência IGDB inválida."); }
+        services.AddSingleton(resilience);
+        services.AddSingleton<IIgdbScheduler, SystemIgdbScheduler>();
+        services.AddSingleton<IgdbResiliencePolicy>();
         services.AddSingleton(_ => IgdbCredentialOptions.Read(name => Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process)));
         services.AddHttpClient(OAuthClientName, client =>
         {
@@ -18,7 +26,7 @@ public static class IgdbAuthenticationRegistration
         }).RemoveAllLoggers().ConfigurePrimaryHttpMessageHandler(ExternalHttpTransport.CreateHandler);
         services.AddHttpClient(IgdbClientName, client =>
         {
-            client.Timeout = TimeSpan.FromSeconds(30);
+            client.Timeout = Timeout.InfiniteTimeSpan;
             client.MaxResponseContentBufferSize = 4 * 1024 * 1024;
         }).RemoveAllLoggers().ConfigurePrimaryHttpMessageHandler(ExternalHttpTransport.CreateHandler);
         services.AddSingleton(services =>
@@ -34,9 +42,9 @@ public static class IgdbAuthenticationRegistration
         });
         services.AddScoped(services => new IgdbAuthenticatedClient(
             services.GetRequiredService<IHttpClientFactory>().CreateClient(IgdbClientName),
-            services.GetRequiredService<IgdbCredentialOptions>(), services.GetRequiredService<TwitchTokenProvider>()));
-        services.AddScoped<IExternalGameCatalog>(services => new IgdbGameCatalog(
-            () => services.GetRequiredService<IgdbAuthenticatedClient>(), services.GetRequiredService<TimeProvider>()));
+            services.GetRequiredService<IgdbCredentialOptions>(), services.GetRequiredService<TwitchTokenProvider>(),
+            services.GetRequiredService<IgdbResiliencePolicy>()));
+        services.AddSingleton<IExternalGameCatalog, ScopedExternalGameCatalog>();
         return services;
     }
 }

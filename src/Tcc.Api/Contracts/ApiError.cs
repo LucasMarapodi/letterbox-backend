@@ -12,6 +12,7 @@ public sealed record ApiError(string Code, string Message)
         500 => new("internal_error", "Erro interno."),
         503 => new("integration_unavailable", "Integração externa indisponível."),
         502 => new("integration_invalid_response", "Resposta inválida da integração externa."),
+        504 => new("integration_timeout", "Tempo limite da integração externa excedido."),
         _ => new("http_error", "Não foi possível atender à requisição.")
     };
 }
