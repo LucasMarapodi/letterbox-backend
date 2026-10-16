@@ -1,14 +1,15 @@
 # Dashboard, feeds e Comunidade — contratos atuais
 
-Base `/api/v1`. Sem paginação ou limites silenciosos de quantidade. IDs locais numéricos e datas UTC; erros ApiError.
+Base `/api/v1`. Listas existentes sem paginação ou limites silenciosos; o ranking de comentários mais curtidos usa paginação explícita. IDs locais numéricos e datas UTC; erros ApiError.
 
 - GET /feed/following: privado, ReviewResponse[] dos autores atualmente seguidos pelo token, createdAt decrescente e ID numérico crescente. Deixar de seguir remove resultados na próxima consulta; autoria própria não entra automaticamente.
 - GET /dashboard: privado, {favorites:{games:GameResponse[],reviews:ReviewResponse[]},feed:ReviewResponse[]}. Reutiliza as consultas existentes de favoritos/feed e a média local; listas vazias mantêm a estrutura. Query userId não altera identidade.
 - GET /community/reviews/recent: público, todas as ReviewResponse[] por createdAt decrescente/ID crescente. Edição e comentários não reposicionam a publicação; inclui autores não seguidos.
 - GET /community/reviews/most-commented?period=7d: público, {review:ReviewResponse,commentCount:number,lastCommentAt:UTC}[] com atividade positiva.
 - GET /community/games/in-discussion?period=7d: público, {game:GameResponse,commentCount:number,lastCommentAt:UTC}[] com atividade positiva. Soma os comentários de todas as reviews do jogo, uma vez por comentário.
+- GET /community/comments/most-liked?period=7d&page=1&pageSize=20: público/no-store, {items:RankedCommentResponse[],page,pageSize,hasNextPage}. Likes ativos criados no período, incluindo comentários antigos e respostas; ordenação periodLikeCount DESC, lastLikeAt DESC, commentId ASC no PostgreSQL. page>=1, pageSize=10|20|50. [Contrato S-PR-12](S-PR-12.md).
 
-Períodos aceitos exatamente 24h/7d/30d, padrão 7d quando omitido. Valor vazio ou desconhecido: 400. Janelas móveis inclusivas [agora-24/168/720 horas, agora], capturando agora UTC uma vez por consulta e excluindo comentários futuros. Reviews antigas participam por seus comentários recentes. Ordenação dos rankings: commentCount decrescente, lastCommentAt elegível decrescente, ID numérico crescente. Não contar participantes distintos, nota média ou popularidade externa como discussão.
+Períodos aceitos exatamente 24h/7d/30d, padrão 7d quando omitido. Valor vazio ou desconhecido: 400. Janelas móveis inclusivas [agora-24/168/720 horas, agora], capturando agora UTC uma vez por consulta. Nos rankings de discussão, excluem-se comentários futuros; reviews antigas participam por seus comentários recentes, com ordenação commentCount decrescente, lastCommentAt elegível decrescente e ID numérico crescente. Não contar participantes distintos, nota média ou popularidade externa como discussão. O ranking de comentários mais curtidos filtra a data dos likes ativos e exclui likes futuros; sua regra é independente da data de publicação do comentário.
 
 Os resultados são projeções dos dados persistidos, sem tabelas próprias de dashboard/ranking. Catálogo segue cache → PostgreSQL → IGDB. CommentActivity compartilha a seleção temporal dos rankings e ActivityOrdering compartilha seus desempates. ReviewProjection centraliza ordenação e projeção de reviews. Feed usa EXISTS SQL sobre seguimentos. Atividade usa COUNT/MAX por review e janela no SQL. Favoritos de jogos/reviews compartilham snapshot RepeatableRead; dashboard e projeções de catálogo/autores usam consultas separadas, sem snapshot transacional global. A coordenação de publicação em memória foi retirada na P-PR-06.
 
