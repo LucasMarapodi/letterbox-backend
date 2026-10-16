@@ -6,6 +6,26 @@ namespace Tcc.Api.Tests.Validation;
 public sealed class OpenApiTests
 {
     [Fact]
+    public async Task Profile_patch_is_partial_and_returns_private_completion_without_changing_public_user_schema()
+    {
+        await using var host = new TestApiFactory();
+        using var client = host.CreateClient();
+        using var document = JsonDocument.Parse(await client.GetStringAsync("/openapi/v1.json"));
+        var root = document.RootElement;
+        var schemas = root.GetProperty("components").GetProperty("schemas");
+        var patch = schemas.GetProperty("ProfilePatchRequest");
+        Assert.False(patch.TryGetProperty("required", out var required) && required.GetArrayLength() > 0);
+        var ids = patch.GetProperty("properties").GetProperty("favoriteGameIds");
+        Assert.Equal("array", ids.GetProperty("type").GetString());
+        Assert.Equal(0, ids.GetProperty("minItems").GetInt32());
+        Assert.Equal(1, ids.GetProperty("items").GetProperty("minimum").GetInt32());
+        Assert.Equal(new[] { "avatarUrl", "bio", "completion", "displayName", "id", "username" },
+            schemas.GetProperty("ProfileUpdateResponse").GetProperty("properties").EnumerateObject().Select(item => item.Name).Order());
+        Assert.False(schemas.GetProperty("PublicUserResponse").GetProperty("properties").TryGetProperty("completion", out _));
+        Assert.True(root.GetProperty("paths").GetProperty("/api/v1/users/me/profile-completion").GetProperty("put").GetProperty("deprecated").GetBoolean());
+    }
+
+    [Fact]
     public async Task Review_like_contract_has_no_write_body_public_integer_count_and_private_boolean_status()
     {
         await using var host = new TestApiFactory();
@@ -59,12 +79,12 @@ public sealed class OpenApiTests
         using var document = JsonDocument.Parse(await client.GetStringAsync("/openapi/v1.json"));
         var schemas = document.RootElement.GetProperty("components").GetProperty("schemas");
         var input = schemas.GetProperty("ProfileCompletionRequest");
-        Assert.Equal(new[] { "bio", "country", "favoriteGameIds", "state" }, input.GetProperty("required").EnumerateArray().Select(item => item.GetString()).Order());
+        Assert.Equal(new[] { "favoriteGameIds" }, input.GetProperty("required").EnumerateArray().Select(item => item.GetString()).Order());
         Assert.False(input.GetProperty("additionalProperties").GetBoolean());
         var properties = input.GetProperty("properties");
         Assert.False(properties.TryGetProperty("avatarSpecified", out _));
         var ids = properties.GetProperty("favoriteGameIds");
-        Assert.Equal(3, ids.GetProperty("minItems").GetInt32());
+        Assert.Equal(0, ids.GetProperty("minItems").GetInt32());
         Assert.Equal("integer", ids.GetProperty("items").GetProperty("type").GetString());
         var output = schemas.GetProperty("ProfileCompletionDetails");
         Assert.Equal(new[] { "avatarUrl", "bio", "country", "favoriteGameCount", "favoriteGameIds", "isComplete", "state" }, output.GetProperty("required").EnumerateArray().Select(item => item.GetString()).Order());

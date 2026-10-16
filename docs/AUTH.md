@@ -9,13 +9,13 @@ Base `/api/v1`. Desde P-PR-01, IDs de usuários são inteiros positivos gerados 
 | GET /auth/me | Bearer | 200, PublicUserResponse |
 | POST /auth/logout | Bearer | 204, revoga somente este token |
 | GET /users/{userId} | público | 200, PublicUserResponse; 404 se inexistente |
-| PATCH /users/me/profile | Bearer; displayName, bio, avatarUrl opcionais | 200, PublicUserResponse atualizado |
+| PATCH /users/me/profile | Bearer; displayName, country, state, bio, avatarUrl, favoriteGameIds opcionais | 200, ProfileUpdateResponse: campos anteriores do usuário na raiz + completion privado |
 
 PublicUserResponse: id, username, displayName, bio, avatarUrl. Sem email, password, hash ou token. Username gerado como `user-{id}`: função determinística do ID único da conta; não é solicitado no cadastro.
 
 Nome/name/displayName: obrigatório, não vazio após trim, máximo 100 caracteres. Email: obrigatório, formato simples de caixa postal sem nome de exibição, máximo 254 caracteres, trim e lowercase para unicidade. Password: obrigatório e não apenas espaços; preservado exatamente, sem exigir tamanho mínimo ou classes de caracteres adicionais. Bio: máximo 2000 caracteres, string vazia permitida. Avatar: null ou URL absoluta HTTP/HTTPS de até 2048 caracteres; não há download ou upload.
 
-PATCH: campo omitido preserva o valor; avatarUrl null limpa foto. displayName e bio explícitos como null são inválidos. Campos desconhecidos (incluindo userId, username, email e password) são rejeitados com 400. Todas as propriedades são validadas antes da gravação. Um objeto vazio é um comando válido sem alterações.
+PATCH: campo omitido preserva o valor; opcionais null/vazio limpam, nome null/vazio é inválido. favoriteGameIds:null é inválido, [] limpa jogos favoritos. País/estado alterados devem formar um par das opções configuradas, com estado vazio permitido; legado inalterado é preservado. Perfil incompleto pode ser salvo; todos os campos/favoritos compartilham a transação. Campos desconhecidos (incluindo userId, username, email e password) são rejeitados com 400. Um objeto vazio é válido sem alterações. [Contrato, resposta privada e opções S-PR-32](S-PR-32.md).
 
 Email duplicado retorna 409/conflict; payload inválido 400/validation_failed; credenciais incorretas e Bearer ausente, inválido ou expirado 401/unauthorized. Falha SQL retorna 503/storage_unavailable, sem fallback. Expiração quando agora >= expiresAt. `Authentication:SessionMinutes` configura duração, padrão 60, deve ser positivo. Cada login gera token opaco aleatório próprio. Logout revoga apenas a sessão atual. Reiniciar a API preserva contas, perfis e sessões no mesmo banco.
 

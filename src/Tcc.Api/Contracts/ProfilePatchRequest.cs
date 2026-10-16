@@ -17,6 +17,10 @@ public sealed class ProfilePatchRequest : IValidatableObject
     private string? state;
     private bool countrySpecified;
     private bool stateSpecified;
+    private IReadOnlyList<int>? favoriteGameIds;
+    private bool favoritesSpecified;
+    [JsonNumberHandling(JsonNumberHandling.Strict)]
+    public IReadOnlyList<int>? FavoriteGameIds { get => favoriteGameIds; set { favoriteGameIds = value; favoritesSpecified = true; } }
     public string? Country { get => country; set { country = value; countrySpecified = true; } }
     public string? State { get => state; set { state = value; stateSpecified = true; } }
 
@@ -42,9 +46,9 @@ public sealed class ProfilePatchRequest : IValidatableObject
     {
         if (displayNameSpecified && DisplayName is null)
             yield return new ValidationResult("Nome não pode ser null.", [nameof(DisplayName)]);
-        if (bioSpecified && Bio is null)
-            yield return new ValidationResult("Biografia não pode ser null.", [nameof(Bio)]);
+        if (favoritesSpecified && FavoriteGameIds is null)
+            yield return new ValidationResult("Favoritos não podem ser null; envie [] para limpar.", [nameof(FavoriteGameIds)]);
     }
 
-    public ProfileChange ToChange() => new(DisplayName, Bio, avatarSpecified, AvatarUrl, countrySpecified, Country, stateSpecified, State);
+    public ProfileChange ToChange() => new(DisplayName, bioSpecified ? Bio ?? "" : null, avatarSpecified, AvatarUrl, countrySpecified, Country, stateSpecified, State);
 }

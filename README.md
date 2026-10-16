@@ -4,6 +4,8 @@ API .NET 10 da plataforma de avaliações e reviews de jogos. Catálogo IGDB ass
 
 ## Executar
 
+A [S-PR-32](docs/S-PR-32.md) unifica a edição parcial: PATCH de perfil salva nome/localização/bio/avatar e favoritos atomicamente, mesmo incompleto. Mantém campos atuais da resposta e acrescenta completion privado. Localização usa opções fechadas e preserva legado inalterado; PUT anterior permanece por compatibilidade. Modal na S-PR-33, sem migration nova.
+
 A [S-PR-08](docs/S-PR-08.md) persiste likes de reviews: PUT/DELETE idempotentes, GET privado de likedByMe e likeCount agregado em SQL nas projeções. Curtidas são independentes de favoritos e não geram notificações. Consumo visual na S-PR-09.
 
 A [S-PR-21](docs/S-PR-21.md) unifica publicação/edição de review e nota: POST exige rating de 0 a 5, descrição é opcional e PATCH salva ambos atomicamente. PUT legado de nota cria/atualiza a mesma review; leituras incluem rating nullable para legados. A integração do formulário pertence à S-PR-22.

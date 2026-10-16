@@ -28,29 +28,27 @@ public sealed class PostgresProfileCompletion(Lazy<TccDbContext> context) : IPro
         return new(profile.Country, profile.State, profile.Bio, profile.AvatarUrl, ids);
     });
 
-    public Task<ProfileCompletionDetails?> SaveAsync(int userId, ProfileCompletionChange change, DateTimeOffset now, CancellationToken ct) => OpinionStorage.Run<ProfileCompletionDetails?>(async () =>
+    public Task<ProfileSaveResult?> SaveAsync(int userId, ProfileCompletionChange change, DateTimeOffset now, CancellationToken ct) => OpinionStorage.Run<ProfileSaveResult?>(async () =>
     {
         var db = context.Value;
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         await ProfileWriteLock.Acquire(db, userId, ct);
         var account = await db.Users.AsTracking().SingleOrDefaultAsync(user => user.Id == userId, ct);
         if (account is null) return null;
-        var ids = change.FavoriteGameIds.ToArray();
+        var existing = await db.GameFavorites.AsNoTracking().Where(item => item.UserId == userId).Select(item => item.GameId).Order().ToArrayAsync(ct);
+        var ids = change.FavoriteGameIds?.Distinct().Order().ToArray() ?? existing;
         // Recheck SQL existence even if the catalog had cached these IDs before the transaction.
         if (await db.Games.CountAsync(game => ids.Contains(game.Id), ct) != ids.Length) throw new ResourceFailure(ResourceFailureKind.NotFound);
         var updated = account.Profile.Apply(change.Profile, now);
-        if (!ProfileCompletionPolicy.IsComplete(updated.Country, updated.State, updated.Bio, ids))
-            throw new Tcc.Domain.Identity.DomainValidationException("Dados de conclusão inválidos.");
-        if (updated.Country != account.Profile.Country || updated.State != account.Profile.State || updated.Bio != account.Profile.Bio || updated.AvatarUrl != account.Profile.AvatarUrl)
+        if (updated.DisplayName != account.Profile.DisplayName || updated.Country != account.Profile.Country || updated.State != account.Profile.State || updated.Bio != account.Profile.Bio || updated.AvatarUrl != account.Profile.AvatarUrl)
         {
             db.Entry(account.Profile).CurrentValues.SetValues(updated);
             db.Entry(account).Property(user => user.UpdatedAt).CurrentValue = now;
         }
-        var existing = await db.GameFavorites.AsNoTracking().Where(item => item.UserId == userId).Select(item => item.GameId).ToArrayAsync(ct);
         await db.GameFavorites.Where(item => item.UserId == userId && !ids.Contains(item.GameId)).ExecuteDeleteAsync(ct);
         foreach (var id in ids.Except(existing)) db.GameFavorites.Add(new GameFavorite(0, userId, id, now));
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
-        return new(updated.Country, updated.State, updated.Bio, updated.AvatarUrl, ids);
+        return new(account, new(updated.Country, updated.State, updated.Bio, updated.AvatarUrl, ids));
     });
 }

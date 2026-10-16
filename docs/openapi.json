@@ -3445,7 +3445,7 @@
           "ProfileCompletion"
         ],
         "summary": "GET /api/v1/users/me/profile-completion",
-        "description": "Privado, sem cache compartilhado; usuário exclusivamente do Bearer. Conclusão calculada: país, estado e bio preenchidos e pelo menos três jogos distintos existentes; avatar opcional. GET retorna todos os favoritos. PUT salva perfil e conjunto completo de favoritos atomicamente, reconciliando diferenças e preservando vínculos mantidos; repetição idempotente. Textos recebem trim, país/estado até 100, bio até 2000 caracteres. avatarUrl omitido preserva, null remove. IDs locais positivos int32; duplicados não contam para o mínimo. 400 para dados inválidos, 404 para jogo inexistente, 503 para persistência indisponível; nenhuma gravação parcial.",
+        "description": "Privado/no-store. GET retorna todos os favoritos e conclusão calculada: país/estado/bio preenchidos e três jogos distintos existentes; avatar não participa. PUT legado preservado por compatibilidade; prefira PATCH /users/me/profile. PUT usa a mesma política/transação e também aceita perfil incompleto; favoriteGameIds obrigatório (inclusive []), localização/bio ausentes/null limpam; avatar omitido preserva. País/estado alterados devem formar um par do catálogo configurado; legado inalterado é preservado. Sem booleano de conclusão persistido, truncamento de favoritos ou gravação parcial.",
         "responses": {
           "200": {
             "description": "OK",
@@ -3535,7 +3535,7 @@
           "ProfileCompletion"
         ],
         "summary": "PUT /api/v1/users/me/profile-completion",
-        "description": "Privado, sem cache compartilhado; usuário exclusivamente do Bearer. Conclusão calculada: país, estado e bio preenchidos e pelo menos três jogos distintos existentes; avatar opcional. GET retorna todos os favoritos. PUT salva perfil e conjunto completo de favoritos atomicamente, reconciliando diferenças e preservando vínculos mantidos; repetição idempotente. Textos recebem trim, país/estado até 100, bio até 2000 caracteres. avatarUrl omitido preserva, null remove. IDs locais positivos int32; duplicados não contam para o mínimo. 400 para dados inválidos, 404 para jogo inexistente, 503 para persistência indisponível; nenhuma gravação parcial.",
+        "description": "Privado/no-store. GET retorna todos os favoritos e conclusão calculada: país/estado/bio preenchidos e três jogos distintos existentes; avatar não participa. PUT legado preservado por compatibilidade; prefira PATCH /users/me/profile. PUT usa a mesma política/transação e também aceita perfil incompleto; favoriteGameIds obrigatório (inclusive []), localização/bio ausentes/null limpam; avatar omitido preserva. País/estado alterados devem formar um par do catálogo configurado; legado inalterado é preservado. Sem booleano de conclusão persistido, truncamento de favoritos ou gravação parcial.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -3648,6 +3648,7 @@
             }
           }
         },
+        "deprecated": true,
         "security": [
           {
             "Bearer": []
@@ -5676,6 +5677,7 @@
           "Users"
         ],
         "summary": "PATCH /api/v1/users/me/profile",
+        "description": "Edição privada/no-store de nome, localização, bio, avatar e conjunto completo de jogos favoritos numa transação. Campos omitidos preservam; null/vazio limpa opcionais, favoriteGameIds:[] limpa favoritos e null é inválido. Perfil incompleto pode ser salvo com qualquer quantidade de favoritos. Países: Brasil (São Paulo/Rio de Janeiro/Minas Gerais), Estados Unidos (Califórnia/Nova York), China (Taiwan/Hubei), labels exatos após trim. Valida o par final mesmo se apenas um campo mudar; estado sem país é inválido. Valores legados inalterados são preservados. Retorna campos atuais do usuário no nível raiz mais completion; localização não é adicionada a PublicUserResponse. 400 inválido, 401 sessão, 404 jogo ausente, 503 persistência indisponível.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -5702,17 +5704,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/PublicUserResponse"
+                  "$ref": "#/components/schemas/ProfileUpdateResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PublicUserResponse"
+                  "$ref": "#/components/schemas/ProfileUpdateResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PublicUserResponse"
+                  "$ref": "#/components/schemas/ProfileUpdateResponse"
                 }
               }
             }
@@ -5741,6 +5743,20 @@
                 "example": {
                   "code": "unauthorized",
                   "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "not_found",
+                  "message": "Recurso não encontrado."
                 }
               }
             }
@@ -6458,59 +6474,117 @@
       },
       "ProfileCompletionRequest": {
         "required": [
-          "country",
-          "state",
-          "bio",
           "favoriteGameIds"
         ],
         "type": "object",
         "properties": {
           "country": {
-            "type": "string",
-            "description": "Obrigatório e não vazio após trim; até 100 caracteres após trim."
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Opcional, null/vazio limpa; até 100 caracteres após trim. Localização alterada exige opções configuradas e par final compatível."
           },
           "state": {
-            "type": "string",
-            "description": "Obrigatório e não vazio após trim; até 100 caracteres após trim."
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Opcional, null/vazio limpa; até 100 caracteres após trim. Localização alterada exige opções configuradas e par final compatível."
           },
           "bio": {
-            "type": "string",
-            "description": "Obrigatório e não vazio após trim; até 2000 caracteres após trim."
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Opcional, null/vazio limpa; até 2000 caracteres após trim. Localização alterada exige opções configuradas e par final compatível."
           },
           "favoriteGameIds": {
-            "minItems": 3,
+            "minItems": 0,
             "type": "array",
             "items": {
               "minimum": 1,
               "type": "integer",
               "format": "int32"
             },
-            "description": "Conjunto desejado completo; pelo menos três IDs distintos existentes, sem truncar favoritos adicionais."
+            "description": "Conjunto desejado completo: [] limpa, null inválido, omitir no PATCH preserva. IDs positivos int32 existentes; deduplica sem truncar e sem mínimo para salvar."
           },
           "avatarUrl": {
             "type": [
               "null",
               "string"
             ],
-            "description": "Opcional: omissão preserva, null remove. HTTP/HTTPS até 2048 caracteres."
+            "description": "Opcional: omissão preserva, null/vazio remove. HTTP/HTTPS até 2048 caracteres."
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Compatibilidade PUT: substitui localização/bio e favoritos, preserva nome; avatar omitido preserva. Perfil incompleto é permitido; prefira PATCH para edição parcial."
       },
       "ProfilePatchRequest": {
         "type": "object",
         "properties": {
+          "favoriteGameIds": {
+            "minItems": 0,
+            "type": "array",
+            "items": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Conjunto desejado completo: [] limpa, null inválido, omitir no PATCH preserva. IDs positivos int32 existentes; deduplica sem truncar e sem mínimo para salvar."
+          },
           "country": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "Opcional, null/vazio limpa; até 100 caracteres após trim. Localização alterada exige opções configuradas e par final compatível."
           },
           "state": {
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "Opcional, null/vazio limpa; até 100 caracteres após trim. Localização alterada exige opções configuradas e par final compatível."
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "bio": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Opcional, null/vazio limpa; até 2000 caracteres após trim. Localização alterada exige opções configuradas e par final compatível."
+          },
+          "avatarUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Opcional: omissão preserva, null/vazio remove. HTTP/HTTPS até 2048 caracteres."
+          }
+        },
+        "additionalProperties": false,
+        "description": "PATCH parcial: omissão preserva; nome não aceita null/vazio, opcionais null/vazio limpam, [] limpa favoritos. Nome até 100, bio até 2000, avatar HTTP/HTTPS até 2048. Localização valida o par final; legado inalterado preservado. Completar perfil não é pré-condição de salvar."
+      },
+      "ProfileUpdateResponse": {
+        "required": [
+          "id",
+          "username",
+          "displayName",
+          "bio",
+          "avatarUrl",
+          "completion"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "username": {
+            "type": "string"
           },
           "displayName": {
             "type": "string"
@@ -6523,10 +6597,11 @@
               "null",
               "string"
             ]
+          },
+          "completion": {
+            "$ref": "#/components/schemas/ProfileCompletionDetails"
           }
-        },
-        "additionalProperties": false,
-        "description": "Campos omitidos preservam valores; displayName/bio não aceitam null, avatarUrl null limpa foto. Nome trim até 100 caracteres, bio até 2000 e avatar HTTP/HTTPS até 2048. country/state privados: trim até 100, null ou vazio limpa; não aparecem na resposta pública. Alterações recalculam a conclusão na próxima consulta."
+        }
       },
       "PublicUserResponse": {
         "required": [

@@ -17,6 +17,7 @@ Comparação dos contratos com o Front da terceira fase, que usa HTTP. Na G-PR-0
 | GameOpinions | GET /games/{id}/opinions | Mesmos averageRating nullable e reviews; zero é média válida |
 | PublicComment | GET/POST /reviews/{id}/comments | ID numérico, parentCommentId nullable e likeCount; respostas de uma camada e endpoints de curtida disponíveis no backend |
 | PublicProfile | GET /users/{id} + GET /users/{id}/reviews | Compor {user,reviews}; API não possui um endpoint único desse agregado; edição usa PATCH /users/me/profile |
+| Edição unificada do próprio perfil | PATCH /users/me/profile → ProfileUpdateResponse | Campos antigos do usuário na raiz + completion privado. Omitir preserva, opcionais null/vazio limpam, [] limpa favoritos, favoritos null é inválido. Permite perfil incompleto; modal na S-PR-33. PUT anterior é compatibilidade |
 | Connections | GET /users/{id}/followers + /following | Compor {followers,following}; ambas públicas |
 | isFollowing / setFollowing | GET /users/{id}/follow/me e PUT/DELETE /follow | Desembrulhar following; PUT devolve estado, DELETE 204; corpo não permitido |
 | Favorite / getFavorite / setFavorite | FavoriteResponse, FavoriteStatusResponse | id/targetId int32; targetType game/review distingue IDs por tipo; GET desembrulha favorite; DELETE 204 vira null; PUT preserva ID na repetição |

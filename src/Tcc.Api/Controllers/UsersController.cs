@@ -17,9 +17,11 @@ public sealed class UsersController(GetUserProfile profiles, EditUserProfile edi
 
     [Authorize]
     [HttpPatch("me/profile")]
-    [ProducesResponseType<PublicUserResponse>(200)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    [ProducesResponseType<ProfileUpdateResponse>(200)]
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(401)]
-    public async Task<ActionResult<PublicUserResponse>> Patch(ProfilePatchRequest request, CancellationToken cancellationToken) =>
-        Ok(PublicUserResponse.From(await edit.Execute(request.ToChange(), cancellationToken)));
+    [ProducesResponseType<ApiError>(404)]
+    public async Task<ActionResult<ProfileUpdateResponse>> Patch(ProfilePatchRequest request, CancellationToken cancellationToken) =>
+        Ok(ProfileUpdateResponse.From(await edit.Execute(request.ToChange(), request.FavoriteGameIds, cancellationToken)));
 }

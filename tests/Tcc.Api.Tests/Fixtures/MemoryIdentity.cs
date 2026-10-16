@@ -12,6 +12,7 @@ public static class TestIdentityRegistration
     {
         services.AddSingleton<IUserAccounts, TestUserAccounts>();
         services.AddSingleton<IUserSessions, TestSessions>();
+        services.AddSingleton<IProfileCompletionStore, InMemoryProfileCompletion>();
         return services;
     }
 }

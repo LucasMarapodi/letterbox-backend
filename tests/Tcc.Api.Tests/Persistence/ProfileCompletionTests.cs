@@ -37,18 +37,18 @@ public sealed class ProfileCompletionTests
         var owner = await NotificationPersistenceTests.Register(client, "completion-owner@example.com");
         using var initial = await Read(client);
         Assert.False(initial.RootElement.GetProperty("isComplete").GetBoolean());
-        using var saved = await client.PutAsJsonAsync(Path, new { country = " Private country ", state = " State ", bio = " Description ", favoriteGameIds = ids.Take(3) });
+        using var saved = await client.PutAsJsonAsync(Path, new { country = " Brasil ", state = " São Paulo ", bio = " Description ", favoriteGameIds = ids.Take(3) });
         Assert.Equal(200, (int)saved.StatusCode);
         Assert.True(saved.Headers.CacheControl?.NoStore);
         using var first = JsonDocument.Parse(await saved.Content.ReadAsStringAsync());
         Assert.True(first.RootElement.GetProperty("isComplete").GetBoolean());
-        Assert.Equal("Private country", first.RootElement.GetProperty("country").GetString());
+        Assert.Equal("Brasil", first.RootElement.GetProperty("country").GetString());
         Assert.Equal(3, first.RootElement.GetProperty("favoriteGameCount").GetInt32());
         Assert.Equal(JsonValueKind.Null, first.RootElement.GetProperty("avatarUrl").ValueKind);
         await using var db = PostgresTestDatabase.Context();
         var favorites = await db.GameFavorites.AsNoTracking().OrderBy(item => item.Id).ToArrayAsync();
         var timestamp = (await db.Users.AsNoTracking().SingleAsync()).Profile.UpdatedAt;
-        using var repeat = await client.PutAsJsonAsync(Path, new { country = "Private country", state = "State", bio = "Description", favoriteGameIds = ids.Take(3) });
+        using var repeat = await client.PutAsJsonAsync(Path, new { country = "Brasil", state = "São Paulo", bio = "Description", favoriteGameIds = ids.Take(3) });
         repeat.EnsureSuccessStatusCode();
         Assert.Equal(first.RootElement.GetRawText(), await repeat.Content.ReadAsStringAsync());
         var restoredFavorites = await db.GameFavorites.AsNoTracking().OrderBy(item => item.Id).ToArrayAsync();
@@ -57,19 +57,19 @@ public sealed class ProfileCompletionTests
         foreach (var route in new[] { $"/api/v1/users/{owner.Id}", "/api/v1/auth/me" })
         {
             var publicBody = await client.GetStringAsync(route);
-            Assert.DoesNotContain("Private country", publicBody);
+            Assert.DoesNotContain("Brasil", publicBody);
             using var json = JsonDocument.Parse(publicBody);
             Assert.False(json.RootElement.TryGetProperty("country", out _));
             Assert.False(json.RootElement.TryGetProperty("state", out _));
         }
         using (var avatar = await client.PatchAsJsonAsync("/api/v1/users/me/profile", new { avatarUrl = "https://example.com/avatar.png" })) avatar.EnsureSuccessStatusCode();
-        using (var preserve = await client.PutAsJsonAsync(Path, new { country = "Private country", state = "State", bio = "Description", favoriteGameIds = ids })) preserve.EnsureSuccessStatusCode();
+        using (var preserve = await client.PutAsJsonAsync(Path, new { country = "Brasil", state = "São Paulo", bio = "Description", favoriteGameIds = ids })) preserve.EnsureSuccessStatusCode();
         using (var withAvatar = await Read(client))
         {
             Assert.Equal("https://example.com/avatar.png", withAvatar.RootElement.GetProperty("avatarUrl").GetString());
             Assert.Equal(4, withAvatar.RootElement.GetProperty("favoriteGameCount").GetInt32());
         }
-        using (var remove = await client.PutAsJsonAsync(Path, new { country = "Private country", state = "State", bio = "Description", avatarUrl = (string?)null, favoriteGameIds = ids.Take(3) })) remove.EnsureSuccessStatusCode();
+        using (var remove = await client.PutAsJsonAsync(Path, new { country = "Brasil", state = "São Paulo", bio = "Description", avatarUrl = (string?)null, favoriteGameIds = ids.Take(3) })) remove.EnsureSuccessStatusCode();
         await using var restarted = new PostgresApiFactory();
         using var other = restarted.CreateClient();
         other.DefaultRequestHeaders.Authorization = new("Bearer", owner.Token);
@@ -79,7 +79,7 @@ public sealed class ProfileCompletionTests
         using (var add = await other.PutAsync($"/api/v1/favorites/game/{ids[2]}", null)) add.EnsureSuccessStatusCode();
         using (var bio = await other.PatchAsJsonAsync("/api/v1/users/me/profile", new { bio = " " })) bio.EnsureSuccessStatusCode();
         using (var incomplete = await Read(other)) Assert.False(incomplete.RootElement.GetProperty("isComplete").GetBoolean());
-        using (var bio = await other.PatchAsJsonAsync("/api/v1/users/me/profile", new { bio = "Restored", country = (string?)null })) bio.EnsureSuccessStatusCode();
+        using (var bio = await other.PatchAsJsonAsync("/api/v1/users/me/profile", new { bio = "Restored", country = (string?)null, state = (string?)null })) bio.EnsureSuccessStatusCode();
         using (var incomplete = await Read(other))
         {
             Assert.False(incomplete.RootElement.GetProperty("isComplete").GetBoolean());
@@ -101,21 +101,21 @@ public sealed class ProfileCompletionTests
         await NotificationPersistenceTests.Register(client, "completion-validation@example.com");
         var bodies = new object[]
         {
-            new { country = " ", state = "State", bio = "Bio", favoriteGameIds = ids },
-            new { country = "Country", state = " ", bio = "Bio", favoriteGameIds = ids },
-            new { country = "Country", state = "State", bio = " ", favoriteGameIds = ids },
-            new { country = new string('x',101), state = "State", bio = "Bio", favoriteGameIds = ids },
-            new { country = "Country", state = "State", bio = "Bio", favoriteGameIds = new[] { ids[0], ids[0], ids[0] } },
-            new { country = "Country", state = "State", bio = "Bio", favoriteGameIds = new[] { ids[0], ids[1], 0 } },
-            new { country = "Country", state = "State", bio = "Bio", favoriteGameIds = ids, avatarUrl = "file:///invalid" },
-            new { country = "Country", state = "State", bio = "Bio", favoriteGameIds = ids, userId = 999 }
+            new { country = " ", state = "São Paulo", bio = "Bio", favoriteGameIds = ids },
+            new { country = "Brasil", state = "Hubei", bio = "Bio", favoriteGameIds = ids },
+            new { country = "Brasil", state = "São Paulo", bio = new string('x',2001), favoriteGameIds = ids },
+            new { country = new string('x',101), state = "São Paulo", bio = "Bio", favoriteGameIds = ids },
+            new { country = "Brasil", state = "São Paulo", bio = "Bio", favoriteGameIds = new[] { ids[0], ids[0], -1 } },
+            new { country = "Brasil", state = "São Paulo", bio = "Bio", favoriteGameIds = new[] { ids[0], ids[1], 0 } },
+            new { country = "Brasil", state = "São Paulo", bio = "Bio", favoriteGameIds = ids, avatarUrl = "file:///invalid" },
+            new { country = "Brasil", state = "São Paulo", bio = "Bio", favoriteGameIds = ids, userId = 999 }
         };
         foreach (var body in bodies)
         {
             using var invalid = await client.PutAsJsonAsync(Path, body);
             Assert.Equal(400, (int)invalid.StatusCode);
         }
-        using var missing = await client.PutAsJsonAsync(Path, new { country = "Country", state = "State", bio = "Bio", favoriteGameIds = new[] { ids[0], ids[1], int.MaxValue } });
+        using var missing = await client.PutAsJsonAsync(Path, new { country = "Brasil", state = "São Paulo", bio = "Bio", favoriteGameIds = new[] { ids[0], ids[1], int.MaxValue } });
         Assert.Equal(404, (int)missing.StatusCode);
         using var unchanged = await Read(client);
         Assert.Equal(0, unchanged.RootElement.GetProperty("favoriteGameCount").GetInt32());
@@ -130,7 +130,7 @@ public sealed class ProfileCompletionTests
         await using var host = new PostgresApiFactory();
         using var client = host.CreateClient();
         var owner = await NotificationPersistenceTests.Register(client, "completion-rollback@example.com");
-        using (var save = await client.PutAsJsonAsync(Path, new { country = "Before", state = "State", bio = "Bio", favoriteGameIds = ids.Take(3) })) save.EnsureSuccessStatusCode();
+        using (var save = await client.PutAsJsonAsync(Path, new { country = "Brasil", state = "São Paulo", bio = "Bio", favoriteGameIds = ids.Take(3) })) save.EnsureSuccessStatusCode();
         using var before = await Read(client);
         await using var db = PostgresTestDatabase.Context();
         var favorites = await db.GameFavorites.AsNoTracking().OrderBy(item => item.Id).ToArrayAsync();
@@ -140,7 +140,7 @@ public sealed class ProfileCompletionTests
             services.AddDbContext<TccDbContext>(options => options.AddInterceptors(failure))));
         using var other = failing.CreateClient();
         other.DefaultRequestHeaders.Authorization = new("Bearer", owner.Token);
-        using var result = await other.PutAsJsonAsync(Path, new { country = "After", state = "State", bio = "Changed", favoriteGameIds = ids.Skip(1) });
+        using var result = await other.PutAsJsonAsync(Path, new { country = "China", state = "Hubei", bio = "Changed", favoriteGameIds = ids.Skip(1) });
         Assert.True(failure.Triggered);
         Assert.Equal(503, (int)result.StatusCode);
         Assert.Contains("storage_unavailable", await result.Content.ReadAsStringAsync());
@@ -176,24 +176,24 @@ public sealed class ProfileCompletionTests
         }
         using (var current = await Read(client)) Assert.Equal(2, current.RootElement.GetProperty("favoriteGameCount").GetInt32());
         var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(index => client.PutAsJsonAsync(Path,
-            new { country = index % 2 == 0 ? "A" : "B", state = "State", bio = "Bio", favoriteGameIds = index % 2 == 0 ? ids.Take(3) : ids.Skip(1) })));
+            new { country = index % 2 == 0 ? "Brasil" : "China", state = index % 2 == 0 ? "São Paulo" : "Hubei", bio = "Bio", favoriteGameIds = index % 2 == 0 ? ids.Take(3) : ids.Skip(1) })));
         try { Assert.All(results, result => Assert.Equal(200, (int)result.StatusCode)); }
         finally { foreach (var result in results) result.Dispose(); }
         using var saved = await Read(client);
         var root = saved.RootElement;
         Assert.True(root.GetProperty("isComplete").GetBoolean());
-        Assert.Equal(root.GetProperty("country").GetString() == "A" ? ids.Take(3) : ids.Skip(1),
+        Assert.Equal(root.GetProperty("country").GetString() == "Brasil" ? ids.Take(3) : ids.Skip(1),
             root.GetProperty("favoriteGameIds").EnumerateArray().Select(item => item.GetInt32()));
         Assert.Equal(reviews, await db.ReviewFavorites.AsNoTracking().ToArrayAsync());
         // The ordinary editor's avatar survives completion PUTs that omit it in either order.
         var edits = await Task.WhenAll(Enumerable.Range(0, 8).Select(index => index % 2 == 0
             ? client.PatchAsJsonAsync("/api/v1/users/me/profile", new { avatarUrl = "https://example.com/concurrent.png" })
-            : client.PutAsJsonAsync(Path, new { country = "C", state = "State", bio = "Bio", favoriteGameIds = ids.Take(3).Concat(ids.Take(3)) })));
+            : client.PutAsJsonAsync(Path, new { country = "Brasil", state = "São Paulo", bio = "Bio", favoriteGameIds = ids.Take(3).Concat(ids.Take(3)) })));
         try { Assert.All(edits, result => Assert.Equal(200, (int)result.StatusCode)); }
         finally { foreach (var result in edits) result.Dispose(); }
         using var combined = await Read(client);
         Assert.Equal("https://example.com/concurrent.png", combined.RootElement.GetProperty("avatarUrl").GetString());
-        Assert.Equal("C", combined.RootElement.GetProperty("country").GetString());
+        Assert.Equal("Brasil", combined.RootElement.GetProperty("country").GetString());
         Assert.Equal(3, combined.RootElement.GetProperty("favoriteGameCount").GetInt32());
     }
 
@@ -202,7 +202,7 @@ public sealed class ProfileCompletionTests
         public bool Triggered { get; private set; }
         public override ValueTask<int> SavedChangesAsync(SaveChangesCompletedEventData eventData, int result, CancellationToken cancellationToken = default)
         {
-            if (eventData.Context?.ChangeTracker.Entries<Tcc.Domain.Identity.UserProfile>().Any(entry => entry.Entity.Country == "After") == true)
+            if (eventData.Context?.ChangeTracker.Entries<Tcc.Domain.Identity.UserProfile>().Any(entry => entry.Entity.Country == "China") == true)
             {
                 Triggered = true;
                 throw new DatabaseUnavailableException();
