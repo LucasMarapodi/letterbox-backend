@@ -1,5 +1,5 @@
 using Tcc.Application.Opinions;
-using Tcc.Api.Configuration;
+using Tcc.Api.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Hosting;

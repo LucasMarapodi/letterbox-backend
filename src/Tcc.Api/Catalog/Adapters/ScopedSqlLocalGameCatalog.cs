@@ -1,7 +1,7 @@
 using Tcc.Application.Catalog;
 using Tcc.Infrastructure.Persistence.Repositories;
 
-namespace Tcc.Api.Configuration;
+namespace Tcc.Api.Catalog.Adapters;
 
 // Shared single-flight/cache services lease a scoped SQL unit for each operation.
 internal sealed class ScopedSqlLocalGameCatalog(IServiceScopeFactory scopes) : ILocalGameCatalog, ICatalogFilterStore, ICatalogReleasePages

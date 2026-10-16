@@ -7,7 +7,7 @@ using Tcc.Api.Contracts;
 using Tcc.Api.Filters;
 using Tcc.Application.Identity;
 
-namespace Tcc.Api.Configuration;
+namespace Tcc.Api.DependencyInjection;
 
 public static class OpenApiRegistration
 {

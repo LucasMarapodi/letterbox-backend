@@ -1,4 +1,4 @@
-namespace Tcc.Api.Configuration;
+namespace Tcc.Api.DependencyInjection;
 
 public static class BrowserCorsRegistration
 {
