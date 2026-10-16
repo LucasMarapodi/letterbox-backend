@@ -20,8 +20,8 @@ public sealed class SocialTests
     {
         var now = DateTimeOffset.UtcNow;
         Assert.Throws<DomainValidationException>(() => Notification.NewReview(1, 1, 1, now));
-        Assert.Throws<ArgumentException>(() => Notification.ReviewComment(1, 2, 1, "", now));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Notification.ReviewComment(1, 2, 1, 0, now));
         Assert.Null(Notification.NewReview(1, 2, 1, now).CommentId);
-        Assert.Equal("comment", Notification.ReviewComment(1, 2, 1, "comment", now).CommentId);
+        Assert.Equal(1, Notification.ReviewComment(1, 2, 1, 1, now).CommentId);
     }
 }

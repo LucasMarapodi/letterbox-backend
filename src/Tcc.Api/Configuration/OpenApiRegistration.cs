@@ -19,7 +19,7 @@ public static class OpenApiRegistration
             options.AddDocumentTransformer((document, _, _) =>
             {
                 document.Info = new() { Title = "TCC Games API", Version = "v1",
-                    Description = "Usuários, perfis, sessões, catálogo, reviews e avaliações persistidos em PostgreSQL. IDs locais de usuários, jogos, reviews e avaliações são inteiros; igdbId é externo de 64 bits. Cache → PostgreSQL → IGDB. Comentários e relações sociais seguem em memória até suas PRs. Listagem de jogos usa envelope paginado." };
+                    Description = "Usuários, perfis, sessões, catálogo, reviews, avaliações, comentários/respostas e curtidas persistidos em PostgreSQL. IDs locais dessas entidades são inteiros; igdbId é externo de 64 bits. Cache → PostgreSQL → IGDB. Favoritos, seguimentos e notificações seguem em memória até suas PRs. Listagem de jogos usa envelope paginado." };
                 document.Servers = [new OpenApiServer { Url = "/" }];
                 document.Components ??= new();
                 document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
@@ -82,13 +82,13 @@ public static class OpenApiRegistration
                     if (parameter.Name == "pageSize") { schema.Minimum = "1"; schema.Maximum = "100"; schema.Default = JsonValue.Create(20); }
                     if (parameter.Name == "kind") schema.Enum = Nodes("game", "review");
                     if (parameter.Name == "userId") schema.Minimum = "1";
-                    if (parameter.Name is "gameId" or "igdbId" or "reviewId") schema.Minimum = "1";
+                    if (parameter.Name is "gameId" or "igdbId" or "reviewId" or "commentId") schema.Minimum = "1";
                 }
                 if (context.Description.RelativePath == "api/v1/games/igdb/{igdbId}")
                     operation.Description = "ID externo IGDB positivo (int64). Consulta SQL por igdb_id antes do fornecedor; importação faz upsert transacional e retorna o ID local int32 para as demais rotas.";
                 else
                 if (context.Description.RelativePath?.EndsWith("comments", StringComparison.Ordinal) == true && context.Description.HttpMethod == "POST")
-                    operation.Description = "Texto obrigatório não vazio após trim; até 2.000 caracteres após trim. Autoria/data vêm da sessão/relógio. Comentário próprio é permitido.";
+                    operation.Description = "Texto obrigatório não vazio após trim; até 2.000 caracteres. parentCommentId omitido/null cria principal; inteiro positivo responde a principal da mesma review, sem segundo nível. Autoria vem do Bearer. Lista plana inclui parentCommentId e likeCount SQL. Vínculo de review/pai é imutável após publicação.";
                 else if (context.Description.HttpMethod is "POST" or "PATCH" && context.Description.RelativePath?.Contains("reviews", StringComparison.Ordinal) == true)
                     operation.Description = "Texto obrigatório não vazio após trim; até 10.000 caracteres após trim. Uma review por usuário/jogo. Apenas o autor edita; preserva identidade e publicação.";
                 else if (context.Description.ActionDescriptor.EndpointMetadata.OfType<NoBodyAttribute>().Any())
@@ -131,6 +131,13 @@ public static class OpenApiRegistration
                 if (type == typeof(RatingRequest) && schema.Properties["value"] is OpenApiSchema value)
                 { value.Minimum = "0"; value.Maximum = "5"; value.Description = "Número finito entre 0 e 5, decimais permitidos."; }
                 if (type == typeof(TextRequest)) schema.Examples = [Example(new TextRequest("Texto fictício."))];
+                if (type == typeof(CommentRequest))
+                {
+                    schema.Required = new HashSet<string> { "text" };
+                    if (schema.Properties["text"] is OpenApiSchema text) { text.Type = JsonSchemaType.String; text.MaxLength = 2000; }
+                    if (schema.Properties["parentCommentId"] is OpenApiSchema parent) parent.Minimum = "1";
+                    schema.Examples = [Example(new CommentRequest("Comentário fictício.")), Example(new CommentRequest("Resposta fictícia.", 1))];
+                }
                 if (type == typeof(ProfilePatchRequest))
                 {
                     schema.Required = new HashSet<string>();

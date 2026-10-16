@@ -13,12 +13,12 @@ public sealed class ReadCommentsTests
         using var client = host.CreateClient();
         var comments = await client.GetFromJsonAsync<CommentDto[]>("/api/v1/reviews/1/comments");
         Assert.NotNull(comments);
-        Assert.Equal(new[] { "comment-c", "comment-a", "comment-b" }, comments.Select(comment => comment.Id));
+        Assert.Equal(new[] { 3, 1, 2 }, comments.Select(comment => comment.Id));
         Assert.All(comments, comment => Assert.Equal(1, comment.ReviewId));
         using var response = await client.GetAsync("/api/v1/reviews/1/comments");
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal(new[] { "avatarUrl", "displayName", "id" }, json.RootElement[0].GetProperty("author").EnumerateObject().Select(property => property.Name).Order());
-        Assert.Equal(new[] { "author", "createdAt", "id", "reviewId", "text", "userId" }, json.RootElement[0].EnumerateObject().Select(property => property.Name).Order());
+        Assert.Equal(new[] { "author", "createdAt", "id", "likeCount", "parentCommentId", "reviewId", "text", "userId" }, json.RootElement[0].EnumerateObject().Select(property => property.Name).Order());
     }
 
     [Fact]

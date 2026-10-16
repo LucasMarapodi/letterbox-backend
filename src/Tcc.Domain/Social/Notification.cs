@@ -11,8 +11,8 @@ public sealed record Notification
     public int ReviewId { get; }
     public DateTimeOffset CreatedAt { get; }
     public NotificationType Type { get; }
-    public string? CommentId { get; }
-    private Notification(int userId, int actorId, int reviewId, DateTimeOffset now, NotificationType type, string? commentId)
+    public int? CommentId { get; }
+    private Notification(int userId, int actorId, int reviewId, DateTimeOffset now, NotificationType type, int? commentId)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(userId);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(actorId);
@@ -23,9 +23,9 @@ public sealed record Notification
     }
     public static Notification NewReview(int userId, int actorId, int reviewId, DateTimeOffset now) =>
         new(userId, actorId, reviewId, now, NotificationType.NewReview, null);
-    public static Notification ReviewComment(int userId, int actorId, int reviewId, string commentId, DateTimeOffset now)
+    public static Notification ReviewComment(int userId, int actorId, int reviewId, int commentId, DateTimeOffset now)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(commentId);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(commentId);
         return new(userId, actorId, reviewId, now, NotificationType.ReviewComment, commentId);
     }
 }

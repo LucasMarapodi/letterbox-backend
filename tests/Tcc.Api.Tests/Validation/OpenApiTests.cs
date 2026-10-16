@@ -6,7 +6,7 @@ namespace Tcc.Api.Tests.Validation;
 public sealed class OpenApiTests
 {
     [Fact]
-    public async Task Openapi_documents_all_35_operations_success_errors_and_exact_access_requirements()
+    public async Task Openapi_documents_all_operations_success_errors_and_exact_access_requirements()
     {
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
@@ -53,7 +53,7 @@ public sealed class OpenApiTests
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var root = document.RootElement;
         var schemas = root.GetProperty("components").GetProperty("schemas");
-        foreach (var name in new[] { "PublicUserResponse", "GameResponse", "ReviewResponse", "RatingResponse" })
+        foreach (var name in new[] { "PublicUserResponse", "GameResponse", "ReviewResponse", "RatingResponse", "CommentResponse" })
         {
             var id = schemas.GetProperty(name).GetProperty("properties").GetProperty("id");
             Assert.Equal("integer", id.GetProperty("type").GetString());

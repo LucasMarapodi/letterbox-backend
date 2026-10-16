@@ -19,9 +19,9 @@ public sealed class CommentsController(QueryComments comments, PublishComment pu
     [ProducesResponseType<CommentResponse>(201)]
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(404)]
-    public async Task<ActionResult<CommentResponse>> Post(int reviewId, TextRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<CommentResponse>> Post(int reviewId, CommentRequest request, CancellationToken cancellationToken)
     {
-        var comment = CommentResponse.From(await publish.Execute(reviewId, request.Text, cancellationToken));
+        var comment = CommentResponse.From(await publish.Execute(reviewId, request.Text, cancellationToken, request.ParentCommentId));
         return Created($"/api/v1/reviews/{reviewId}/comments", comment);
     }
 }

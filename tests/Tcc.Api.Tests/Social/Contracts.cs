@@ -9,7 +9,7 @@ public sealed record FavoriteDto(string Id, int UserId, string TargetType, strin
 public sealed record FavoriteStatus(FavoriteDto? Favorite);
 public sealed record FavoriteLists(GameDto[] Games, ReviewDto[] Reviews);
 public sealed record NotificationDto(string Id, int UserId, int ActorId, int ReviewId,
-    DateTimeOffset CreatedAt, string Type, string? CommentId, AuthorDto Actor);
+    DateTimeOffset CreatedAt, string Type, int? CommentId, AuthorDto Actor);
 
 internal static class SocialTest
 {

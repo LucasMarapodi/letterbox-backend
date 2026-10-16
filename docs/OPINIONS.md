@@ -1,6 +1,6 @@
 # Catálogo e opiniões — contratos atuais
 
-Base `/api/v1`. Leituras públicas, exceto `/rating/me` e `/reviews/me`. Escritas usam Bearer e identidade da sessão, rejeitando campos desconhecidos nos payloads. IDs locais de usuários/jogos/reviews/avaliações inteiros, datas UTC, null explícito. Comentários ainda têm ID textual. Listagem de jogos paginada desde G-PR-04; listas de opiniões mantêm seus contratos.
+Base `/api/v1`. Leituras públicas, exceto `/rating/me`, `/reviews/me` e `/comments/{id}/like/me`. Escritas usam Bearer e identidade da sessão, rejeitando campos desconhecidos nos payloads. IDs locais de usuários/jogos/reviews/avaliações inteiros, datas UTC, null explícito. Comentários também usam ID inteiro desde P-PR-04. Listagem de jogos paginada desde G-PR-04; listas de opiniões mantêm seus contratos.
 
 GameResponse: id, title, summary, coverUrl nullable, genres, platforms, releaseDate nullable (yyyy-MM-dd), averageRating nullable calculada exclusivamente das notas locais. Listagem usa envelope items/page/pageSize/hasNextPage, term com trim e sort release-desc/name-asc/name-desc (padrão release-desc sem termo, name-asc com termo). Query/ID inválido: 400; ausência confirmada: 404; falha externa: 502/503/504. Consulte [IGDB-CATALOG.md](IGDB-CATALOG.md).
 
@@ -10,9 +10,9 @@ POST /games/{id}/reviews e PATCH /reviews/{id} recebem apenas {text: string}. Te
 
 GET /reviews/{id}, /games/{id}/reviews, /users/{id}/reviews e /games/{id}/opinions são públicos. Listas por publicação decrescente, desempate ID numérico crescente. GET /games/{id}/reviews/me retorna {review: ReviewResponse|null}; opiniões retornam {averageRating: number|null,reviews: ReviewResponse[]}.
 
-GET /reviews/{id}/comments retorna lista plana por createdAt crescente/ID ordinal crescente. POST recebe apenas {text: string}, trim não vazio, máximo 2.000 caracteres depois do trim; retorna 201 CommentResponse (id,userId,reviewId,text,createdAt,author). Location aponta a lista consultável de comentários. Permite comentário próprio. Sem parentCommentId, likes ou exclusão nesta etapa. Notificações de publicação/comentário são transitórias até sua PR SQL.
+GET /reviews/{id}/comments retorna lista plana por createdAt/id numérico crescentes. POST recebe text e parentCommentId opcional/null: principal ou resposta a principal da mesma review, sem segundo nível. Texto trim não vazio até 2.000 caracteres. Retorna 201 CommentResponse (id,userId,reviewId,text,createdAt,author,parentCommentId,likeCount). Location aponta a lista. PUT/DELETE /comments/{id}/like autenticados, sem body, retornam 204 idempotente; GET /comments/{id}/like/me retorna {liked:boolean}. Curtida própria e em resposta permitidas; contagem pública SQL, sem notificações de like. Consulte P-PR-04.md.
 
-Desde P-PR-03, reviews e avaliações são persistidas no PostgreSQL, incluindo leitura após reinício. Filtros de opiniões e médias são SQL; stores de opiniões em memória ficam apenas nos testes. Publicações usam transação SQL e preparação de eventos antes do commit. Comentários e notificações permanecem em memória. A preparação com falha cancela a review; a entrega durável de eventos depende da PR de notificações. Projeções usam lotes e I/O SQL ocorre fora dos locks síncronos. Consulte P-PR-03.md.
+Desde P-PR-03, reviews e avaliações são persistidas no PostgreSQL, incluindo leitura após reinício. Filtros de opiniões e médias são SQL; stores de opiniões em memória ficam apenas nos testes. Publicações usam transação SQL e preparação de eventos antes do commit. Comentários e curtidas também usam PostgreSQL desde P-PR-04; notificações permanecem em memória. A preparação com falha cancela a review/comentário; a entrega durável de eventos depende da PR de notificações. Projeções usam lotes e I/O SQL ocorre fora dos locks síncronos. Consulte P-PR-03.md.
 
 ## Exemplo
 
