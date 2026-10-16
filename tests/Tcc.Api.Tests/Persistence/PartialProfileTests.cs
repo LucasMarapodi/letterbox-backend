@@ -48,7 +48,7 @@ public sealed class PartialProfileTests
         var timestamp = (await db.Users.AsNoTracking().SingleAsync()).Profile.UpdatedAt;
         using (var repeated = await client.PatchAsJsonAsync(Path, new { displayName = "Only name" })) repeated.EnsureSuccessStatusCode();
         Assert.Equal(timestamp, (await db.Users.AsNoTracking().SingleAsync()).Profile.UpdatedAt);
-        using (var clear = await client.PatchAsJsonAsync(Path, new { bio = (string?)null, avatarUrl = (string?)null, country = (string?)null, state = (string?)null, favoriteGameIds = Array.Empty<int>() })) clear.EnsureSuccessStatusCode();
+        using (var clear = await client.PatchAsJsonAsync(Path, new { bio = (string?)null, avatarUrl = "", country = (string?)null, state = (string?)null, favoriteGameIds = Array.Empty<int>() })) clear.EnsureSuccessStatusCode();
         using var status = JsonDocument.Parse(await client.GetStringAsync(Completion));
         Assert.Equal("", status.RootElement.GetProperty("bio").GetString());
         Assert.Equal(JsonValueKind.Null, status.RootElement.GetProperty("avatarUrl").ValueKind);
@@ -75,6 +75,7 @@ public sealed class PartialProfileTests
         var legacy = (await db.Users.AsNoTracking().SingleAsync()).Profile;
         Assert.Equal(" Legacy ", legacy.Country);
         Assert.Equal(" Region ", legacy.State);
+        using (var preserveLegacy = await client.PutAsJsonAsync(Completion, new { country = " Legacy ", state = " Region ", bio = "Bio", favoriteGameIds = games.Take(2) })) preserveLegacy.EnsureSuccessStatusCode();
         foreach (var body in new object[] { new { country = "China" }, new { state = "Hubei" }, new { country = "Brasil", state = "Hubei", displayName = "Invalid" }, new { favoriteGameIds = (int[]?)null }, new { favoriteGameIds = new[] { 0 } }, new { displayName = " " } })
         {
             using var invalid = await client.PatchAsJsonAsync(Path, body);

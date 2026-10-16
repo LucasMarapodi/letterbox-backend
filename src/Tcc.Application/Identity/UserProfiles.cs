@@ -10,12 +10,8 @@ public sealed class GetUserProfile(IUserAccounts accounts)
         return await accounts.FindByIdAsync(id, cancellationToken) ?? throw new IdentityFailure(IdentityFailureKind.NotFound);
     }
 }
-public sealed class EditUserProfile(IUserAccounts accounts, ICurrentSession current, SessionAccess access, TimeProvider clock)
+public sealed class EditUserProfile(ProfileCompletion completion)
 {
-    public async Task<UserAccount> Execute(ProfileChange change, CancellationToken cancellationToken = default)
-    {
-        var userId = (await access.Require(current, cancellationToken)).UserId;
-        return await accounts.UpdateProfileAsync(userId, change, clock.GetUtcNow(), cancellationToken)
-            ?? throw new IdentityFailure(IdentityFailureKind.NotFound);
-    }
+    public Task<ProfileSaveResult> Execute(ProfileChange change, IReadOnlyList<int>? favoriteGameIds, CancellationToken cancellationToken = default) =>
+        completion.Patch(change, favoriteGameIds, cancellationToken);
 }

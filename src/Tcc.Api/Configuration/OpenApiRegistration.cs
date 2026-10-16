@@ -100,7 +100,12 @@ public static class OpenApiRegistration
                 if (context.Description.RelativePath == "api/v1/reviews/{reviewId}/like/me")
                     operation.Description = "Estado privado do usuário do Bearer, sem cache compartilhado (no-store). Retorna somente likedByMe; não existe estado personalizado nas projeções públicas. Permite curtir a própria review. Alvo inexistente: 404; ID inválido: 400; sem sessão: 401. Likes não criam notificações e são independentes de favoritos.";
                 else if (context.Description.RelativePath == "api/v1/users/me/profile-completion")
-                    operation.Description = "Privado, sem cache compartilhado; usuário exclusivamente do Bearer. Conclusão calculada: país, estado e bio preenchidos e pelo menos três jogos distintos existentes; avatar opcional. GET retorna todos os favoritos. PUT salva perfil e conjunto completo de favoritos atomicamente, reconciliando diferenças e preservando vínculos mantidos; repetição idempotente. Textos recebem trim, país/estado até 100, bio até 2000 caracteres. avatarUrl omitido preserva, null remove. IDs locais positivos int32; duplicados não contam para o mínimo. 400 para dados inválidos, 404 para jogo inexistente, 503 para persistência indisponível; nenhuma gravação parcial.";
+                {
+                    operation.Deprecated = context.Description.HttpMethod == "PUT";
+                    operation.Description = "Privado/no-store. GET retorna todos os favoritos e conclusão calculada: país/estado/bio preenchidos e três jogos distintos existentes; avatar não participa. PUT legado preservado por compatibilidade; prefira PATCH /users/me/profile. PUT usa a mesma política/transação e também aceita perfil incompleto; favoriteGameIds obrigatório (inclusive []), localização/bio ausentes/null limpam; avatar omitido preserva. País/estado alterados devem formar um par do catálogo configurado; legado inalterado é preservado. Sem booleano de conclusão persistido, truncamento de favoritos ou gravação parcial.";
+                }
+                else if (context.Description.RelativePath == "api/v1/users/me/profile" && context.Description.HttpMethod == "PATCH")
+                    operation.Description = "Edição privada/no-store de nome, localização, bio, avatar e conjunto completo de jogos favoritos numa transação. Campos omitidos preservam; null/vazio limpa opcionais, favoriteGameIds:[] limpa favoritos e null é inválido. Perfil incompleto pode ser salvo com qualquer quantidade de favoritos. Países: Brasil (São Paulo/Rio de Janeiro/Minas Gerais), Estados Unidos (Califórnia/Nova York), China (Taiwan/Hubei), labels exatos após trim. Valida o par final mesmo se apenas um campo mudar; estado sem país é inválido. Valores legados inalterados são preservados. Retorna campos atuais do usuário no nível raiz mais completion; localização não é adicionada a PublicUserResponse. 400 inválido, 401 sessão, 404 jogo ausente, 503 persistência indisponível.";
                 else if (context.Description.RelativePath == "api/v1/games/filters")
                     operation.Description = "Opções públicas completas de gêneros/plataformas, com IDs locais int32 estáveis. Sincroniza metadados IGDB com cursor/limites e persiste no SQL; cache completo por uma hora. Não deriva opções da página exibida. Falha sem cobertura completa retorna erro, sem lista parcial como sucesso.";
                 else if (context.Description.RelativePath == "api/v1/games")
@@ -189,28 +194,31 @@ public static class OpenApiRegistration
                 if (type == typeof(ProfilePatchRequest))
                 {
                     schema.Required = new HashSet<string>();
-                    schema.Description = "Campos omitidos preservam valores; displayName/bio não aceitam null, avatarUrl null limpa foto. Nome trim até 100 caracteres, bio até 2000 e avatar HTTP/HTTPS até 2048. country/state privados: trim até 100, null ou vazio limpa; não aparecem na resposta pública. Alterações recalculam a conclusão na próxima consulta.";
-                    foreach (var key in new[] { "displayName", "bio" })
-                        if (schema.Properties[key] is OpenApiSchema property) property.Type = JsonSchemaType.String;
+                    schema.Description = "PATCH parcial: omissão preserva; nome não aceita null/vazio, opcionais null/vazio limpam, [] limpa favoritos. Nome até 100, bio até 2000, avatar HTTP/HTTPS até 2048. Localização valida o par final; legado inalterado preservado. Completar perfil não é pré-condição de salvar.";
+                    if (schema.Properties["displayName"] is OpenApiSchema name) name.Type = JsonSchemaType.String;
                 }
                 if (type == typeof(ProfileCompletionRequest))
                 {
-                    schema.Required = new HashSet<string> { "country", "state", "bio", "favoriteGameIds" };
+                    schema.Required = new HashSet<string> { "favoriteGameIds" };
+                    schema.Description = "Compatibilidade PUT: substitui localização/bio e favoritos, preserva nome; avatar omitido preserva. Perfil incompleto é permitido; prefira PATCH para edição parcial.";
+                }
+                if (type == typeof(ProfilePatchRequest) || type == typeof(ProfileCompletionRequest))
+                {
                     foreach (var key in new[] { "country", "state", "bio" })
                         if (schema.Properties[key] is OpenApiSchema text)
                         {
-                            text.Type = JsonSchemaType.String;
-                            text.Description = $"Obrigatório e não vazio após trim; até {(key == "bio" ? 2000 : 100)} caracteres após trim.";
+                            text.Type = JsonSchemaType.String | JsonSchemaType.Null;
+                            text.Description = $"Opcional, null/vazio limpa; até {(key == "bio" ? 2000 : 100)} caracteres após trim. Localização alterada exige opções configuradas e par final compatível.";
                         }
                     if (schema.Properties["favoriteGameIds"] is OpenApiSchema ids)
                     {
                         ids.Type = JsonSchemaType.Array;
-                        ids.MinItems = 3;
-                        ids.Description = "Conjunto desejado completo; pelo menos três IDs distintos existentes, sem truncar favoritos adicionais.";
+                        ids.MinItems = 0;
+                        ids.Description = "Conjunto desejado completo: [] limpa, null inválido, omitir no PATCH preserva. IDs positivos int32 existentes; deduplica sem truncar e sem mínimo para salvar.";
                         if (ids.Items is OpenApiSchema item) item.Minimum = "1";
                     }
                     if (schema.Properties["avatarUrl"] is OpenApiSchema avatar)
-                        avatar.Description = "Opcional: omissão preserva, null remove. HTTP/HTTPS até 2048 caracteres.";
+                        avatar.Description = "Opcional: omissão preserva, null/vazio remove. HTTP/HTTPS até 2048 caracteres.";
                     schema.AdditionalPropertiesAllowed = false;
                 }
                 if (type == typeof(FavoriteResponse) && schema.Properties["targetType"] is OpenApiSchema kind) kind.Enum = Nodes("game", "review");

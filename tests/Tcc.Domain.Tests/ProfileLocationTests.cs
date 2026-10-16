@@ -5,6 +5,23 @@ namespace Tcc.Domain.Tests;
 public sealed class ProfileLocationTests
 {
     [Theory]
+    [InlineData("Brasil", "São Paulo")]
+    [InlineData("Brasil", "Rio de Janeiro")]
+    [InlineData("Brasil", "Minas Gerais")]
+    [InlineData("Estados Unidos", "Califórnia")]
+    [InlineData("Estados Unidos", "Nova York")]
+    [InlineData("China", "Taiwan")]
+    [InlineData("China", "Hubei")]
+    [InlineData("China", null)]
+    [InlineData(null, null)]
+    public void Configured_location_pairs_or_empty_values_are_valid_for_partial_save(string? country, string? state)
+    {
+        var updated = UserProfile.Create("Name").Apply(new(null, null, false, null, true, country, true, state));
+        Assert.Equal(country, updated.Country);
+        Assert.Equal(state, updated.State);
+    }
+
+    [Theory]
     [InlineData("Brasil", "Hubei")]
     [InlineData(null, "São Paulo")]
     [InlineData("Other", null)]

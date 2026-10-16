@@ -34,9 +34,16 @@ public sealed record UserProfile
         return new UserProfile(name, bio, avatarUrl, (updatedAt ?? DateTimeOffset.UtcNow).ToUniversalTime(), Location(country), Location(state));
     }
 
-    public UserProfile Apply(ProfileChange change, DateTimeOffset? now = null) => Create(change.DisplayName ?? DisplayName,
-        change.Bio ?? Bio, change.AvatarSpecified ? change.AvatarUrl : AvatarUrl, now,
-        change.CountrySpecified ? change.Country : Country, change.StateSpecified ? change.State : State);
+    public UserProfile Apply(ProfileChange change, DateTimeOffset? now = null)
+    {
+        var updated = Create(change.DisplayName ?? DisplayName, change.Bio?.Trim() ?? Bio,
+            change.AvatarSpecified ? (string.IsNullOrWhiteSpace(change.AvatarUrl) ? null : change.AvatarUrl) : AvatarUrl, now);
+        // Preserve untouched historical values exactly; validate a changed final pair together.
+        var country = change.CountrySpecified && change.Country != Country ? Location(change.Country) : Country;
+        var state = change.StateSpecified && change.State != State ? Location(change.State) : State;
+        if (country != Country || state != State) ProfileLocations.Validate(country, state);
+        return new(updated.DisplayName, updated.Bio, updated.AvatarUrl, updated.UpdatedAt, country, state);
+    }
 
     private static string? Location(string? value)
     {
