@@ -14,7 +14,7 @@ public sealed class SessionTests
     [InlineData("Bearer")]
     public async Task Missing_or_invalid_authorization_returns_standard_401(string? authorization)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         if (authorization is not null) client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", authorization);
         using var me = await client.GetAsync("/api/v1/auth/me");
@@ -28,7 +28,7 @@ public sealed class SessionTests
     [Fact]
     public async Task Me_uses_token_identity_and_logout_revokes_only_that_session()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
         registration.EnsureSuccessStatusCode();
@@ -76,8 +76,8 @@ public sealed class SessionTests
     [Fact]
     public async Task New_host_does_not_accept_previous_tokens()
     {
-        await using var first = new WebApplicationFactory<Program>();
-        await using var second = new WebApplicationFactory<Program>();
+        await using var first = new TestApiFactory();
+        await using var second = new TestApiFactory();
         using var a = first.CreateClient();
         using var b = second.CreateClient();
         var login = await LoginTests.Login(a);

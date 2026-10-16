@@ -21,7 +21,7 @@ public sealed class EditReviewTests
         Assert.NotNull(updated);
         Assert.Equal(original with { Text = "Edited", UpdatedAt = clock.GetUtcNow() }, updated);
         Assert.Equal(updated, await client.GetFromJsonAsync<ReviewDto>($"/api/v1/reviews/{original.Id}"));
-        Assert.Single((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/game-1/reviews")) ?? []);
+        Assert.Single((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/igdb-1/reviews")) ?? []);
         using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
         registration.EnsureSuccessStatusCode();
         await ApiTest.SignIn(client, "b@example.com", "p");
@@ -35,12 +35,12 @@ public sealed class EditReviewTests
 
     [Theory]
     [InlineData("{\"text\":\" \"}")]
-    [InlineData("{\"text\":\"New\",\"gameId\":\"game-2\"}")]
+    [InlineData("{\"text\":\"New\",\"gameId\":\"igdb-2\"}")]
     [InlineData("{\"text\":\"New\",\"userId\":\"other\"}")]
     [InlineData("{\"text\":\"New\",\"createdAt\":\"2020-01-01T00:00:00Z\"}")]
     public async Task Invalid_edits_are_atomic(string json)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
         var original = await ApiTest.Publish(client);
@@ -52,7 +52,7 @@ public sealed class EditReviewTests
     [Fact]
     public async Task Missing_review_returns_404()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
         using var response = await client.PatchAsJsonAsync("/api/v1/reviews/missing", new TextInput("New"));

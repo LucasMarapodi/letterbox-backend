@@ -47,7 +47,7 @@ public sealed class PublishCommentTests
     [InlineData("{\"text\":\"Good\",\"parentCommentId\":\"other\"}")]
     public async Task Invalid_comment_is_rejected_without_writing(string json)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
         var review = await ApiTest.Publish(client);

@@ -8,7 +8,7 @@ public sealed class OpenApiTests
     [Fact]
     public async Task Openapi_documents_all_35_operations_success_errors_and_exact_access_requirements()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/openapi/v1.json");
         Assert.Equal(200, (int)response.StatusCode);
@@ -46,7 +46,7 @@ public sealed class OpenApiTests
     [Fact]
     public async Task Public_schemas_are_named_safe_and_requests_describe_validation_and_examples()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/openapi/v1.json");
         Assert.Equal(200, (int)response.StatusCode);

@@ -9,7 +9,7 @@ public sealed class ReadCommentsTests
     [Fact]
     public async Task Visitors_read_flat_comments_sorted_by_date_then_id_with_safe_authors()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         var comments = await client.GetFromJsonAsync<CommentDto[]>("/api/v1/reviews/review-fixture/comments");
         Assert.NotNull(comments);
@@ -24,7 +24,7 @@ public sealed class ReadCommentsTests
     [Fact]
     public async Task Empty_review_does_not_receive_other_review_comments_and_missing_review_returns_404()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
         var review = await ApiTest.Publish(client);

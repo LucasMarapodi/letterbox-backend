@@ -16,7 +16,7 @@ public sealed class CorsTests
     [InlineData("/api/v1/games", 200)]
     [InlineData("/api/v1/games?sort=invalid", 400)]
     [InlineData("/api/v1/auth/me", 401)]
-    [InlineData("/api/v1/games/missing", 404)]
+    [InlineData("/api/v1/games/igdb-999", 404)]
     [InlineData("/__tests/failure/403", 403)]
     [InlineData("/__tests/failure/409", 409)]
     [InlineData("/__tests/failure/500", 500)]
@@ -29,15 +29,15 @@ public sealed class CorsTests
         using var response = await client.SendAsync(request);
         Assert.Equal(status, (int)response.StatusCode);
         Assert.Equal(Origin, Assert.Single(response.Headers.GetValues("Access-Control-Allow-Origin")));
-        Assert.Contains("Location", response.Headers.GetValues("Access-Control-Expose-Headers"));
+        Assert.Contains("Location", response.Headers.GetValues("Access-Control-Expose-Headers").SelectMany(value => value.Split(",")));
         Assert.False(response.Headers.Contains("Access-Control-Allow-Credentials"));
     }
 
     [Theory]
     [InlineData("POST", "/api/v1/auth/register")]
     [InlineData("PATCH", "/api/v1/users/me/profile")]
-    [InlineData("PUT", "/api/v1/games/game-1/rating/me")]
-    [InlineData("DELETE", "/api/v1/favorites/game/game-1")]
+    [InlineData("PUT", "/api/v1/games/igdb-1/rating/me")]
+    [InlineData("DELETE", "/api/v1/favorites/game/igdb-1")]
     public async Task Preflight_accepts_json_and_bearer_without_a_session(string method, string path)
     {
         await using var host = new CorsFactory(Origin);
@@ -67,7 +67,7 @@ public sealed class CorsTests
         using var response = await client.SendAsync(request);
         Assert.Equal(200, (int)response.StatusCode);
         Assert.False(response.Headers.Contains("Access-Control-Allow-Origin"));
-        using var preflight = Preflight(origin, "PUT", "/api/v1/games/game-1/rating/me");
+        using var preflight = Preflight(origin, "PUT", "/api/v1/games/igdb-1/rating/me");
         using var options = await client.SendAsync(preflight);
         Assert.False(options.Headers.Contains("Access-Control-Allow-Origin"));
         Assert.False(options.Headers.Contains("Access-Control-Allow-Credentials"));
@@ -87,7 +87,7 @@ public sealed class CorsTests
         Assert.Equal(201, (int)response.StatusCode);
         Assert.NotNull(response.Headers.Location);
         Assert.Equal(custom, Assert.Single(response.Headers.GetValues("Access-Control-Allow-Origin")));
-        Assert.Contains("Location", response.Headers.GetValues("Access-Control-Expose-Headers"));
+        Assert.Contains("Location", response.Headers.GetValues("Access-Control-Expose-Headers").SelectMany(value => value.Split(",")));
         using var rejected = Preflight(Origin, "POST", "/api/v1/auth/register");
         using var options = await client.SendAsync(rejected);
         Assert.False(options.Headers.Contains("Access-Control-Allow-Origin"));
@@ -108,7 +108,7 @@ public sealed class CorsTests
     [InlineData("http://127.0.0.1:5173")]
     public async Task Development_defaults_release_both_vite_hostnames(string origin)
     {
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder => builder.UseEnvironment("Development"));
+        await using var host = new TestApiFactory().WithWebHostBuilder(builder => builder.UseEnvironment("Development"));
         using var client = host.CreateClient();
         using var request = Preflight(origin, "GET", "/api/v1/games");
         using var response = await client.SendAsync(request);
@@ -138,10 +138,11 @@ public sealed class CorsTests
         return request;
     }
 
-    private sealed class CorsFactory(params string[] origins) : WebApplicationFactory<Program>
+    private sealed class CorsFactory(params string[] origins) : TestApiFactory
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            base.ConfigureWebHost(builder);
             builder.ConfigureServices(services => services.AddControllers().AddApplicationPart(typeof(ProbeController).Assembly));
             builder.UseEnvironment("Production");
             builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(

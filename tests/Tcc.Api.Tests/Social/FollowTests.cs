@@ -10,7 +10,7 @@ public sealed class FollowTests
     [Fact]
     public async Task Relations_use_session_direction_and_are_idempotent_under_concurrency()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         var b = await SocialTest.Register(client, "B");
         var c = await SocialTest.Register(client, "C");
@@ -37,7 +37,7 @@ public sealed class FollowTests
     [Fact]
     public async Task Self_missing_anonymous_and_body_forgery_are_rejected()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var anonymous = await client.PutAsync("/api/v1/users/user-1/follow", null);
         Assert.Equal(401, (int)anonymous.StatusCode);

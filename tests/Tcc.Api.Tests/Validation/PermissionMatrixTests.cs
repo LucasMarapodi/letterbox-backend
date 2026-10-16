@@ -38,13 +38,13 @@ public sealed class PermissionMatrixTests
         }
         client.DefaultRequestHeaders.Authorization = null;
         Assert.Equal("Ana", (await client.GetFromJsonAsync<PublicUser>("/api/v1/users/user-1"))?.DisplayName);
-        Assert.Empty((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/game-1/reviews")) ?? []);
+        Assert.Empty((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/igdb-1/reviews")) ?? []);
     }
 
     [Fact]
     public async Task Every_public_read_operation_works_without_token()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         foreach (var operation in EndpointInventory.All.Where(operation => !operation.Private && operation.Method == "get"))
         {
@@ -53,6 +53,6 @@ public sealed class PermissionMatrixTests
         }
     }
 
-    private static string Resolve(string path) => path.Replace("{userId}", "user-1").Replace("{gameId}", "game-1")
-        .Replace("{reviewId}", "review-fixture").Replace("{kind}", "game").Replace("{targetId}", "game-1");
+    private static string Resolve(string path) => path.Replace("{userId}", "user-1").Replace("{gameId}", "igdb-1")
+        .Replace("{reviewId}", "review-fixture").Replace("{kind}", "game").Replace("{targetId}", "igdb-1");
 }

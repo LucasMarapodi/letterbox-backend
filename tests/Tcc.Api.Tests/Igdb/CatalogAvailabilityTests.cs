@@ -1,3 +1,4 @@
+using Tcc.Api.ErrorHandling;
 using Tcc.Application.Catalog;
 using Tcc.Infrastructure.Igdb;
 using Microsoft.AspNetCore.Http;
@@ -120,7 +121,7 @@ public sealed class CatalogAvailabilityTests
     {
         var context = new DefaultHttpContext();
         using var stream = new MemoryStream(); context.Response.Body = stream;
-        Assert.True(await new IdentityExceptionHandler().TryHandleAsync(context, new CatalogTimeoutException(), default));
+        Assert.True(await new ApiExceptionHandler().TryHandleAsync(context, new CatalogTimeoutException(), default));
         Assert.Equal(504, context.Response.StatusCode);
         stream.Position = 0;
         using var json = await JsonDocument.ParseAsync(stream);

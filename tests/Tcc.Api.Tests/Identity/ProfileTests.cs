@@ -12,7 +12,7 @@ public sealed class ProfileTests
     [Fact]
     public async Task Public_profile_is_safe_and_missing_id_returns_404()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/api/v1/users/user-1");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -28,7 +28,7 @@ public sealed class ProfileTests
     [Fact]
     public async Task Patch_without_session_is_rejected()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var response = await Patch(client, "{\"displayName\":\"Changed\"}");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -37,7 +37,7 @@ public sealed class ProfileTests
     [Fact]
     public async Task Partial_update_preserves_omitted_fields_clears_avatar_and_is_visible_in_me_and_public_read()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         var login = await LoginTests.Login(client);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
@@ -75,7 +75,7 @@ public sealed class ProfileTests
     [InlineData("{\"displayName\":123}")]
     public async Task Invalid_patch_does_not_change_any_account(string json)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
         registered.EnsureSuccessStatusCode();
@@ -93,8 +93,8 @@ public sealed class ProfileTests
     [Fact]
     public async Task Editing_current_profile_cannot_change_another_user_and_survives_new_requests()
     {
-        await using var first = new WebApplicationFactory<Program>();
-        await using var second = new WebApplicationFactory<Program>();
+        await using var first = new TestApiFactory();
+        await using var second = new TestApiFactory();
         using var client = first.CreateClient();
         using var otherHost = second.CreateClient();
         using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
@@ -113,7 +113,7 @@ public sealed class ProfileTests
     [Fact]
     public async Task Text_limits_are_enforced_atomically()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         var login = await LoginTests.Login(client);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);

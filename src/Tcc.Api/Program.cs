@@ -1,5 +1,4 @@
-using Tcc.Api.Authentication;
-using Tcc.Api;
+using Tcc.Api.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddBrowserCors(builder.Configuration);

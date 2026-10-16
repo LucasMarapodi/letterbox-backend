@@ -1,16 +1,20 @@
 using Tcc.Application.Catalog;
-using Tcc.Infrastructure.Catalog;
+using Tcc.Api.Filters;
+
 using Tcc.Application.Opinions;
 using Tcc.Infrastructure.Opinions;
 
-namespace Tcc.Api;
+namespace Tcc.Api.Configuration;
 
 public static class OpinionsRegistration
 {
     public static IServiceCollection AddOpinionsFeature(this IServiceCollection services)
     {
-        services.AddSingleton<IGameCatalog, FakeIgdbCatalog>();
+
         services.AddScoped<QueryGames>();
+        services.AddScoped<CatalogUsage>();
+        services.AddScoped<CatalogHeadersFilter>();
+        services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(options => options.Filters.AddService<CatalogHeadersFilter>());
         services.AddSingleton<IRatings, InMemoryRatings>();
         services.AddScoped<PersonalRating>();
         services.AddScoped<LocalRatingAverage>();

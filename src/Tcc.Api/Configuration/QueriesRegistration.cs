@@ -1,6 +1,6 @@
 using Tcc.Application.Queries;
 
-namespace Tcc.Api;
+namespace Tcc.Api.Configuration;
 
 public static class QueriesRegistration
 {

@@ -50,10 +50,9 @@ public sealed class RecentTests
     }
 }
 
-public sealed class EmptyReviewsFactory : WebApplicationFactory<Program>
+public sealed class EmptyReviewsFactory : TestApiFactory
 {
-    protected override void ConfigureWebHost(IWebHostBuilder builder) =>
-        builder.ConfigureServices(services => services.AddSingleton<IReviews, EmptyReviews>());
+    protected override void ConfigureWebHost(IWebHostBuilder builder) { base.ConfigureWebHost(builder); builder.ConfigureServices(services => services.AddSingleton<IReviews, EmptyReviews>()); }
 }
 public sealed class EmptyReviews : IReviews
 {

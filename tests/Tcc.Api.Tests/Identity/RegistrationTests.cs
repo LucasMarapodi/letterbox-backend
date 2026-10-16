@@ -10,7 +10,7 @@ public sealed class RegistrationTests
     [Fact]
     public async Task Register_returns_public_user_without_starting_session()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var response = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("  Lucas  ", " Lucas@example.com ", "p"));
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -31,7 +31,7 @@ public sealed class RegistrationTests
     [Fact]
     public async Task Email_uniqueness_is_normalized_and_atomic_under_concurrent_requests()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         var responses = await Task.WhenAll(
             client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("One", " Test@example.com ", "p")),
@@ -55,7 +55,7 @@ public sealed class RegistrationTests
     [InlineData("A", "a@example.com", " ")]
     public async Task Invalid_fields_return_standard_400(string? name, string? email, string? password)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var response = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput(name, email, password));
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -65,8 +65,8 @@ public sealed class RegistrationTests
     [Fact]
     public async Task Accounts_are_isolated_and_seed_does_not_reset_registered_accounts()
     {
-        await using var first = new WebApplicationFactory<Program>();
-        await using var second = new WebApplicationFactory<Program>();
+        await using var first = new TestApiFactory();
+        await using var second = new TestApiFactory();
         using var a = first.CreateClient();
         using var b = second.CreateClient();
         var input = new RegisterInput("A", "a@example.com", "p");

@@ -20,9 +20,9 @@ public sealed class PublicationFailureTests
         await ApiTest.SignIn(client, "B@example.com", "p");
         await SocialTest.Follow(client, "user-1");
         await ApiTest.SignIn(client);
-        using var failedReview = await client.PostAsJsonAsync("/api/v1/games/game-1/reviews", new TextInput("Review"));
+        using var failedReview = await client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("Review"));
         Assert.Equal(500, (int)failedReview.StatusCode);
-        Assert.Empty((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/game-1/reviews")) ?? []);
+        Assert.Empty((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/igdb-1/reviews")) ?? []);
         Assert.Empty(host.Services.GetRequiredService<INotifications>().ForUser(b.Id));
         await ApiTest.SignIn(client, "B@example.com", "p");
         using var failedComment = await client.PostAsJsonAsync("/api/v1/reviews/review-fixture/comments", new TextInput("Comment"));
@@ -32,11 +32,11 @@ public sealed class PublicationFailureTests
     }
 }
 
-public sealed class FailingNotificationFactory : WebApplicationFactory<Program>
+public sealed class FailingNotificationFactory : TestApiFactory
 {
-    protected override void ConfigureWebHost(IWebHostBuilder builder) => builder.ConfigureServices(services =>
+    protected override void ConfigureWebHost(IWebHostBuilder builder) { base.ConfigureWebHost(builder); builder.ConfigureServices(services =>
         services.AddSingleton<INotifications>(provider => new FailingNotifications(
-            new InMemoryNotifications(provider.GetRequiredService<InMemoryPublicationScope>()))));
+            new InMemoryNotifications(provider.GetRequiredService<InMemoryPublicationScope>())))); }
 }
 
 public sealed class FailingNotifications(INotifications inner) : INotifications

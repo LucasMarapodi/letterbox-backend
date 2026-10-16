@@ -13,7 +13,7 @@ public sealed class LoginTests
     [Fact]
     public async Task Registered_account_can_login_with_normalized_email_and_exact_password()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Lucas", "lucas@example.com", " p "));
         registration.EnsureSuccessStatusCode();
@@ -38,7 +38,7 @@ public sealed class LoginTests
     [InlineData("not-an-email", "teste123")]
     public async Task Wrong_credentials_return_the_same_safe_401(string email, string password)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var response = await client.PostAsJsonAsync("/api/v1/auth/login", new LoginInput(email, password));
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -72,10 +72,11 @@ public sealed class LoginTests
     }
 }
 
-public sealed class IdentityFactory(MutableClock clock, string minutes = "60") : WebApplicationFactory<Program>
+public sealed class IdentityFactory(MutableClock clock, string minutes = "60") : TestApiFactory
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+            base.ConfigureWebHost(builder);
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
             new Dictionary<string, string?> { ["Authentication:SessionMinutes"] = minutes }));
         builder.ConfigureServices(services => services.AddSingleton<TimeProvider>(clock));

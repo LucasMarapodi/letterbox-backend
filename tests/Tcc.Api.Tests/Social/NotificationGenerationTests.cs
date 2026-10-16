@@ -27,8 +27,8 @@ public sealed class NotificationGenerationTests
         await ApiTest.SignIn(client, "C@example.com", "p");
         await SocialTest.Follow(client, "user-1");
         await ApiTest.SignIn(client);
-        var responses = await Task.WhenAll(client.PostAsJsonAsync("/api/v1/games/game-1/reviews", new TextInput("One")),
-            client.PostAsJsonAsync("/api/v1/games/game-1/reviews", new TextInput("Two")));
+        var responses = await Task.WhenAll(client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("One")),
+            client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("Two")));
         ReviewDto review;
         try
         {
@@ -55,7 +55,7 @@ public sealed class NotificationGenerationTests
         using var unfollow = await client.DeleteAsync("/api/v1/users/user-1/follow");
         unfollow.EnsureSuccessStatusCode();
         await ApiTest.SignIn(client);
-        await ApiTest.Publish(client, "game-2");
+        await ApiTest.Publish(client, "igdb-2");
         Assert.Single(Events(host, b.Id));
         Assert.Equal(2, Events(host, c.Id).Count);
     }
@@ -63,7 +63,7 @@ public sealed class NotificationGenerationTests
     [Fact]
     public async Task Comment_notifies_only_review_author_and_self_comment_or_failures_do_not_notify()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         var b = await SocialTest.Register(client, "B");
         await ApiTest.SignIn(client);

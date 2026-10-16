@@ -1,3 +1,4 @@
+using Tcc.Api.Filters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Tcc.Api.Contracts;
@@ -10,28 +11,28 @@ namespace Tcc.Api.Controllers;
 public sealed class FavoritesController(PersonalFavorites favorites, LocalRatingAverage averages) : ControllerBase
 {
     [HttpGet]
-    public ActionResult<FavoriteListsResponse> List()
+    public async Task<ActionResult<FavoriteListsResponse>> List(CancellationToken cancellationToken)
     {
-        var lists = favorites.List();
+        var lists = await favorites.List(cancellationToken);
         return Ok(FavoriteListsResponse.From(lists, averages.ForGame));
     }
     [HttpGet("{kind}/{targetId}")]
     [ProducesResponseType<FavoriteStatusResponse>(200)]
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(404)]
-    public ActionResult<FavoriteStatusResponse> Get(string kind, string targetId)
+    public async Task<ActionResult<FavoriteStatusResponse>> Get(string kind, string targetId, CancellationToken cancellationToken)
     {
-        var favorite = favorites.Get(kind, targetId);
+        var favorite = await favorites.Get(kind, targetId, cancellationToken);
         return Ok(new FavoriteStatusResponse(favorite is null ? null : FavoriteResponse.From(favorite)));
     }
     [NoBody, HttpPut("{kind}/{targetId}")]
     [ProducesResponseType<FavoriteResponse>(200)]
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(404)]
-    public ActionResult<FavoriteResponse> Put(string kind, string targetId) => Ok(FavoriteResponse.From(favorites.Set(kind, targetId)));
+    public async Task<ActionResult<FavoriteResponse>> Put(string kind, string targetId, CancellationToken cancellationToken) => Ok(FavoriteResponse.From(await favorites.Set(kind, targetId, cancellationToken)));
     [NoBody, HttpDelete("{kind}/{targetId}")]
     [ProducesResponseType(204)]
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(404)]
-    public IActionResult Delete(string kind, string targetId) { favorites.Remove(kind, targetId); return NoContent(); }
+    public async Task<IActionResult> Delete(string kind, string targetId, CancellationToken cancellationToken) { await favorites.Remove(kind, targetId, cancellationToken); return NoContent(); }
 }

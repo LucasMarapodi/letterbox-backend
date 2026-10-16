@@ -9,5 +9,5 @@ namespace Tcc.Api.Controllers;
 public sealed class FeedController(FollowingFeed feed) : ControllerBase
 {
     [HttpGet]
-    public ActionResult<IReadOnlyList<ReviewResponse>> Get() => Ok(feed.Execute().Select(ReviewResponse.From).ToArray());
+    public async Task<ActionResult<IReadOnlyList<ReviewResponse>>> Get(CancellationToken cancellationToken) => Ok((await feed.Execute(cancellationToken)).Select(ReviewResponse.From).ToArray());
 }

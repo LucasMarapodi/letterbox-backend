@@ -5,9 +5,9 @@ using Tcc.Domain.Identity;
 using Tcc.Application.Catalog;
 using Tcc.Domain.Opinions;
 
-namespace Tcc.Api;
+namespace Tcc.Api.ErrorHandling;
 
-public sealed class IdentityExceptionHandler : IExceptionHandler
+public sealed class ApiExceptionHandler : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext context, Exception exception, CancellationToken cancellationToken)
     {

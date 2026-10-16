@@ -2,7 +2,7 @@ using Tcc.Infrastructure.Igdb;
 using Tcc.Application.Catalog;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Tcc.Api;
+namespace Tcc.Api.Configuration;
 
 public static class IgdbAuthenticationRegistration
 {

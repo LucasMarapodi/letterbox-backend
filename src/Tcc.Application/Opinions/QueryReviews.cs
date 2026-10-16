@@ -1,32 +1,34 @@
 using Tcc.Application.Catalog;
 using Tcc.Application.Identity;
-using Tcc.Domain.Opinions;
 
 namespace Tcc.Application.Opinions;
 
 public sealed record GameOpinions(double? AverageRating, IReadOnlyList<ReviewDetails> Reviews);
-
 public sealed class QueryReviews(IReviews reviews, QueryGames games, IUserAccounts accounts, OpinionViews views,
     ICurrentSession current, SessionAccess access, LocalRatingAverage averages, ReviewProjection projection)
 {
-    private IReadOnlyList<ReviewDetails> Project(IEnumerable<Review> items) => projection.Execute(items);
-
-    public IReadOnlyList<ReviewDetails> ForGame(string gameId)
+    public async Task<IReadOnlyList<ReviewDetails>> ForGame(string gameId, CancellationToken cancellationToken = default)
     {
-        games.Get(gameId);
-        return Project(reviews.All().Where(review => review.GameId == gameId));
+        var snapshot = reviews.All().Where(review => review.GameId == gameId).ToArray();
+        var game = await games.GetAsync(gameId, cancellationToken);
+        return snapshot.OrderByDescending(review => review.CreatedAt).ThenBy(review => review.Id, StringComparer.Ordinal)
+            .Select(review => views.Review(review, game)).ToArray();
     }
-    public IReadOnlyList<ReviewDetails> ForUser(string userId)
+    public Task<IReadOnlyList<ReviewDetails>> ForUser(string userId, CancellationToken cancellationToken = default)
     {
         if (accounts.FindById(userId) is null) throw new ResourceFailure(ResourceFailureKind.NotFound);
-        return Project(reviews.All().Where(review => review.UserId == userId));
+        return projection.ExecuteAsync(reviews.All().Where(review => review.UserId == userId), cancellationToken);
     }
-    public ReviewDetails? Mine(string gameId)
+    public async Task<ReviewDetails?> Mine(string gameId, CancellationToken cancellationToken = default)
     {
         var userId = access.Require(current).UserId;
-        games.Get(gameId);
         var review = reviews.All().SingleOrDefault(review => review.UserId == userId && review.GameId == gameId);
-        return review is null ? null : views.Review(review);
+        var game = await games.GetAsync(gameId, cancellationToken);
+        return review is null ? null : views.Review(review, game);
     }
-    public GameOpinions Opinions(string gameId) => new(averages.ForGame(gameId), ForGame(gameId));
+    public async Task<GameOpinions> Opinions(string gameId, CancellationToken cancellationToken = default)
+    {
+        var average = averages.ForGame(gameId);
+        return new(average, await ForGame(gameId, cancellationToken));
+    }
 }

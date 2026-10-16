@@ -27,10 +27,10 @@ public sealed class RankedGameTests
         RankingFixture.Comment(host, "c-upper", "rank-c", now);
         RankingFixture.Comment(host, "past", "rank-a", now.AddHours(-hours).AddTicks(-1));
         RankingFixture.Comment(host, "future", "rank-a", now.AddTicks(1));
-        host.Services.GetRequiredService<IRatings>().Set("user-1", "game-3", RatingValue.Create(5));
+        host.Services.GetRequiredService<IRatings>().Set("user-1", "igdb-3", RatingValue.Create(5));
         var results = await client.GetFromJsonAsync<RankedGameDto[]>($"/api/v1/community/games/in-discussion?period={period}");
         Assert.NotNull(results);
-        Assert.Equal(new[] { "game-1", "game-2" }, results.Select(item => item.Game.Id));
+        Assert.Equal(new[] { "igdb-1", "igdb-2" }, results.Select(item => item.Game.Id));
         Assert.Equal(new[] { 3, 2 }, results.Select(item => item.CommentCount));
         Assert.All(results, item => Assert.Equal(now, item.LastCommentAt));
         if (period == "7d")
@@ -52,16 +52,16 @@ public sealed class RankedGameTests
         RankingFixture.Comment(host, "a", "rank-a", now.AddDays(-2));
         RankingFixture.Comment(host, "c", "rank-c", now.AddDays(-1));
         var week = await client.GetFromJsonAsync<RankedGameDto[]>("/api/v1/community/games/in-discussion");
-        Assert.Equal(new[] { "game-2", "game-1" }, (week ?? []).Select(item => item.Game.Id));
+        Assert.Equal(new[] { "igdb-2", "igdb-1" }, (week ?? []).Select(item => item.Game.Id));
         var day = await client.GetFromJsonAsync<RankedGameDto[]>("/api/v1/community/games/in-discussion?period=24h");
-        Assert.Equal("game-2", Assert.Single(day ?? []).Game.Id);
+        Assert.Equal("igdb-2", Assert.Single(day ?? []).Game.Id);
         RankingFixture.Comment(host, "b", "rank-b", now.AddDays(-8));
         Assert.Equal(2, (await client.GetFromJsonAsync<RankedGameDto[]>("/api/v1/community/games/in-discussion?period=30d"))?[0].CommentCount);
         RankingFixture.Comment(host, "new-a", "rank-a", now);
         RankingFixture.Comment(host, "new-c1", "rank-c", now);
         RankingFixture.Comment(host, "new-c2", "rank-c", now);
         var tied = await client.GetFromJsonAsync<RankedGameDto[]>("/api/v1/community/games/in-discussion?period=30d");
-        Assert.Equal(new[] { "game-1", "game-2" }, (tied ?? []).Select(item => item.Game.Id));
+        Assert.Equal(new[] { "igdb-1", "igdb-2" }, (tied ?? []).Select(item => item.Game.Id));
     }
 
     [Theory]
@@ -69,7 +69,7 @@ public sealed class RankedGameTests
     [InlineData("")]
     public async Task Invalid_period_returns_400(string period)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var response = await client.GetAsync($"/api/v1/community/games/in-discussion?period={period}");
         Assert.Equal(400, (int)response.StatusCode);
@@ -89,7 +89,7 @@ public sealed class RankedGameTests
         published.EnsureSuccessStatusCode();
         client.DefaultRequestHeaders.Authorization = null;
         var game = Assert.Single((await client.GetFromJsonAsync<RankedGameDto[]>("/api/v1/community/games/in-discussion")) ?? []);
-        Assert.Equal("game-3", game.Game.Id);
+        Assert.Equal("igdb-3", game.Game.Id);
         Assert.Equal(1, game.CommentCount);
         var review = Assert.Single((await client.GetFromJsonAsync<RankedReviewDto[]>("/api/v1/community/reviews/most-commented")) ?? []);
         Assert.Equal("review-fixture", review.Review.Id);

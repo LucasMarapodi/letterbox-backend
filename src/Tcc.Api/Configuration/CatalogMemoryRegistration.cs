@@ -1,7 +1,7 @@
 using Tcc.Application.Catalog;
 using Tcc.Infrastructure.Igdb;
 
-namespace Tcc.Api;
+namespace Tcc.Api.Configuration;
 
 public static class CatalogMemoryRegistration
 {

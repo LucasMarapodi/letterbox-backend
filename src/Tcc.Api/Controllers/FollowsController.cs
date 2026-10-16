@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Tcc.Api.Filters;
 using Microsoft.AspNetCore.Mvc;
 using Tcc.Api.Contracts;
 using Tcc.Application.Social;

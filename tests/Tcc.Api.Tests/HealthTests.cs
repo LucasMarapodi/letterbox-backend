@@ -9,7 +9,7 @@ public sealed class HealthTests
     [Fact]
     public async Task Health_returns_typed_success()
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/health");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
