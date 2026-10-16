@@ -4,20 +4,31 @@ using System.Net;
 
 namespace Tcc.Infrastructure.Igdb;
 
-public sealed class IgdbGameCatalog(Func<IgdbAuthenticatedClient> getClient, TimeProvider clock,
-    IgdbGameMapper? mapper = null) : IExternalGameCatalog
+public sealed partial class IgdbGameCatalog(Func<IgdbAuthenticatedClient> getClient, TimeProvider clock,
+    IgdbGameMapper? mapper = null, ICatalogFilterStore? filters = null, ICatalogReleasePages? releases = null) : IExternalGameCatalog
 {
     private readonly IgdbGameMapper gameMapper = mapper ?? new(ExternalEndpointOptions.Default);
     public async Task<CatalogPage> SearchAsync(CatalogSearch query, CancellationToken cancellationToken)
     {
         var now = clock.GetUtcNow();
-        var rows = await ReadAsync(IgdbQueries.Search(query, now), cancellationToken);
+        var bindings = query.GenreId.HasValue || query.PlatformId.HasValue
+            ? await (filters ?? throw new InvalidCatalogFilterException()).ResolveAsync(query.GenreId, query.PlatformId, cancellationToken)
+            : new CatalogFilterBindings(null, null);
+        if (query.Sort == "release-desc" && releases is not null) return await ReleasePage(query, bindings, now, cancellationToken);
+        var rows = await ReadAsync(IgdbQueries.Search(query, now, bindings.GenreId, bindings.PlatformId), cancellationToken);
+        ValidateFilters(rows, bindings);
         if (rows.Length > query.PageSize + 1 || ((query.Term.Length == 0 || query.Sort == "release-desc")
             && rows.Any(row => row.FirstReleaseDate is null || row.FirstReleaseDate > now.ToUnixTimeSeconds())))
             throw new CatalogInvalidResponseException();
         var fetchedAt = clock.GetUtcNow();
         var games = rows.Select(row => gameMapper.Map(row, fetchedAt)).ToArray();
         return new(query, Array.AsReadOnly(games.Take(query.PageSize).ToArray()), games.Length > query.PageSize, new(fetchedAt));
+    }
+    private static void ValidateFilters(IReadOnlyList<IgdbGameDto> rows, CatalogFilterBindings bindings)
+    {
+        if (rows.Any(row => bindings.GenreId.HasValue && !(row.Genres?.Any(item => item is not null && item.Id == bindings.GenreId.Value) ?? false)
+            || bindings.PlatformId.HasValue && !(row.Platforms?.Any(item => item is not null && item.Id == bindings.PlatformId.Value) ?? false)))
+            throw new CatalogInvalidResponseException();
     }
     public async Task<IReadOnlyDictionary<long, CatalogGame>> ResolveAsync(IReadOnlyList<long> ids, CancellationToken cancellationToken)
     {

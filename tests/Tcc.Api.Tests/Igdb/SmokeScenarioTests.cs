@@ -49,6 +49,7 @@ public sealed class SmokeScenarioTests
             builder.ConfigureLogging(logging => logging.ClearProviders());
             builder.ConfigureServices(services =>
             {
+                services.AddPostgresPersistence(_ => throw new InvalidOperationException("Simulated smoke must never resolve a SQL connection."));
                 services.AddSingleton(IgdbTest.Options());
                 services.AddSingleton(new IgdbResilienceOptions { MaxRetries = 0 });
                 services.AddHttpClient(IgdbAuthenticationRegistration.OAuthClientName).ConfigurePrimaryHttpMessageHandler(() =>

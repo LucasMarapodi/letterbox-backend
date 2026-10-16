@@ -94,8 +94,13 @@ public static class OpenApiRegistration
                     if (parameter.Name == "kind") schema.Enum = Nodes("game", "review");
                     if (parameter.Name == "userId") schema.Minimum = "1";
                     if (parameter.Name is "gameId" or "igdbId" or "reviewId" or "commentId" or "targetId") schema.Minimum = "1";
+                    if (parameter.Name is "genreId" or "platformId") { schema.Minimum = "1"; schema.Description = "ID local int32 de GET /api/v1/games/filters; omissão significa Todos. Inválido/inexistente retorna 400 invalid_filter."; }
                 }
-                if (context.Description.RelativePath == "api/v1/search")
+                if (context.Description.RelativePath == "api/v1/games/filters")
+                    operation.Description = "Opções públicas completas de gêneros/plataformas, com IDs locais int32 estáveis. Sincroniza metadados IGDB com cursor/limites e persiste no SQL; cache completo por uma hora. Não deriva opções da página exibida. Falha sem cobertura completa retorna erro, sem lista parcial como sucesso.";
+                else if (context.Description.RelativePath == "api/v1/games")
+                    operation.Description = "Combina termo AND gênero AND plataforma antes da paginação. genreId/platformId são IDs locais opcionais obtidos em /games/filters; inválidos/inexistentes retornam 400 invalid_filter. Sem termo: release-desc. Últimos lançados exclui futuros/sem data, ordena data decrescente e ID local crescente. Usa contagem de lançamentos mais novos para páginas avançadas e completa dias de fronteira: janela limitada a 2.000 candidatos, 20 chamadas e 30 segundos; se não comprovar o desempate, falha sem página parcial. Catálogo SQL parcial não equivale a cobertura global.";
+                else if (context.Description.RelativePath == "api/v1/search")
                     operation.Description = "Busca pública por q com trim, 3–200 caracteres. suggestions: 5 por grupo e page=1; results: 20. scope=all|people|games controla fontes consultadas. Cada grupo: status ready (items e paginação válidos), unavailable (items vazio, paginação null e erro público) ou notRequested (items vazio, paginação null e error null). 200 quando ao menos um grupo solicitado está ready, inclusive vazio; 503 quando todos falham. Jogos inclui metadata fetchedAt/isStale do catálogo quando ready. Pessoas: username exato, prefixo em username/displayName, demais; desempate username/ID. Não pesquisa e-mail/bio. pageSize não é aceito.";
                 else if (context.Description.RelativePath == "api/v1/games/igdb/{igdbId}")
                     operation.Description = "ID externo IGDB positivo (int64). Consulta SQL por igdb_id antes do fornecedor; importação faz upsert transacional e retorna o ID local int32 para as demais rotas.";

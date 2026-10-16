@@ -4,6 +4,8 @@ API .NET 10 da plataforma de avaliações e reviews de jogos. Catálogo IGDB ass
 
 ## Executar
 
+A [S-PR-05](docs/S-PR-05.md) adiciona genreId/platformId locais à listagem de jogos e GET /api/v1/games/filters com opções públicas persistidas e sincronizadas pela IGDB. Filtros precedem paginação; últimos lançados exclui futuros/sem data e desempata por ID local. A interface permanece na S-PR-06.
+
 A [S-PR-26](docs/S-PR-26.md) adiciona GET /api/v1/search público para pessoas e jogos: sugestões de cinco por grupo, resultados de 20, paginação e retry por categoria, projeções mínimas e falha parcial. Pessoas usa PostgreSQL; Jogos preserva cache → SQL → IGDB. Contrato disponível para as futuras S-PR-27/28, sem alterações no Front.
 
 URLs externas são centralizadas por [S-PR-07](docs/S-PR-07.md): IGDB__BaseUrl, IGDB__ImagesBaseUrl e Twitch__TokenEndpoint. Configure no ambiente backend ou `.env` de Development e reinicie a API. Opções tipadas validam HTTPS na inicialização; exemplos públicos em appsettings.Development.json.
@@ -19,7 +21,7 @@ dotnet run --project src/Tcc.Api --urls http://localhost:5080
 
 `GET /health` retorna `200 {"status":"ok"}`. Endpoints de negócio estão em `/api/v1`; contratos e exemplos em [AUTH.md](docs/AUTH.md), [OPINIONS.md](docs/OPINIONS.md), [SOCIAL.md](docs/SOCIAL.md) e [FEEDS.md](docs/FEEDS.md).
 
-`GET /openapi/v1.json` fornece OpenAPI 3.1 com 39 operações funcionais e health, schemas, erros e autenticação Bearer. [Documento exportado](docs/openapi.json) e [mapeamento para o frontend](docs/COMPATIBILITY.md).
+`GET /openapi/v1.json` fornece OpenAPI 3.1 com 40 operações funcionais e health, schemas, erros e autenticação Bearer. [Documento exportado](docs/openapi.json) e [mapeamento para o frontend](docs/COMPATIBILITY.md).
 
 Swagger UI em [http://localhost:5080/swagger](http://localhost:5080/swagger), usando o mesmo documento OpenAPI. Permite explorar contratos e executar chamadas; para operações privadas, faça login e informe o token no botão **Authorize**. [Guia do Swagger](docs/SWAGGER.md).
 

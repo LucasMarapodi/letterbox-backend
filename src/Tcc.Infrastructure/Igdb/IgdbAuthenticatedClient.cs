@@ -8,9 +8,13 @@ namespace Tcc.Infrastructure.Igdb;
 public sealed class IgdbAuthenticatedClient(HttpClient http, IgdbCredentialOptions options, TwitchTokenProvider tokens,
     IgdbResiliencePolicy? resilience = null, ExternalEndpointOptions? endpoints = null) : IDisposable
 {
-    private readonly Uri gamesEndpoint = new((endpoints ?? ExternalEndpointOptions.Default).BaseUrl, "games");
+    private readonly Uri baseUrl = (endpoints ?? ExternalEndpointOptions.Default).BaseUrl;
     private readonly IgdbResiliencePolicy policy = resilience ?? new(new(), new SystemIgdbScheduler(TimeProvider.System));
-    public async Task<HttpResponseMessage> PostGamesAsync(string query, CancellationToken cancellationToken = default)
+    public Task<HttpResponseMessage> PostGamesAsync(string query, CancellationToken cancellationToken = default) => SendAsync("games", query, cancellationToken);
+    public Task<HttpResponseMessage> PostGamesCountAsync(string query, CancellationToken cancellationToken) => SendAsync("games/count", query, cancellationToken);
+    public Task<HttpResponseMessage> PostGenresAsync(string query, CancellationToken cancellationToken) => SendAsync("genres", query, cancellationToken);
+    public Task<HttpResponseMessage> PostPlatformsAsync(string query, CancellationToken cancellationToken) => SendAsync("platforms", query, cancellationToken);
+    private async Task<HttpResponseMessage> SendAsync(string endpoint, string query, CancellationToken cancellationToken)
     {
         using var budget = policy.CreateBudget(cancellationToken);
         try
@@ -21,7 +25,7 @@ public sealed class IgdbAuthenticatedClient(HttpClient http, IgdbCredentialOptio
             {
                 var response = await policy.SendAsync(async ct =>
                 {
-                    using var request = new HttpRequestMessage(HttpMethod.Post, gamesEndpoint);
+                    using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(baseUrl, endpoint));
                     request.Headers.Add("Client-ID", options.ClientId);
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Value);
                     request.Content = new StringContent(query, Encoding.UTF8, "text/plain");
