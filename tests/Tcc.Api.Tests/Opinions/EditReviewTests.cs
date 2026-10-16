@@ -15,7 +15,7 @@ public sealed class EditReviewTests
         await ApiTest.SignIn(client);
         var original = await ApiTest.Publish(client);
         clock.UtcNow = clock.UtcNow.AddMinutes(1);
-        using var response = await client.PatchAsJsonAsync($"/api/v1/reviews/{original.Id}", new TextInput("  Edited  "));
+        using var response = await client.PatchAsJsonAsync($"/api/v1/reviews/{original.Id}", new ReviewInput("  Edited  "));
         Assert.Equal(200, (int)response.StatusCode);
         var updated = await response.Content.ReadFromJsonAsync<ReviewDto>();
         Assert.NotNull(updated);
@@ -25,16 +25,16 @@ public sealed class EditReviewTests
         using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
         registration.EnsureSuccessStatusCode();
         await ApiTest.SignIn(client, "b@example.com", "p");
-        using var forbidden = await client.PatchAsJsonAsync($"/api/v1/reviews/{original.Id}", new TextInput("Other"));
+        using var forbidden = await client.PatchAsJsonAsync($"/api/v1/reviews/{original.Id}", new ReviewInput("Other"));
         Assert.Equal(403, (int)forbidden.StatusCode);
         Assert.Equal(updated, await client.GetFromJsonAsync<ReviewDto>($"/api/v1/reviews/{original.Id}"));
         client.DefaultRequestHeaders.Authorization = null;
-        using var anonymous = await client.PatchAsJsonAsync($"/api/v1/reviews/{original.Id}", new TextInput("Other"));
+        using var anonymous = await client.PatchAsJsonAsync($"/api/v1/reviews/{original.Id}", new ReviewInput("Other"));
         Assert.Equal(401, (int)anonymous.StatusCode);
     }
 
     [Theory]
-    [InlineData("{\"text\":\" \"}")]
+    [InlineData("{\"rating\":null}")]
     [InlineData("{\"text\":\"New\",\"gameId\":\"igdb-2\"}")]
     [InlineData("{\"text\":\"New\",\"userId\":\"other\"}")]
     [InlineData("{\"text\":\"New\",\"createdAt\":\"2020-01-01T00:00:00Z\"}")]
@@ -55,7 +55,7 @@ public sealed class EditReviewTests
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
-        using var response = await client.PatchAsJsonAsync("/api/v1/reviews/999999", new TextInput("New"));
+        using var response = await client.PatchAsJsonAsync("/api/v1/reviews/999999", new ReviewInput("New"));
         Assert.Equal(404, (int)response.StatusCode);
     }
 }

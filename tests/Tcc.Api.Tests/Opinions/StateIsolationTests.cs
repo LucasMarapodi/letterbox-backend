@@ -13,9 +13,9 @@ public sealed class StateIsolationTests
         using var client = first.CreateClient();
         using var other = restarted.CreateClient();
         await ApiTest.SignIn(client);
+        var review = await ApiTest.Publish(client);
         using var rating = await client.PutAsJsonAsync("/api/v1/games/1/rating/me", new RatingInput(4));
         rating.EnsureSuccessStatusCode();
-        var review = await ApiTest.Publish(client);
         using var comment = await client.PostAsJsonAsync("/api/v1/reviews/1/comments", new TextInput("New"));
         comment.EnsureSuccessStatusCode();
         Assert.Equal(4d, (await client.GetFromJsonAsync<GameDto>("/api/v1/games/1"))?.AverageRating);

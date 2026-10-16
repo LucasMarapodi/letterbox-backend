@@ -4,6 +4,8 @@ API .NET 10 da plataforma de avaliações e reviews de jogos. Catálogo IGDB ass
 
 ## Executar
 
+A [S-PR-21](docs/S-PR-21.md) unifica publicação/edição de review e nota: POST exige rating de 0 a 5, descrição é opcional e PATCH salva ambos atomicamente. PUT legado de nota cria/atualiza a mesma review; leituras incluem rating nullable para legados. A integração do formulário pertence à S-PR-22.
+
 A [S-PR-16](docs/S-PR-16.md) adiciona GET/PUT privados de conclusão do perfil, país/estado opcionais no banco e salvamento atômico de perfil e jogos favoritos. Conclusão exige localização, bio e três jogos distintos, com avatar opcional. O formulário permanece na S-PR-17.
 
 A [S-PR-05](docs/S-PR-05.md) adiciona genreId/platformId locais à listagem de jogos e GET /api/v1/games/filters com opções públicas persistidas e sincronizadas pela IGDB. Filtros precedem paginação; últimos lançados exclui futuros/sem data e desempata por ID local. A interface permanece na S-PR-06.

@@ -422,7 +422,7 @@ namespace Tcc.Infrastructure.Persistence.Migrations
 
                     b.ToTable("reviews", null, t =>
                         {
-                            t.HasCheckConstraint("ck_reviews_texto", "char_length(texto) BETWEEN 1 AND 10000 AND texto ~ '[^[:space:]]'");
+                            t.HasCheckConstraint("ck_reviews_texto", "char_length(texto) <= 10000");
                         });
                 });
 
@@ -710,6 +710,13 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Opinions.Review", null)
+                        .WithOne("Evaluation")
+                        .HasForeignKey("Tcc.Domain.Opinions.Rating", "UserId", "GameId")
+                        .HasPrincipalKey("Tcc.Domain.Opinions.Review", "UserId", "GameId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Tcc.Domain.Opinions.Review", b =>
@@ -797,6 +804,11 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Opinions.Review", b =>
+                {
+                    b.Navigation("Evaluation");
                 });
 #pragma warning restore 612, 618
         }

@@ -19,18 +19,34 @@ internal static class OpinionStorage
 }
 public sealed class PostgresReviews(Lazy<TccDbContext> context) : IReviews
 {
-    public Task<Review?> AddAsync(Review review, CancellationToken ct = default, Func<Review, CancellationToken, Task>? publish = null) => OpinionStorage.Run<Review?>(async () =>
+    public Task<Review> WriteAsync(ReviewWrite command, Func<Review, CancellationToken, Task> publish, CancellationToken ct = default) => OpinionStorage.Run(async () =>
     {
         var db = context.Value;
         await using var tx = await db.Database.BeginTransactionAsync(ct);
-        db.Reviews.Add(review);
-        try { await db.SaveChangesAsync(ct); }
-        catch (DbUpdateException failure) when (failure.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
-        { db.ChangeTracker.Clear(); return null; }
-        if (publish is not null) await publish(review, ct);
+        // Shared across POST, PATCH and legacy rating PUT; read after acquiring the lock.
+        await ProfileWriteLock.Acquire(db, command.UserId, ct);
+        var review = await db.Reviews.AsTracking().SingleOrDefaultAsync(item => item.UserId == command.UserId && item.GameId == command.GameId, ct);
+        var creating = review is null;
+        if (command.ReviewId is int id && (review is null || review.Id != id)) throw new ResourceFailure(ResourceFailureKind.NotFound);
+        if (review is not null && command.CreateOnly) throw new ResourceFailure(ResourceFailureKind.Conflict);
+        if (review is null)
+        {
+            review = Review.CreateRated(command.UserId, command.GameId, command.Text, command.Rating, command.Now);
+            db.Reviews.Add(review);
+        }
+        else
+        {
+            var updated = review.EditRated(command.UserId, command.TextSpecified, command.Text, command.Rating, command.Now);
+            db.Entry(review).CurrentValues.SetValues(updated);
+            if (review.Evaluation is null) db.Ratings.Add(updated.Evaluation!);
+            else db.Entry(review.Evaluation).CurrentValues.SetValues(updated.Evaluation!);
+        }
         await db.SaveChangesAsync(ct);
+        if (creating) await publish(review, ct);
+        await db.SaveChangesAsync(ct);
+        var saved = await db.Reviews.AsNoTracking().SingleAsync(item => item.Id == review.Id, ct);
         await tx.CommitAsync(ct);
-        return review;
+        return saved;
     });
     public Task<Review?> FindAsync(int id, CancellationToken ct = default) => OpinionStorage.Run(() => context.Value.Reviews.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, ct));
     public Task<IReadOnlyList<Review>> QueryAsync(ReviewQuery query, CancellationToken ct = default) => OpinionStorage.Run<IReadOnlyList<Review>>(async () =>
@@ -41,16 +57,6 @@ public sealed class PostgresReviews(Lazy<TccDbContext> context) : IReviews
         if (query.Authors is not null) rows = rows.Where(item => query.Authors.Contains(item.UserId));
         if (query.Ids is not null) rows = rows.Where(item => query.Ids.Contains(item.Id));
         return await rows.OrderByDescending(item => item.CreatedAt).ThenBy(item => item.Id).ToArrayAsync(ct);
-    });
-    public Task<Review?> EditAsync(int id, int actorId, string? text, DateTimeOffset now, CancellationToken ct = default) => OpinionStorage.Run<Review?>(async () =>
-    {
-        var db = context.Value;
-        var original = await db.Reviews.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, ct);
-        if (original is null) return null;
-        var edited = original.Edit(actorId, text, now);
-        var changed = await db.Reviews.Where(item => item.Id == id && item.UserId == actorId)
-            .ExecuteUpdateAsync(update => update.SetProperty(item => item.Text, edited.Text).SetProperty(item => item.UpdatedAt, now), ct);
-        return changed == 0 ? null : await db.Reviews.AsNoTracking().SingleAsync(item => item.Id == id, ct);
     });
 }
 public sealed class PostgresRatings(Lazy<TccDbContext> context) : IRatings

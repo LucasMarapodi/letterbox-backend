@@ -25,7 +25,7 @@ public sealed class CommentPersistenceTests
         registered.EnsureSuccessStatusCode();
         var login = await LoginTests.Login(client, "discussion@example.com", "synthetic-password");
         client.DefaultRequestHeaders.Authorization = new("Bearer", login.Token);
-        using var response = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { text = "Review" });
+        using var response = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { rating = 3, text = "Review" });
         response.EnsureSuccessStatusCode();
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         return (login.User.Id, json.RootElement.GetProperty("id").GetInt32());
@@ -204,7 +204,7 @@ public sealed class CommentPersistenceTests
         registered.EnsureSuccessStatusCode();
         var login = await LoginTests.Login(client, "commenter@example.com", "synthetic-password");
         client.DefaultRequestHeaders.Authorization = new("Bearer", login.Token);
-        using var review = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { text = "Review" });
+        using var review = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { rating = 3, text = "Review" });
         review.EnsureSuccessStatusCode();
         using var reviewJson = JsonDocument.Parse(await review.Content.ReadAsStringAsync());
         var reviewId = reviewJson.RootElement.GetProperty("id").GetInt32();

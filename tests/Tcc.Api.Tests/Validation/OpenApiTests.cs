@@ -6,6 +6,27 @@ namespace Tcc.Api.Tests.Validation;
 public sealed class OpenApiTests
 {
     [Fact]
+    public async Task Unified_review_documents_required_creation_rating_partial_edit_and_legacy_nullable_output()
+    {
+        await using var host = new TestApiFactory();
+        using var client = host.CreateClient();
+        using var document = JsonDocument.Parse(await client.GetStringAsync("/openapi/v1.json"));
+        var schemas = document.RootElement.GetProperty("components").GetProperty("schemas");
+        var create = schemas.GetProperty("ReviewCreateRequest");
+        Assert.Equal("rating", Assert.Single(create.GetProperty("required").EnumerateArray()).GetString());
+        var rating = create.GetProperty("properties").GetProperty("rating");
+        Assert.Equal("number", rating.GetProperty("type").GetString());
+        Assert.Equal(0, rating.GetProperty("minimum").GetDouble());
+        Assert.Equal(5, rating.GetProperty("maximum").GetDouble());
+        Assert.False(create.GetProperty("additionalProperties").GetBoolean());
+        var patch = schemas.GetProperty("ReviewPatchRequest");
+        Assert.False(patch.TryGetProperty("required", out var required) && required.GetArrayLength() > 0);
+        Assert.Equal(new[] { "rating", "text" }, patch.GetProperty("properties").EnumerateObject().Select(property => property.Name).Order());
+        var nullable = schemas.GetProperty("ReviewResponse").GetProperty("properties").GetProperty("rating");
+        Assert.Contains("null", nullable.GetProperty("type").EnumerateArray().Select(item => item.GetString()));
+    }
+
+    [Fact]
     public async Task Completion_contract_distinguishes_optional_avatar_from_required_private_fields()
     {
         await using var host = new TestApiFactory();

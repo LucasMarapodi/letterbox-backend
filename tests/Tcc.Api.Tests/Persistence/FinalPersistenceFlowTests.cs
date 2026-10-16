@@ -62,8 +62,8 @@ public sealed class FinalPersistenceFlowTests
             reader = await NotificationPersistenceTests.Register(client, "final-reader@example.com");
             await Put(client, $"/api/v1/users/{author.Id}/follow");
             client.DefaultRequestHeaders.Authorization = new("Bearer", author.Token);
+            reviewId = await Publish(client, $"/api/v1/games/{gameId}/reviews", new { rating = 4.5, text = "Complete SQL lifecycle" });
             using (var rating = await client.PutAsJsonAsync($"/api/v1/games/{gameId}/rating/me", new { value = 4.5 })) rating.EnsureSuccessStatusCode();
-            reviewId = await Publish(client, $"/api/v1/games/{gameId}/reviews", new { text = "Complete SQL lifecycle" });
             client.DefaultRequestHeaders.Authorization = new("Bearer", reader.Token);
             rootId = await Publish(client, $"/api/v1/reviews/{reviewId}/comments", new { text = "Persistent root" });
             replyId = await Publish(client, $"/api/v1/reviews/{reviewId}/comments", new { text = "Persistent reply", parentCommentId = rootId });

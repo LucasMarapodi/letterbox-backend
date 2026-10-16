@@ -3819,6 +3819,7 @@
           "Ratings"
         ],
         "summary": "PUT /api/v1/games/{gameId}/rating/me",
+        "description": "Compatibilidade: delega ao fluxo unificado. Cria review real sem descrição quando ausente ou altera a nota preservando texto/ID da existente, atomicamente. Não cria avaliação órfã. O novo formulário deve usar POST/PATCH de reviews.",
         "parameters": [
           {
             "name": "gameId",
@@ -3999,7 +4000,7 @@
           "Reviews"
         ],
         "summary": "POST /api/v1/games/{gameId}/reviews",
-        "description": "Texto obrigatório não vazio após trim; até 10.000 caracteres após trim. Uma review por usuário/jogo. Apenas o autor edita; preserva identidade e publicação.",
+        "description": "Review e nota salvas na mesma transação. POST exige rating numérico finito de 0 a 5 (zero válido); text omitido/null/espaços vira vazio, até 10.000 caracteres após trim. PATCH preserva campos omitidos, text null limpa e rating null é inválido; legado sem nota exige informá-la antes de salvar. Uma review por usuário/jogo; apenas o autor edita, preservando identidade/publicação/vínculos. rating nullable na resposta somente para histórico sem nota. Publicação notifica uma vez; edição não publica novamente.",
         "parameters": [
           {
             "name": "gameId",
@@ -4016,17 +4017,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TextRequest"
+                "$ref": "#/components/schemas/ReviewCreateRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/TextRequest"
+                "$ref": "#/components/schemas/ReviewCreateRequest"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/TextRequest"
+                "$ref": "#/components/schemas/ReviewCreateRequest"
               }
             }
           },
@@ -4483,7 +4484,7 @@
           "Reviews"
         ],
         "summary": "PATCH /api/v1/reviews/{reviewId}",
-        "description": "Texto obrigatório não vazio após trim; até 10.000 caracteres após trim. Uma review por usuário/jogo. Apenas o autor edita; preserva identidade e publicação.",
+        "description": "Review e nota salvas na mesma transação. POST exige rating numérico finito de 0 a 5 (zero válido); text omitido/null/espaços vira vazio, até 10.000 caracteres após trim. PATCH preserva campos omitidos, text null limpa e rating null é inválido; legado sem nota exige informá-la antes de salvar. Uma review por usuário/jogo; apenas o autor edita, preservando identidade/publicação/vínculos. rating nullable na resposta somente para histórico sem nota. Publicação notifica uma vez; edição não publica novamente.",
         "parameters": [
           {
             "name": "reviewId",
@@ -4500,17 +4501,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TextRequest"
+                "$ref": "#/components/schemas/ReviewPatchRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/TextRequest"
+                "$ref": "#/components/schemas/ReviewPatchRequest"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/TextRequest"
+                "$ref": "#/components/schemas/ReviewPatchRequest"
               }
             }
           },
@@ -6365,6 +6366,51 @@
         "additionalProperties": false,
         "description": "Credenciais fictícias. Email normalizado por trim/lowercase; senha preservada, obrigatória, sem política adicional."
       },
+      "ReviewCreateRequest": {
+        "required": [
+          "rating"
+        ],
+        "type": "object",
+        "properties": {
+          "rating": {
+            "maximum": 5,
+            "minimum": 0,
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": "number",
+            "description": "Nota finita obrigatória na criação; zero válido. PATCH: omitir preserva, null inválido; legado sem nota deve informá-la.",
+            "format": "double"
+          },
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Opcional e nullable, até 10.000 caracteres após trim. POST: omissão/null/espaços = vazio. PATCH: omissão preserva, null limpa."
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReviewPatchRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Opcional e nullable, até 10.000 caracteres após trim. POST: omissão/null/espaços = vazio. PATCH: omissão preserva, null limpa."
+          },
+          "rating": {
+            "maximum": 5,
+            "minimum": 0,
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": "number",
+            "description": "Nota finita obrigatória na criação; zero válido. PATCH: omitir preserva, null inválido; legado sem nota deve informá-la.",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "ReviewResponse": {
         "required": [
           "id",
@@ -6374,7 +6420,8 @@
           "createdAt",
           "updatedAt",
           "author",
-          "game"
+          "game",
+          "rating"
         ],
         "type": "object",
         "properties": {
@@ -6411,6 +6458,18 @@
           },
           "game": {
             "$ref": "#/components/schemas/GameSummaryResponse"
+          },
+          "rating": {
+            "maximum": 5,
+            "minimum": 0,
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "Nota da avaliação única do autor/jogo; null somente para legado ainda não regularizado pelo autor.",
+            "format": "double"
           }
         }
       },
@@ -6581,23 +6640,6 @@
           "unavailable",
           "notRequested"
         ]
-      },
-      "TextRequest": {
-        "examples": [
-          {
-            "text": "Texto fictício."
-          }
-        ],
-        "required": [
-          "text"
-        ],
-        "type": "object",
-        "properties": {
-          "text": {
-            "type": "string"
-          }
-        },
-        "additionalProperties": false
       }
     },
     "securitySchemes": {

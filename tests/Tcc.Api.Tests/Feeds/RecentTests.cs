@@ -28,7 +28,7 @@ public sealed class RecentTests
         Assert.Equal(new[] { ana.Id, b.Id }.Order().Append(1), before.Select(review => review.Id));
         await ApiTest.SignIn(client);
         clock.UtcNow = clock.UtcNow.AddMinutes(1);
-        using var edit = await client.PatchAsJsonAsync("/api/v1/reviews/1", new TextInput("Edited old review"));
+        using var edit = await client.PatchAsJsonAsync("/api/v1/reviews/1", new ReviewInput("Edited old review"));
         using var comment = await client.PostAsJsonAsync("/api/v1/reviews/1/comments", new TextInput("New comment"));
         edit.EnsureSuccessStatusCode(); comment.EnsureSuccessStatusCode();
         var authenticated = await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/community/reviews/recent");
@@ -56,8 +56,7 @@ public sealed class EmptyReviewsFactory : TestApiFactory
 }
 public sealed class EmptyReviews : IReviews
 {
-    public Task<Review?> AddAsync(Review review, CancellationToken ct = default, Func<Review, CancellationToken, Task>? publish = null) => Task.FromResult<Review?>(null);
+    public Task<Review> WriteAsync(ReviewWrite command, Func<Review, CancellationToken, Task> publish, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<Review?> FindAsync(int id, CancellationToken ct = default) => Task.FromResult<Review?>(null);
     public Task<IReadOnlyList<Review>> QueryAsync(ReviewQuery query, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Review>>([]);
-    public Task<Review?> EditAsync(int id, int actorId, string? text, DateTimeOffset now, CancellationToken ct = default) => Task.FromResult<Review?>(null);
 }

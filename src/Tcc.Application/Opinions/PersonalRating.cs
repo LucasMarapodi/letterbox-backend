@@ -8,7 +8,7 @@ public interface IRatings
     Task<Rating> SetAsync(int userId, int gameId, RatingValue value, DateTimeOffset now, CancellationToken ct = default);
     Task<IReadOnlyDictionary<int, double?>> AveragesAsync(IReadOnlyList<int> gameIds, CancellationToken ct = default);
 }
-public sealed class PersonalRating(IRatings ratings, QueryGames games, ICurrentSession current, SessionAccess access, TimeProvider clock)
+public sealed class PersonalRating(IRatings ratings, QueryGames games, ICurrentSession current, SessionAccess access, PublishReview publish)
 {
     public async Task<Rating?> Get(int gameId, CancellationToken ct = default)
     {
@@ -18,11 +18,8 @@ public sealed class PersonalRating(IRatings ratings, QueryGames games, ICurrentS
     }
     public async Task<Rating> Set(int gameId, double value, CancellationToken ct = default)
     {
-        var userId = (await access.Require(current, ct)).UserId;
-        var validated = RatingValue.Create(value);
-        await games.GetAsync(gameId, ct);
-        await access.Require(current, ct);
-        return await ratings.SetAsync(userId, gameId, validated, clock.GetUtcNow(), ct);
+        var saved = await publish.Execute(gameId, null, value, ct, createOnly: false);
+        return saved.Review.Evaluation ?? throw new InvalidOperationException("Review salva sem nota.");
     }
 }
 public sealed class LocalRatingAverage(IRatings ratings)
