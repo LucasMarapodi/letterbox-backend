@@ -3,9 +3,9 @@ using Tcc.Domain.Catalog;
 
 namespace Tcc.Infrastructure.Igdb;
 
-public static class IgdbGameMapper
+public sealed class IgdbGameMapper(ExternalEndpointOptions endpoints)
 {
-    public static CatalogGame Map(IgdbGameDto dto, DateTimeOffset fetchedAt)
+    public CatalogGame Map(IgdbGameDto dto, DateTimeOffset fetchedAt)
     {
         if (dto.Id is null or <= 0 || string.IsNullOrWhiteSpace(dto.Name)) throw new CatalogInvalidResponseException();
         DateOnly? release = null;
@@ -20,7 +20,7 @@ public static class IgdbGameMapper
             var imageId = dto.Cover.ImageId;
             if (imageId.Length > 128 || imageId.Any(c => !(char.IsAsciiLetterOrDigit(c) || c == '_')))
                 throw new CatalogInvalidResponseException();
-            cover = "https://images.igdb.com/igdb/image/upload/t_cover_big/" + imageId + ".jpg";
+            cover = new Uri(endpoints.ImagesBaseUrl, "t_cover_big/" + imageId + ".jpg").AbsoluteUri;
         }
         var genres = Names(dto.Genres);
         var platforms = Names(dto.Platforms);

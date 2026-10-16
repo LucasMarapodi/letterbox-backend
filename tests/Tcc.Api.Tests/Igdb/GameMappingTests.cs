@@ -21,7 +21,7 @@ public sealed class GameMappingTests
             """;
         var dto = JsonSerializer.Deserialize<IgdbGameDto>(json);
         Assert.NotNull(dto);
-        var result = IgdbGameMapper.Map(dto, CatalogFlow.Metadata.FetchedAt);
+        var result = new IgdbGameMapper(ExternalEndpointOptions.Default).Map(dto, CatalogFlow.Metadata.FetchedAt);
         Assert.Equal(0, result.Game.Id);
         Assert.Equal(42L, result.Game.IgdbId);
         Assert.Equal("Game", result.Game.Title);
@@ -37,7 +37,7 @@ public sealed class GameMappingTests
     [Fact]
     public void Valid_absent_optional_fields_remain_null_empty_and_outside_domain_metadata()
     {
-        var result = IgdbGameMapper.Map(new() { Id = 7, Name = "Minimal" }, CatalogFlow.Metadata.FetchedAt);
+        var result = new IgdbGameMapper(ExternalEndpointOptions.Default).Map(new() { Id = 7, Name = "Minimal" }, CatalogFlow.Metadata.FetchedAt);
         Assert.Equal(0, result.Game.Id);
         Assert.Equal(7L, result.Game.IgdbId);
         Assert.Null(result.Game.CoverUrl);
@@ -59,7 +59,7 @@ public sealed class GameMappingTests
     {
         var dto = JsonSerializer.Deserialize<IgdbGameDto>(json);
         Assert.NotNull(dto);
-        var failure = Assert.Throws<CatalogInvalidResponseException>(() => IgdbGameMapper.Map(dto, CatalogFlow.Metadata.FetchedAt));
+        var failure = Assert.Throws<CatalogInvalidResponseException>(() => new IgdbGameMapper(ExternalEndpointOptions.Default).Map(dto, CatalogFlow.Metadata.FetchedAt));
         Assert.DoesNotContain("secret", failure.ToString());
         Assert.Null(failure.InnerException);
     }

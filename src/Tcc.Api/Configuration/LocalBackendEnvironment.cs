@@ -3,7 +3,8 @@ namespace Tcc.Api.Configuration;
 public static class LocalBackendEnvironment
 {
     private static readonly HashSet<string> Names = new(StringComparer.Ordinal)
-    { "IGDB__ClientId", "IGDB__ClientSecret", "IGDB__TokenRefreshMarginSeconds", "ConnectionStrings__TccDatabase" };
+    { "IGDB__ClientId", "IGDB__ClientSecret", "IGDB__TokenRefreshMarginSeconds", "ConnectionStrings__TccDatabase",
+      "IGDB__BaseUrl", "IGDB__ImagesBaseUrl", "Twitch__TokenEndpoint" };
 
     public static Func<string, string?> CreateReader(string path, Func<string, string?> processVariable)
     {
