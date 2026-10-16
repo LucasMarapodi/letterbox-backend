@@ -122,6 +122,12 @@ public sealed class ReviewLikeTests
         var results = await Task.WhenAll(Enumerable.Range(0,12).Select(_ => client.PutAsync(path, null)));
         try { Assert.All(results, result => Assert.Equal(204, (int)result.StatusCode)); }
         finally { foreach (var result in results) result.Dispose(); }
+        await using var db = PostgresTestDatabase.Context();
+        var persisted = Assert.Single(await db.ReviewLikes.AsNoTracking().ToArrayAsync());
+        using (var repeat = await client.PutAsync(path, null)) Assert.Equal(204, (int)repeat.StatusCode);
+        Assert.Equal(persisted, Assert.Single(await db.ReviewLikes.AsNoTracking().ToArrayAsync()));
+        Assert.Equal(0, await db.ReviewFavorites.CountAsync());
+        using (var favorite = await client.PutAsync($"/api/v1/favorites/review/{id}", null)) favorite.EnsureSuccessStatusCode();
         await using var restarted = new PostgresApiFactory();
         using var other = restarted.CreateClient();
         other.DefaultRequestHeaders.Authorization = new("Bearer", owner.Token);
@@ -147,8 +153,7 @@ public sealed class ReviewLikeTests
         await AssertCount(other, id, 1);
         using (var remove = await client.DeleteAsync(path)) Assert.Equal(204, (int)remove.StatusCode);
         await AssertCount(other, id, 0);
-        await using var db = PostgresTestDatabase.Context();
-        Assert.Equal(0, await db.ReviewFavorites.CountAsync());
+        Assert.Equal(1, await db.ReviewFavorites.CountAsync());
         Assert.Equal(0, await db.Notifications.CountAsync());
     }
 

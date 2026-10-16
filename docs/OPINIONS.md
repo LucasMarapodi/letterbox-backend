@@ -1,5 +1,7 @@
 # Catálogo e opiniões — contratos atuais
 
+S-PR-08: PUT/DELETE `/api/v1/reviews/{reviewId}/like`, autenticados e sem corpo, retornam 204 e são idempotentes. GET `/api/v1/reviews/{reviewId}/like/me` retorna `{likedByMe:boolean}` privado/no-store. ReviewResponse inclui likeCount inteiro agregado em SQL em todas as projeções, sem estado personalizado. Curtir a própria review é permitido; não altera favoritos nem gera notificações. [Contrato e persistência](S-PR-08.md).
+
 Base `/api/v1`. Leituras públicas, exceto `/rating/me`, `/reviews/me` e `/comments/{id}/like/me`. Escritas usam Bearer e identidade da sessão, rejeitando campos desconhecidos nos payloads. IDs locais de usuários/jogos/reviews/avaliações inteiros, datas UTC, null explícito. Comentários também usam ID inteiro desde P-PR-04. Listagem de jogos paginada desde G-PR-04; listas de opiniões mantêm seus contratos.
 
 GameResponse: id, title, summary, coverUrl nullable, genres, platforms, releaseDate nullable (yyyy-MM-dd), averageRating nullable calculada exclusivamente das notas locais. Listagem usa envelope items/page/pageSize/hasNextPage, term com trim e sort release-desc/name-asc/name-desc (padrão release-desc sem termo, name-asc com termo). Query/ID inválido: 400; ausência confirmada: 404; falha externa: 502/503/504. Consulte [IGDB-CATALOG.md](IGDB-CATALOG.md).

@@ -14,7 +14,8 @@ public sealed class PersonalDashboard(PersonalFavorites favorites, FollowingFeed
         var found = await games.ResolveAsync(snapshot.Favorites.GameIds.Concat(snapshot.Favorites.Reviews.Select(review => review.GameId))
             .Concat(snapshot.Feed.Select(review => review.GameId)), cancellationToken);
         var authors = await views.Authors(snapshot.Favorites.Reviews.Concat(snapshot.Feed).Select(review => review.UserId), cancellationToken);
-        return new(favorites.Project(snapshot.Favorites, found, authors), snapshot.Feed.OrderByDescending(review => review.CreatedAt)
-            .ThenBy(review => review.Id).Select(review => views.Review(review, found[review.GameId], authors[review.UserId])).ToArray());
+        var counts = await views.LikeCounts(snapshot.Favorites.Reviews.Concat(snapshot.Feed), cancellationToken);
+        return new(favorites.Project(snapshot.Favorites, found, authors, counts), snapshot.Feed.OrderByDescending(review => review.CreatedAt)
+            .ThenBy(review => review.Id).Select(review => views.Review(review, found[review.GameId], authors[review.UserId], counts.GetValueOrDefault(review.Id))).ToArray());
     }
 }

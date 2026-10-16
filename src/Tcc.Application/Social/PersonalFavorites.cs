@@ -52,13 +52,13 @@ public sealed class PersonalFavorites(IFavorites favorites, QueryGames games, Ge
         return await SnapshotFor(userId, cancellationToken);
     }
     public Task<FavoriteSnapshot> SnapshotFor(int userId, CancellationToken ct = default) => favorites.SnapshotAsync(userId, ct);
-    public FavoriteCollections Project(FavoriteSnapshot snapshot, IReadOnlyDictionary<int, Game> found, IReadOnlyDictionary<int, PublicAuthor> authors) =>
-        new(snapshot.GameIds.Select(id => found[id]).ToArray(), snapshot.Reviews.Select(review => views.Review(review, found[review.GameId], authors[review.UserId])).ToArray());
+    public FavoriteCollections Project(FavoriteSnapshot snapshot, IReadOnlyDictionary<int, Game> found, IReadOnlyDictionary<int, PublicAuthor> authors, IReadOnlyDictionary<int, int> counts) =>
+        new(snapshot.GameIds.Select(id => found[id]).ToArray(), snapshot.Reviews.Select(review => views.Review(review, found[review.GameId], authors[review.UserId], counts.GetValueOrDefault(review.Id))).ToArray());
     public async Task<FavoriteCollections> List(CancellationToken cancellationToken = default)
     {
         var snapshot = await Snapshot(cancellationToken);
         var found = await games.ResolveAsync(snapshot.GameIds.Concat(snapshot.Reviews.Select(review => review.GameId)), cancellationToken);
         var authors = await views.Authors(snapshot.Reviews.Select(review => review.UserId), cancellationToken);
-        return Project(snapshot, found, authors);
+        return Project(snapshot, found, authors, await views.LikeCounts(snapshot.Reviews, cancellationToken));
     }
 }

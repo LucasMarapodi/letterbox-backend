@@ -28,6 +28,7 @@ public sealed class FinalPersistenceFlowTests
             (typeof(IUserAccounts), typeof(PostgresUserAccounts)), (typeof(IUserSessions), typeof(PostgresUserSessions)),
             (typeof(IReviews), typeof(PostgresReviews)), (typeof(IRatings), typeof(PostgresRatings)),
             (typeof(IComments), typeof(PostgresComments)), (typeof(ICommentLikes), typeof(PostgresCommentLikes)),
+            (typeof(IReviewLikes), typeof(PostgresReviewLikes)),
             (typeof(IFavorites), typeof(PostgresFavorites)), (typeof(IFollows), typeof(PostgresFollows)),
             (typeof(INotifications), typeof(PostgresNotifications))
         };
@@ -67,6 +68,7 @@ public sealed class FinalPersistenceFlowTests
             client.DefaultRequestHeaders.Authorization = new("Bearer", reader.Token);
             rootId = await Publish(client, $"/api/v1/reviews/{reviewId}/comments", new { text = "Persistent root" });
             replyId = await Publish(client, $"/api/v1/reviews/{reviewId}/comments", new { text = "Persistent reply", parentCommentId = rootId });
+            await Put(client, $"/api/v1/reviews/{reviewId}/like");
             foreach (var path in new[] { $"/api/v1/comments/{rootId}/like", $"/api/v1/comments/{replyId}/like", $"/api/v1/favorites/game/{gameId}", $"/api/v1/favorites/review/{reviewId}" }) await Put(client, path);
             revoked = (await LoginTests.Login(client, "final-author@example.com", "synthetic-password")).Token;
             client.DefaultRequestHeaders.Authorization = new("Bearer", revoked);
@@ -133,6 +135,7 @@ public sealed class FinalPersistenceFlowTests
         yield return ("reviews", reader.Token, $"/api/v1/games/{game}/reviews");
         yield return ("comments", reader.Token, $"/api/v1/reviews/{review}/comments");
         yield return ("like", reader.Token, $"/api/v1/comments/{comment}/like/me");
+        yield return ("review-like", reader.Token, $"/api/v1/reviews/{review}/like/me");
         yield return ("favorites", reader.Token, "/api/v1/favorites");
         yield return ("author-favorites", author.Token, "/api/v1/favorites");
         yield return ("following", reader.Token, $"/api/v1/users/{reader.Id}/following");

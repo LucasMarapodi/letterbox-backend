@@ -3994,6 +3994,324 @@
         ]
       }
     },
+    "/api/v1/reviews/{reviewId}/like": {
+      "put": {
+        "tags": [
+          "ReviewLikes"
+        ],
+        "summary": "PUT /api/v1/reviews/{reviewId}/like",
+        "description": "Comando idempotente, sem corpo. Identidade exclusivamente pelo Bearer; enviar corpo retorna 400.",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "not_found",
+                  "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão necessária ou inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "unauthorized",
+                  "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "ReviewLikes"
+        ],
+        "summary": "DELETE /api/v1/reviews/{reviewId}/like",
+        "description": "Comando idempotente, sem corpo. Identidade exclusivamente pelo Bearer; enviar corpo retorna 400.",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "not_found",
+                  "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão necessária ou inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "unauthorized",
+                  "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reviews/{reviewId}/like/me": {
+      "get": {
+        "tags": [
+          "ReviewLikes"
+        ],
+        "summary": "GET /api/v1/reviews/{reviewId}/like/me",
+        "description": "Estado privado do usuário do Bearer, sem cache compartilhado (no-store). Retorna somente likedByMe; não existe estado personalizado nas projeções públicas. Permite curtir a própria review. Alvo inexistente: 404; ID inválido: 400; sem sessão: 401. Likes não criam notificações e são independentes de favoritos.",
+        "parameters": [
+          {
+            "name": "reviewId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewLikeStatusResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewLikeStatusResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewLikeStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "not_found",
+                  "message": "Recurso não encontrado."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão necessária ou inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "unauthorized",
+                  "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/games/{gameId}/reviews": {
       "post": {
         "tags": [
@@ -6390,6 +6708,17 @@
         },
         "additionalProperties": false
       },
+      "ReviewLikeStatusResponse": {
+        "required": [
+          "likedByMe"
+        ],
+        "type": "object",
+        "properties": {
+          "likedByMe": {
+            "type": "boolean"
+          }
+        }
+      },
       "ReviewPatchRequest": {
         "type": "object",
         "properties": {
@@ -6421,7 +6750,8 @@
           "updatedAt",
           "author",
           "game",
-          "rating"
+          "rating",
+          "likeCount"
         ],
         "type": "object",
         "properties": {
@@ -6470,6 +6800,12 @@
             ],
             "description": "Nota da avaliação única do autor/jogo; null somente para legado ainda não regularizado pelo autor.",
             "format": "double"
+          },
+          "likeCount": {
+            "minimum": 0,
+            "type": "integer",
+            "description": "Quantidade inteira de usuários que curtiram a review, agregada em SQL. Favoritos não entram no contador; estado do usuário está somente em GET /reviews/{reviewId}/like/me.",
+            "format": "int32"
           }
         }
       },
@@ -6690,6 +7026,9 @@
     },
     {
       "name": "Ratings"
+    },
+    {
+      "name": "ReviewLikes"
     },
     {
       "name": "Reviews"

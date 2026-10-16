@@ -12,6 +12,7 @@ Comparação dos contratos com o Front da terceira fase, que usa HTTP. Na G-PR-0
 | Game / GameQuery | GET /games → GamePageResponse; GET /games/{id} → GameResponse | Consumir items/page/pageSize/hasNextPage; release-desc sem termo, name-asc com termo; tratar headers stale/fetchedAt e erros 502/503/504; ID local numérico, igdbId externo separado e média local |
 | Rating / getRating | PUT /games/{id}/rating/me e GET → MyRatingResponse | PUT devolve Rating; GET exige sessão e desembrulha rating, inclusive null |
 | Review / PublicReview / ReviewDetails | ReviewResponse | S-PR-21 acrescenta rating nullable para legado, permite text vazio e exige rating no POST; PATCH parcial com nota/texto. Integrar formulário único na S-PR-22; não encadear PUT de nota e POST de review |
+| Likes de review | PUT/DELETE /reviews/{id}/like e GET /like/me | Escritas sem body retornam 204; estado privado {likedByMe:boolean}, contador público likeCount integer. Integração visual S-PR-09; relação independente de favoritos, sem notificações |
 | findOwnReview | GET /games/{id}/reviews/me → MyReviewResponse | Desembrulhar review nullable; 404 significa jogo inexistente, não ausência de review própria |
 | GameOpinions | GET /games/{id}/opinions | Mesmos averageRating nullable e reviews; zero é média válida |
 | PublicComment | GET/POST /reviews/{id}/comments | ID numérico, parentCommentId nullable e likeCount; respostas de uma camada e endpoints de curtida disponíveis no backend |

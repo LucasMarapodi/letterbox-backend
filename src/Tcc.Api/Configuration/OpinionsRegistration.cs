@@ -28,6 +28,8 @@ public static class OpinionsRegistration
         services.AddScoped<IComments, Tcc.Infrastructure.Persistence.Repositories.PostgresComments>();
         services.AddScoped<ICommentLikes, Tcc.Infrastructure.Persistence.Repositories.PostgresCommentLikes>();
         services.AddScoped<PersonalCommentLike>();
+        services.AddScoped<IReviewLikes, Tcc.Infrastructure.Persistence.Repositories.PostgresReviewLikes>();
+        services.AddScoped<PersonalReviewLike>();
         services.AddScoped<QueryComments>();
         services.AddScoped<PublishComment>();
         return services;

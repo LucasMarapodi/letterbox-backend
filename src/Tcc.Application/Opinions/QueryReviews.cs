@@ -12,8 +12,9 @@ public sealed class QueryReviews(IReviews reviews, QueryGames games, IUserAccoun
         var snapshot = await reviews.QueryAsync(new(GameId: gameId), cancellationToken);
         var game = await games.GetAsync(gameId, cancellationToken);
         var authors = await views.Authors(snapshot.Select(review => review.UserId), cancellationToken);
+        var counts = await views.LikeCounts(snapshot, cancellationToken);
         return snapshot.OrderByDescending(review => review.CreatedAt).ThenBy(review => review.Id)
-            .Select(review => views.Review(review, game, authors[review.UserId])).ToArray();
+            .Select(review => views.Review(review, game, authors[review.UserId], counts.GetValueOrDefault(review.Id))).ToArray();
     }
     public async Task<IReadOnlyList<ReviewDetails>> ForUser(int userId, CancellationToken cancellationToken = default)
     {
@@ -25,7 +26,8 @@ public sealed class QueryReviews(IReviews reviews, QueryGames games, IUserAccoun
         var userId = (await access.Require(current, cancellationToken)).UserId;
         var review = (await reviews.QueryAsync(new(GameId: gameId, UserId: userId), cancellationToken)).SingleOrDefault();
         var game = await games.GetAsync(gameId, cancellationToken);
-        return review is null ? null : views.Review(review, game, await views.Author(review.UserId, cancellationToken));
+        return review is null ? null : views.Review(review, game, await views.Author(review.UserId, cancellationToken),
+            (await views.LikeCounts([review], cancellationToken)).GetValueOrDefault(review.Id));
     }
     public async Task<GameOpinions> Opinions(int gameId, CancellationToken cancellationToken = default)
     {

@@ -6,6 +6,31 @@ namespace Tcc.Api.Tests.Validation;
 public sealed class OpenApiTests
 {
     [Fact]
+    public async Task Review_like_contract_has_no_write_body_public_integer_count_and_private_boolean_status()
+    {
+        await using var host = new TestApiFactory();
+        using var client = host.CreateClient();
+        using var document = JsonDocument.Parse(await client.GetStringAsync("/openapi/v1.json"));
+        var root = document.RootElement;
+        var like = root.GetProperty("paths").GetProperty("/api/v1/reviews/{reviewId}/like");
+        foreach (var method in new[] { "put", "delete" })
+        {
+            Assert.False(like.GetProperty(method).TryGetProperty("requestBody", out _));
+            Assert.True(like.GetProperty(method).GetProperty("responses").TryGetProperty("204", out _));
+        }
+        var schemas = root.GetProperty("components").GetProperty("schemas");
+        var review = schemas.GetProperty("ReviewResponse").GetProperty("properties");
+        Assert.False(review.TryGetProperty("likedByMe", out _));
+        var count = review.GetProperty("likeCount");
+        Assert.Equal("integer", count.GetProperty("type").GetString());
+        Assert.Equal("int32", count.GetProperty("format").GetString());
+        Assert.Equal(0, count.GetProperty("minimum").GetInt32());
+        var status = schemas.GetProperty("ReviewLikeStatusResponse");
+        Assert.Equal("likedByMe", Assert.Single(status.GetProperty("properties").EnumerateObject()).Name);
+        Assert.Equal("boolean", status.GetProperty("properties").GetProperty("likedByMe").GetProperty("type").GetString());
+    }
+
+    [Fact]
     public async Task Unified_review_documents_required_creation_rating_partial_edit_and_legacy_nullable_output()
     {
         await using var host = new TestApiFactory();
