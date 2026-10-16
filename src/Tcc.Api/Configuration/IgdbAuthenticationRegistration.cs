@@ -23,7 +23,7 @@ public static class IgdbAuthenticationRegistration
             var environment = provider.GetRequiredService<IHostEnvironment>();
             Func<string, string?> read = name => Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
             if (environment.IsDevelopment())
-                read = LocalIgdbEnvironment.CreateReader(LocalIgdbEnvironment.PathFor(environment.ContentRootPath), read);
+                read = LocalBackendEnvironment.CreateReader(LocalBackendEnvironment.PathFor(environment.ContentRootPath), read);
             return IgdbCredentialOptions.Read(read);
         });
         services.AddHttpClient(OAuthClientName, client =>

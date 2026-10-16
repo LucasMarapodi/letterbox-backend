@@ -19,7 +19,7 @@ public static class OpenApiRegistration
             options.AddDocumentTransformer((document, _, _) =>
             {
                 document.Info = new() { Title = "TCC Games API", Version = "v1",
-                    Description = "Catálogo IGDB com cache e catálogo local em memória; token de sessão opaco simulado. Reiniciar descarta dados e sessões. Listagem de jogos usa envelope paginado." };
+                    Description = "Contas, perfis e sessões persistidos em PostgreSQL. IDs de usuários são inteiros. Token opaco com verificador SHA-256; reiniciar preserva identidade e sessões. Catálogo local, opiniões e relações ainda em memória nesta etapa. Listagem de jogos usa envelope paginado." };
                 document.Servers = [new OpenApiServer { Url = "/" }];
                 document.Components ??= new();
                 document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
@@ -41,6 +41,8 @@ public static class OpenApiRegistration
                 operation.Responses ??= new();
                 var catalogOperation = context.Description.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor action
                     && action.ControllerName is "Games" or "Reviews" or "Ratings" or "Favorites" or "Feed" or "Dashboard" or "Community";
+                var storageOperation = secured || context.Description.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor storageAction
+                    && storageAction.ControllerName is not "Games";
                 if (catalogOperation)
                     foreach (var response in operation.Responses.Where(item => int.TryParse(item.Key, out var code) && code is >= 200 and < 300).Select(item => item.Value).OfType<OpenApiResponse>())
                     {
@@ -55,17 +57,23 @@ public static class OpenApiRegistration
                 context.Document?.AddComponent("ApiError", errorSchema);
                 var errors = context.Description.SupportedResponseTypes.Where(response => response.StatusCode >= 400)
                     .Select(response => response.StatusCode).Concat(secured ? new[] { 401 } : [])
-                    .Concat(catalogOperation ? new[] { 400, 502, 503, 504 } : []).Append(500).Distinct();
+                    .Concat(catalogOperation ? new[] { 400, 502, 503, 504 } : [])
+                    .Concat(storageOperation ? new[] { 503 } : []).Append(500).Distinct();
                 foreach (var status in errors)
+                {
+                    var error = status == 503 && storageOperation && !catalogOperation
+                        ? new ApiError("storage_unavailable", "Persistência temporariamente indisponível.") : ApiError.FromStatus(status);
                     operation.Responses[status.ToString()] = new OpenApiResponse
                     {
-                        Description = ApiError.FromStatus(status).Message,
+                        Description = status == 503 && storageOperation && catalogOperation
+                            ? "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable)." : error.Message,
                         Content = new Dictionary<string, OpenApiMediaType> { ["application/json"] = new()
                         {
                             Schema = new OpenApiSchemaReference("ApiError", context.Document),
-                            Example = JsonSerializer.SerializeToNode(ApiError.FromStatus(status), JsonSerializerOptions.Web)
+                            Example = JsonSerializer.SerializeToNode(error, JsonSerializerOptions.Web)
                         } }
                     };
+                }
                 foreach (var parameter in operation.Parameters ?? [])
                 {
                     if (parameter.Schema is not OpenApiSchema schema) continue;
@@ -74,6 +82,7 @@ public static class OpenApiRegistration
                     if (parameter.Name == "page") { schema.Minimum = "1"; schema.Default = JsonValue.Create(1); }
                     if (parameter.Name == "pageSize") { schema.Minimum = "1"; schema.Maximum = "100"; schema.Default = JsonValue.Create(20); }
                     if (parameter.Name == "kind") schema.Enum = Nodes("game", "review");
+                    if (parameter.Name == "userId") schema.Minimum = "1";
                 }
                 if (context.Description.RelativePath?.EndsWith("comments", StringComparison.Ordinal) == true && context.Description.HttpMethod == "POST")
                     operation.Description = "Texto obrigatório não vazio após trim; até 2.000 caracteres após trim. Autoria/data vêm da sessão/relógio. Comentário próprio é permitido.";

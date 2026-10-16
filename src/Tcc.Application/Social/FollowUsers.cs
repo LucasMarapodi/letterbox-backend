@@ -3,44 +3,47 @@ using Tcc.Domain.Identity;
 using Tcc.Domain.Social;
 
 namespace Tcc.Application.Social;
-
 public interface IFollows
 {
     void Add(Follow follow);
-    void Remove(string followerId, string followedId);
-    bool Contains(string followerId, string followedId);
-    IReadOnlyList<string> Followers(string userId);
-    IReadOnlyList<string> Following(string userId);
+    void Remove(int followerId, int followedId);
+    bool Contains(int followerId, int followedId);
+    IReadOnlyList<int> Followers(int userId);
+    IReadOnlyList<int> Following(int userId);
 }
-
-public sealed class FollowUsers(IFollows follows, GetUserProfile users, ICurrentSession current, SessionAccess access)
+public sealed class FollowUsers(IFollows follows, GetUserProfile users, IUserAccounts accounts, ICurrentSession current, SessionAccess access)
 {
-    public void Set(string targetId)
+    public async Task Set(int targetId, CancellationToken cancellationToken = default)
     {
-        var userId = access.Require(current).UserId;
-        users.Execute(targetId);
+        var userId = (await access.Require(current, cancellationToken)).UserId;
+        await users.Execute(targetId, cancellationToken);
         follows.Add(Follow.Create(userId, targetId));
     }
-    public void Remove(string targetId)
+    public async Task Remove(int targetId, CancellationToken cancellationToken = default)
     {
-        var userId = access.Require(current).UserId;
-        users.Execute(targetId);
+        var userId = (await access.Require(current, cancellationToken)).UserId;
+        await users.Execute(targetId, cancellationToken);
         follows.Remove(userId, targetId);
     }
-    public bool IsFollowing(string targetId)
+    public async Task<bool> IsFollowing(int targetId, CancellationToken cancellationToken = default)
     {
-        var userId = access.Require(current).UserId;
-        users.Execute(targetId);
+        var userId = (await access.Require(current, cancellationToken)).UserId;
+        await users.Execute(targetId, cancellationToken);
         return follows.Contains(userId, targetId);
     }
-    public IReadOnlyList<UserAccount> Followers(string userId)
+    public async Task<IReadOnlyList<UserAccount>> Followers(int userId, CancellationToken cancellationToken = default)
     {
-        users.Execute(userId);
-        return follows.Followers(userId).Order(StringComparer.Ordinal).Select(users.Execute).ToArray();
+        await users.Execute(userId, cancellationToken);
+        return await Project(follows.Followers(userId), cancellationToken);
     }
-    public IReadOnlyList<UserAccount> Following(string userId)
+    public async Task<IReadOnlyList<UserAccount>> Following(int userId, CancellationToken cancellationToken = default)
     {
-        users.Execute(userId);
-        return follows.Following(userId).Order(StringComparer.Ordinal).Select(users.Execute).ToArray();
+        await users.Execute(userId, cancellationToken);
+        return await Project(follows.Following(userId), cancellationToken);
+    }
+    private async Task<IReadOnlyList<UserAccount>> Project(IReadOnlyList<int> ids, CancellationToken cancellationToken)
+    {
+        var found = await accounts.FindManyAsync(ids, cancellationToken);
+        return ids.Order().Where(found.ContainsKey).Select(id => found[id]).ToArray();
     }
 }

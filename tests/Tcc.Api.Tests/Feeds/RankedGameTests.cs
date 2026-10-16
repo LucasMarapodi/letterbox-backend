@@ -27,7 +27,7 @@ public sealed class RankedGameTests
         RankingFixture.Comment(host, "c-upper", "rank-c", now);
         RankingFixture.Comment(host, "past", "rank-a", now.AddHours(-hours).AddTicks(-1));
         RankingFixture.Comment(host, "future", "rank-a", now.AddTicks(1));
-        host.Services.GetRequiredService<IRatings>().Set("user-1", "igdb-3", RatingValue.Create(5));
+        host.Services.GetRequiredService<IRatings>().Set(1, "igdb-3", RatingValue.Create(5));
         var results = await client.GetFromJsonAsync<RankedGameDto[]>($"/api/v1/community/games/in-discussion?period={period}");
         Assert.NotNull(results);
         Assert.Equal(new[] { "igdb-1", "igdb-2" }, results.Select(item => item.Game.Id));

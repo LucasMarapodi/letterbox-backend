@@ -7,10 +7,16 @@ namespace Tcc.Application.Queries;
 public sealed class FollowingFeed(IFollows follows, IReviews reviews, ReviewProjection projection,
     ICurrentSession current, SessionAccess access, IPublicationScope publications)
 {
-    public IReadOnlyList<Review> Snapshot() => publications.Execute(() =>
+    public IReadOnlyList<Review> SnapshotFor(int userId)
     {
-        var followed = follows.Following(access.Require(current).UserId).ToHashSet(StringComparer.Ordinal);
-        return (IReadOnlyList<Review>)reviews.All().Where(review => followed.Contains(review.UserId)).ToArray();
-    });
-    public Task<IReadOnlyList<ReviewDetails>> Execute(CancellationToken cancellationToken = default) => projection.ExecuteAsync(Snapshot(), cancellationToken);
+        var followed = follows.Following(userId).ToHashSet();
+        return reviews.All().Where(review => followed.Contains(review.UserId)).ToArray();
+    }
+    public async Task<IReadOnlyList<Review>> Snapshot(CancellationToken cancellationToken = default)
+    {
+        var userId = (await access.Require(current, cancellationToken)).UserId;
+        return publications.Execute(() => SnapshotFor(userId));
+    }
+    public async Task<IReadOnlyList<ReviewDetails>> Execute(CancellationToken cancellationToken = default) =>
+        await projection.ExecuteAsync(await Snapshot(cancellationToken), cancellationToken);
 }

@@ -16,14 +16,14 @@ public sealed class SocialIsolationTests
         using var other = second.CreateClient();
         var b = await SocialTest.Register(client, "B");
         await ApiTest.SignIn(client, "B@example.com", "p");
-        await SocialTest.Follow(client, "user-1");
+        await SocialTest.Follow(client, 1);
         await ApiTest.SignIn(client);
         using var favorite = await client.PutAsync("/api/v1/favorites/game/igdb-1", null);
         favorite.EnsureSuccessStatusCode();
         await ApiTest.Publish(client);
-        Assert.Equal(b.Id, Assert.Single((await client.GetFromJsonAsync<PublicUser[]>("/api/v1/users/user-1/followers")) ?? []).Id);
+        Assert.Equal(b.Id, Assert.Single((await client.GetFromJsonAsync<PublicUser[]>("/api/v1/users/1/followers")) ?? []).Id);
         await ApiTest.SignIn(other);
-        Assert.Empty((await other.GetFromJsonAsync<PublicUser[]>("/api/v1/users/user-1/followers")) ?? []);
+        Assert.Empty((await other.GetFromJsonAsync<PublicUser[]>("/api/v1/users/1/followers")) ?? []);
         Assert.Empty((await other.GetFromJsonAsync<FavoriteLists>("/api/v1/favorites"))?.Games ?? []);
         Assert.Empty((await other.GetFromJsonAsync<NotificationDto[]>("/api/v1/notifications")) ?? []);
         Assert.Single((await client.GetFromJsonAsync<FavoriteLists>("/api/v1/favorites"))?.Games ?? []);

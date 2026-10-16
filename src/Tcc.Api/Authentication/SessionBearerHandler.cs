@@ -7,24 +7,24 @@ using Tcc.Application.Identity;
 
 namespace Tcc.Api.Authentication;
 
-public sealed class MockBearerHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
+public sealed class SessionBearerHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger, UrlEncoder encoder, SessionAccess sessions)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
-    public const string SchemeName = "MockBearer";
+    public const string SchemeName = "SessionBearer";
 
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         var headers = Request.Headers.Authorization;
-        if (headers.Count == 0) return Task.FromResult(AuthenticateResult.NoResult());
+        if (headers.Count == 0) return AuthenticateResult.NoResult();
         if (headers.Count != 1 || !AuthenticationHeaderValue.TryParse(headers[0], out var header) ||
             !header.Scheme.Equals("Bearer", StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(header.Parameter))
-            return Task.FromResult(AuthenticateResult.Fail("Sessão inválida."));
-        var session = sessions.Resolve(header.Parameter);
-        if (session is null) return Task.FromResult(AuthenticateResult.Fail("Sessão inválida."));
+            return AuthenticateResult.Fail("Sessão inválida.");
+        var session = await sessions.Resolve(header.Parameter, Context.RequestAborted);
+        if (session is null) return AuthenticateResult.Fail("Sessão inválida.");
         Context.Features.Set(new AuthenticatedSession(session));
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, session.UserId)], SchemeName);
-        return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName)));
+        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, session.UserId.ToString(System.Globalization.CultureInfo.InvariantCulture))], SchemeName);
+        return AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName));
     }
 
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)

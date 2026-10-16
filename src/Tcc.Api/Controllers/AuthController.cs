@@ -14,9 +14,9 @@ public sealed class AuthController(RegisterAccount register, LoginAccount login,
     [ProducesResponseType<PublicUserResponse>(201)]
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(409)]
-    public ActionResult<PublicUserResponse> Register(RegisterRequest request)
+    public async Task<ActionResult<PublicUserResponse>> Register(RegisterRequest request, CancellationToken cancellationToken)
     {
-        var user = PublicUserResponse.From(register.Execute(request.Name, request.Email, request.Password));
+        var user = PublicUserResponse.From(await register.Execute(request.Name, request.Email, request.Password, cancellationToken));
         return Created($"/api/v1/users/{user.Id}", user);
     }
 
@@ -24,9 +24,9 @@ public sealed class AuthController(RegisterAccount register, LoginAccount login,
     [ProducesResponseType<LoginResponse>(200)]
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(401)]
-    public ActionResult<LoginResponse> Login(LoginRequest request)
+    public async Task<ActionResult<LoginResponse>> Login(LoginRequest request, CancellationToken cancellationToken)
     {
-        var result = login.Execute(request.Email, request.Password);
+        var result = await login.Execute(request.Email, request.Password, cancellationToken);
         return Ok(new LoginResponse(result.Session.Token, result.Session.ExpiresAt, PublicUserResponse.From(result.Account)));
     }
 
@@ -34,15 +34,15 @@ public sealed class AuthController(RegisterAccount register, LoginAccount login,
     [HttpGet("me")]
     [ProducesResponseType<PublicUserResponse>(200)]
     [ProducesResponseType<ApiError>(401)]
-    public ActionResult<PublicUserResponse> Me() => Ok(PublicUserResponse.From(current.Execute()));
+    public async Task<ActionResult<PublicUserResponse>> Me(CancellationToken cancellationToken) => Ok(PublicUserResponse.From(await current.Execute(cancellationToken)));
 
     [Authorize]
     [HttpPost("logout")]
     [ProducesResponseType(204)]
     [ProducesResponseType<ApiError>(401)]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        logout.Execute();
+        await logout.Execute(cancellationToken);
         return NoContent();
     }
 }

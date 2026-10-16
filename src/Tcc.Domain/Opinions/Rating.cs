@@ -10,4 +10,4 @@ public sealed record RatingValue
         ? new(value) : throw new DomainValidationException("Nota inválida.");
 }
 
-public sealed record Rating(string Id, string UserId, string GameId, RatingValue Value);
+public sealed record Rating(string Id, int UserId, string GameId, RatingValue Value);

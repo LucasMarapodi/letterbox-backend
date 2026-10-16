@@ -18,7 +18,7 @@ public sealed class PublicationFailureTests
         using var client = host.CreateClient();
         var b = await SocialTest.Register(client, "B");
         await ApiTest.SignIn(client, "B@example.com", "p");
-        await SocialTest.Follow(client, "user-1");
+        await SocialTest.Follow(client, 1);
         await ApiTest.SignIn(client);
         using var failedReview = await client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("Review"));
         Assert.Equal(500, (int)failedReview.StatusCode);
@@ -28,7 +28,7 @@ public sealed class PublicationFailureTests
         using var failedComment = await client.PostAsJsonAsync("/api/v1/reviews/review-fixture/comments", new TextInput("Comment"));
         Assert.Equal(500, (int)failedComment.StatusCode);
         Assert.Equal(3, (await client.GetFromJsonAsync<CommentDto[]>("/api/v1/reviews/review-fixture/comments"))?.Length);
-        Assert.Empty(host.Services.GetRequiredService<INotifications>().ForUser("user-1"));
+        Assert.Empty(host.Services.GetRequiredService<INotifications>().ForUser(1));
     }
 }
 
@@ -46,5 +46,5 @@ public sealed class FailingNotifications(INotifications inner) : INotifications
         inner.AddRange(notifications);
         throw new InvalidOperationException("Falha simulada de gravação.");
     }
-    public IReadOnlyList<Notification> ForUser(string userId) => inner.ForUser(userId);
+    public IReadOnlyList<Notification> ForUser(int userId) => inner.ForUser(userId);
 }

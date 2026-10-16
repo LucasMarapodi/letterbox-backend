@@ -6,13 +6,13 @@ public enum FavoriteKind { Game, Review }
 public sealed record Favorite
 {
     public string Id { get; }
-    public string UserId { get; }
+    public int UserId { get; }
     public FavoriteKind Kind { get; }
     public string TargetId { get; }
-    public Favorite(string id, string userId, FavoriteKind kind, string targetId)
+    public Favorite(string id, int userId, FavoriteKind kind, string targetId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
-        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetId);
         if (!Enum.IsDefined(kind)) throw new DomainValidationException("Tipo de favorito inválido.");
         Id = id; UserId = userId; Kind = kind; TargetId = targetId;

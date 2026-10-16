@@ -21,9 +21,9 @@ public sealed class FollowTests
         Assert.True((await client.GetFromJsonAsync<FollowStatus>($"/api/v1/users/{b.Id}/follow/me"))?.Following);
         await ApiTest.SignIn(client, "B@example.com", "p");
         await SocialTest.Follow(client, c.Id);
-        Assert.False((await client.GetFromJsonAsync<FollowStatus>("/api/v1/users/user-1/follow/me"))?.Following);
+        Assert.False((await client.GetFromJsonAsync<FollowStatus>("/api/v1/users/1/follow/me"))?.Following);
         client.DefaultRequestHeaders.Authorization = null;
-        Assert.Equal("user-1", Assert.Single((await client.GetFromJsonAsync<PublicUser[]>($"/api/v1/users/{b.Id}/followers")) ?? []).Id);
+        Assert.Equal(1, Assert.Single((await client.GetFromJsonAsync<PublicUser[]>($"/api/v1/users/{b.Id}/followers")) ?? []).Id);
         Assert.Equal(c.Id, Assert.Single((await client.GetFromJsonAsync<PublicUser[]>($"/api/v1/users/{b.Id}/following")) ?? []).Id);
         await ApiTest.SignIn(client);
         for (var i = 0; i < 2; i++)
@@ -39,15 +39,15 @@ public sealed class FollowTests
     {
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
-        using var anonymous = await client.PutAsync("/api/v1/users/user-1/follow", null);
+        using var anonymous = await client.PutAsync("/api/v1/users/1/follow", null);
         Assert.Equal(401, (int)anonymous.StatusCode);
-        using var status = await client.GetAsync("/api/v1/users/user-1/follow/me");
+        using var status = await client.GetAsync("/api/v1/users/1/follow/me");
         Assert.Equal(401, (int)status.StatusCode);
         var b = await SocialTest.Register(client, "B");
         await ApiTest.SignIn(client);
-        using var self = await client.PutAsync("/api/v1/users/user-1/follow", null);
+        using var self = await client.PutAsync("/api/v1/users/1/follow", null);
         Assert.Equal(400, (int)self.StatusCode);
-        using var missing = await client.PutAsync("/api/v1/users/missing/follow", null);
+        using var missing = await client.PutAsync("/api/v1/users/999999/follow", null);
         Assert.Equal(404, (int)missing.StatusCode);
         using var forged = await ApiTest.Json(client, HttpMethod.Put, $"/api/v1/users/{b.Id}/follow", "{\"userId\":\"other\"}");
         Assert.Equal(400, (int)forged.StatusCode);

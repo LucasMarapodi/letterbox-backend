@@ -23,7 +23,7 @@ public sealed class IntegratedFlowTests
         var oldAuthorization = follower.DefaultRequestHeaders.Authorization;
         using var profile = await follower.PatchAsJsonAsync("/api/v1/users/me/profile", new ProfileUpdate("B edited"));
         profile.EnsureSuccessStatusCode();
-        await SocialTest.Follow(follower, "user-1");
+        await SocialTest.Follow(follower, 1);
         await ApiTest.SignIn(author);
         using var rating = await author.PutAsJsonAsync("/api/v1/games/igdb-1/rating/me", new RatingInput(3.75));
         rating.EnsureSuccessStatusCode();

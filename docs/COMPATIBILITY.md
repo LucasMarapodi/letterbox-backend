@@ -39,4 +39,4 @@ ApiError usa código HTTP estável (`validation_failed`, `unauthorized`, `forbid
 
 Não enviar identidades/autoria em payloads. Requests nomeados rejeitam campos desconhecidos; PUT/DELETE de relações/favoritos não aceitam corpo. PATCH perfil preserva campos omitidos, permite avatarUrl null e rejeita username/email/password/userId. Limites e semântica de trim estão em [AUTH.md](AUTH.md) e [OPINIONS.md](OPINIONS.md).
 
-Sem paginação ou limite silencioso. Fixtures e alterações existem somente em memória; reinício elimina contas criadas, relações, favoritos, opiniões e sessões. Notificações não são recriadas retroativamente. O adaptador IGDB não realiza HTTP externo.
+Desde P-PR-01, usuários, perfis e sessões persistem no PostgreSQL. IDs de usuários e referências userId/actorId são números; o Front precisa adaptar tipos e rotas antes da liberação. Outras entidades continuam transitórias e conservam seus IDs atuais até suas PRs. O catálogo usa HTTP IGDB quando cache/local não atendem. Consulte POSTGRES.md para o escopo exato.

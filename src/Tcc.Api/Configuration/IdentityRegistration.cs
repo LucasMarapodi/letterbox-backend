@@ -5,6 +5,7 @@ using Tcc.Api.ErrorHandling;
 using SessionOptions = Tcc.Api.Authentication.SessionOptions;
 using Tcc.Application.Identity;
 using Tcc.Infrastructure.Identity;
+using Tcc.Infrastructure.Persistence.Repositories;
 
 namespace Tcc.Api.Configuration;
 
@@ -14,8 +15,8 @@ public static class IdentityRegistration
     {
         services.AddExceptionHandler<ApiExceptionHandler>();
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
-        services.AddSingleton<IUserAccounts, InMemoryUserAccounts>();
-        services.AddSingleton<IMockSessions, InMemoryMockSessions>();
+        services.AddScoped<IUserAccounts, PostgresUserAccounts>();
+        services.AddScoped<IUserSessions, PostgresUserSessions>();
         services.AddScoped<RegisterAccount>();
         services.AddScoped<LoginAccount>();
         services.AddScoped<SessionAccess>();
@@ -25,8 +26,8 @@ public static class IdentityRegistration
         services.AddScoped<EditUserProfile>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentSession, HttpCurrentSession>();
-        services.AddAuthentication(MockBearerHandler.SchemeName)
-            .AddScheme<AuthenticationSchemeOptions, MockBearerHandler>(MockBearerHandler.SchemeName, _ => { });
+        services.AddAuthentication(SessionBearerHandler.SchemeName)
+            .AddScheme<AuthenticationSchemeOptions, SessionBearerHandler>(SessionBearerHandler.SchemeName, _ => { });
         services.AddAuthorization();
         services.AddOptions<SessionOptions>()
             .BindConfiguration("Authentication")

@@ -10,7 +10,7 @@ namespace Tcc.Api.Tests.Social;
 
 public sealed class NotificationGenerationTests
 {
-    private static IReadOnlyList<Notification> Events(WebApplicationFactory<Program> host, string userId) =>
+    private static IReadOnlyList<Notification> Events(WebApplicationFactory<Program> host, int userId) =>
         host.Services.GetService<INotifications>()?.ForUser(userId) ?? [];
 
     [Fact]
@@ -23,9 +23,9 @@ public sealed class NotificationGenerationTests
         var c = await SocialTest.Register(client, "C");
         var d = await SocialTest.Register(client, "D");
         await ApiTest.SignIn(client, "B@example.com", "p");
-        await SocialTest.Follow(client, "user-1");
+        await SocialTest.Follow(client, 1);
         await ApiTest.SignIn(client, "C@example.com", "p");
-        await SocialTest.Follow(client, "user-1");
+        await SocialTest.Follow(client, 1);
         await ApiTest.SignIn(client);
         var responses = await Task.WhenAll(client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("One")),
             client.PostAsJsonAsync("/api/v1/games/igdb-1/reviews", new TextInput("Two")));
@@ -42,17 +42,17 @@ public sealed class NotificationGenerationTests
             var notification = Assert.Single(Events(host, recipient.Id));
             Assert.Equal(NotificationType.NewReview, notification.Type);
             Assert.Equal(review.Id, notification.ReviewId);
-            Assert.Equal("user-1", notification.ActorId);
+            Assert.Equal(1, notification.ActorId);
             Assert.Equal(clock.GetUtcNow(), notification.CreatedAt);
             Assert.Null(notification.CommentId);
         }
         Assert.Empty(Events(host, d.Id));
-        Assert.Empty(Events(host, "user-1"));
+        Assert.Empty(Events(host, 1));
         using var edit = await client.PatchAsJsonAsync($"/api/v1/reviews/{review.Id}", new TextInput("Edited"));
         edit.EnsureSuccessStatusCode();
         Assert.Single(Events(host, b.Id));
         await ApiTest.SignIn(client, "B@example.com", "p");
-        using var unfollow = await client.DeleteAsync("/api/v1/users/user-1/follow");
+        using var unfollow = await client.DeleteAsync("/api/v1/users/1/follow");
         unfollow.EnsureSuccessStatusCode();
         await ApiTest.SignIn(client);
         await ApiTest.Publish(client, "igdb-2");
@@ -71,12 +71,12 @@ public sealed class NotificationGenerationTests
         var url = $"/api/v1/reviews/{review.Id}/comments";
         using var own = await client.PostAsJsonAsync(url, new TextInput("Own"));
         own.EnsureSuccessStatusCode();
-        Assert.Empty(Events(host, "user-1"));
+        Assert.Empty(Events(host, 1));
         await ApiTest.SignIn(client, "B@example.com", "p");
         using var response = await client.PostAsJsonAsync(url, new TextInput("Other"));
         response.EnsureSuccessStatusCode();
         var comment = await response.Content.ReadFromJsonAsync<CommentDto>();
-        var notification = Assert.Single(Events(host, "user-1"));
+        var notification = Assert.Single(Events(host, 1));
         Assert.Equal(NotificationType.ReviewComment, notification.Type);
         Assert.Equal(comment?.Id, notification.CommentId);
         Assert.Equal(comment?.CreatedAt, notification.CreatedAt);
@@ -86,8 +86,8 @@ public sealed class NotificationGenerationTests
         Assert.Equal(400, (int)invalid.StatusCode);
         using var missing = await client.PostAsJsonAsync("/api/v1/reviews/missing/comments", new TextInput("Text"));
         Assert.Equal(404, (int)missing.StatusCode);
-        Assert.Single(Events(host, "user-1"));
+        Assert.Single(Events(host, 1));
         host.Services.GetRequiredService<INotifications>().AddRange([notification, notification]);
-        Assert.Single(Events(host, "user-1"));
+        Assert.Single(Events(host, 1));
     }
 }

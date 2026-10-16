@@ -8,7 +8,7 @@ namespace Tcc.Application.Social;
 public interface INotifications
 {
     void AddRange(IReadOnlyList<Notification> notifications);
-    IReadOnlyList<Notification> ForUser(string userId);
+    IReadOnlyList<Notification> ForUser(int userId);
 }
 
 public interface IPublicationScope
@@ -20,7 +20,7 @@ public sealed class PublicationNotifications(IFollows follows, INotifications no
 {
     public IReadOnlyList<Notification> ForReview(Review review) => follows.Followers(review.UserId)
         .Select(userId => Notification.NewReview(userId, review.UserId, review.Id, review.CreatedAt)).ToArray();
-    public IReadOnlyList<Notification> ForComment(Comment comment, string reviewAuthor) =>
+    public IReadOnlyList<Notification> ForComment(Comment comment, int reviewAuthor) =>
         comment.UserId == reviewAuthor ? [] : [Notification.ReviewComment(reviewAuthor, comment.UserId,
             comment.ReviewId, comment.Id, comment.CreatedAt)];
     public void Send(IReadOnlyList<Notification> events) => notifications.AddRange(events);
@@ -29,7 +29,11 @@ public sealed class PublicationNotifications(IFollows follows, INotifications no
 public sealed record NotificationDetails(Notification Notification, PublicAuthor Actor);
 public sealed class QueryNotifications(INotifications notifications, ICurrentSession current, SessionAccess access, OpinionViews views)
 {
-    public IReadOnlyList<NotificationDetails> Execute() => notifications.ForUser(access.Require(current).UserId)
-        .OrderByDescending(item => item.CreatedAt).ThenBy(item => item.Id, StringComparer.Ordinal)
-        .Select(item => new NotificationDetails(item, views.Author(item.ActorId))).ToArray();
+    public async Task<IReadOnlyList<NotificationDetails>> Execute(CancellationToken cancellationToken = default)
+    {
+        var userId = (await access.Require(current, cancellationToken)).UserId;
+        var snapshot = notifications.ForUser(userId).OrderByDescending(item => item.CreatedAt).ThenBy(item => item.Id, StringComparer.Ordinal).ToArray();
+        var authors = await views.Authors(snapshot.Select(item => item.ActorId), cancellationToken);
+        return snapshot.Select(item => new NotificationDetails(item, authors[item.ActorId])).ToArray();
+    }
 }

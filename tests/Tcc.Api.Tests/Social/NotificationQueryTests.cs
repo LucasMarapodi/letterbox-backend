@@ -30,7 +30,7 @@ public sealed class NotificationQueryTests
         var b = await SocialTest.Register(client, "B");
         await SocialTest.Register(client, "C");
         await ApiTest.SignIn(client, "B@example.com", "p");
-        await SocialTest.Follow(client, "user-1");
+        await SocialTest.Follow(client, 1);
         var bReview = await ApiTest.Publish(client);
         await ApiTest.SignIn(client);
         var first = await ApiTest.Publish(client);

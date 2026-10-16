@@ -2,25 +2,34 @@ namespace Tcc.Domain.Identity;
 
 public sealed class UserAccount
 {
-    public string Id { get; }
-    public string Username { get; }
-    public Email Email { get; }
-    public string PasswordHash { get; }
-    public UserProfile Profile { get; }
+    private UserProfile? profile;
+    public int Id { get; private set; }
+    public string Username { get; private set; }
+    public Email Email { get; private set; }
+    public string PasswordHash { get; private set; }
+    public UserProfile Profile { get => profile ?? throw new InvalidOperationException("Perfil não materializado."); private set => profile = value; }
+    public DateTimeOffset CreatedAt { get; private set; }
+    public DateTimeOffset UpdatedAt { get; private set; }
 
-    public UserAccount(string id, string username, Email email, string passwordHash, UserProfile profile)
+    private UserAccount(int id, string username, Email email, string passwordHash, DateTimeOffset createdAt, DateTimeOffset updatedAt)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(id);
-        ArgumentException.ThrowIfNullOrWhiteSpace(username);
+        ArgumentOutOfRangeException.ThrowIfNegative(id);
+        if (id > 0) ArgumentException.ThrowIfNullOrWhiteSpace(username);
         ArgumentException.ThrowIfNullOrWhiteSpace(passwordHash);
         ArgumentNullException.ThrowIfNull(email);
-        ArgumentNullException.ThrowIfNull(profile);
         Id = id;
         Username = username;
         Email = email;
         PasswordHash = passwordHash;
-        Profile = profile;
+        CreatedAt = createdAt.ToUniversalTime();
+        UpdatedAt = updatedAt.ToUniversalTime();
     }
 
-    public UserAccount UpdateProfile(ProfileChange change) => new(Id, Username, Email, PasswordHash, Profile.Apply(change));
+    public UserAccount(int id, string username, Email email, string passwordHash, UserProfile profile,
+        DateTimeOffset? createdAt = null, DateTimeOffset? updatedAt = null)
+        : this(id, username, email, passwordHash, createdAt ?? DateTimeOffset.UtcNow, updatedAt ?? createdAt ?? DateTimeOffset.UtcNow)
+    { ArgumentNullException.ThrowIfNull(profile); Profile = profile; }
+
+    public UserAccount UpdateProfile(ProfileChange change, DateTimeOffset? now = null) =>
+        new(Id, Username, Email, PasswordHash, Profile.Apply(change, now), CreatedAt, now ?? DateTimeOffset.UtcNow);
 }

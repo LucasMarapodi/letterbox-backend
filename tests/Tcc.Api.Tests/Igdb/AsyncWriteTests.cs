@@ -26,8 +26,8 @@ public sealed class AsyncWriteTests
         source.Release.TrySetResult();
         using var response = await write;
         Assert.Equal(401, (int)response.StatusCode);
-        Assert.Null(host.Services.GetRequiredService<IRatings>().Find("user-1", "igdb-10"));
-        Assert.Empty(host.Services.GetRequiredService<IFavorites>().ForUser("user-1"));
+        Assert.Null(host.Services.GetRequiredService<IRatings>().Find(1, "igdb-10"));
+        Assert.Empty(host.Services.GetRequiredService<IFavorites>().ForUser(1));
     }
     [Fact]
     public async Task Delayed_catalog_does_not_hold_publication_lock_and_concurrent_reviews_are_unique()
@@ -88,7 +88,7 @@ public sealed class AsyncWriteTests
         source.Release.TrySetResult();
         await using var host = CatalogHttpTests.Host(source);
         var store = host.Services.GetRequiredService<IReviews>();
-        store.TryAdd(Review.Create("edit", "user-1", "igdb-10", "Original", CatalogFlow.Metadata.FetchedAt));
+        store.TryAdd(Review.Create("edit", 1, "igdb-10", "Original", CatalogFlow.Metadata.FetchedAt));
         using var client = host.CreateClient();
         await ApiTest.SignIn(client);
         using var failed = await client.PatchAsJsonAsync("/api/v1/reviews/edit", new TextInput("Changed"));

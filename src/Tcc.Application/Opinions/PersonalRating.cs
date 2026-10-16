@@ -6,8 +6,8 @@ namespace Tcc.Application.Opinions;
 
 public interface IRatings
 {
-    Rating? Find(string userId, string gameId);
-    Rating Set(string userId, string gameId, RatingValue value);
+    Rating? Find(int userId, string gameId);
+    Rating Set(int userId, string gameId, RatingValue value);
     IReadOnlyList<Rating> ForGame(string gameId);
 }
 
@@ -16,19 +16,20 @@ public sealed class PersonalRating(IRatings ratings, QueryGames games, ICurrentS
 {
     public async Task<Rating?> Get(string gameId, CancellationToken cancellationToken = default)
     {
-        var userId = access.Require(current).UserId;
+        var userId = (await access.Require(current, cancellationToken)).UserId;
         await games.GetAsync(gameId, cancellationToken);
         return ratings.Find(userId, gameId);
     }
     public async Task<Rating> Set(string gameId, double value, CancellationToken cancellationToken = default)
     {
-        var userId = access.Require(current).UserId;
+        var userId = (await access.Require(current, cancellationToken)).UserId;
         var ratingValue = RatingValue.Create(value);
         await games.GetAsync(gameId, cancellationToken);
+        await access.Require(current, cancellationToken);
         return publications.Execute(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-            access.Require(current);
+
             return ratings.Set(userId, gameId, ratingValue);
         });
     }

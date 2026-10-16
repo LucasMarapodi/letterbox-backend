@@ -21,7 +21,7 @@ public sealed class FavoriteTests
             var a = await responses[0].Content.ReadFromJsonAsync<FavoriteDto>();
             var b = await responses[1].Content.ReadFromJsonAsync<FavoriteDto>();
             Assert.Equal(a, b);
-            Assert.Equal("user-1", a?.UserId);
+            Assert.Equal(1, a?.UserId);
             Assert.Equal("game", a?.TargetType);
         }
         finally { foreach (var response in responses) response.Dispose(); }

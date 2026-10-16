@@ -1,6 +1,6 @@
 # Contratos de identidade e perfil — B-PR-02
 
-Base `/api/v1`. IDs em string opaca. Todos os erros usam ApiError da fundação.
+Base `/api/v1`. Desde P-PR-01, IDs de usuários são inteiros positivos gerados pelo PostgreSQL e enviados como JSON number. Todos os erros usam ApiError da fundação.
 
 | Operação | Request | Sucesso |
 | --- | --- | --- |
@@ -17,11 +17,11 @@ Nome/name/displayName: obrigatório, não vazio após trim, máximo 100 caracter
 
 PATCH: campo omitido preserva o valor; avatarUrl null limpa foto. displayName e bio explícitos como null são inválidos. Campos desconhecidos (incluindo userId, username, email e password) são rejeitados com 400. Todas as propriedades são validadas antes da gravação. Um objeto vazio é um comando válido sem alterações.
 
-Email duplicado retorna 409/conflict; payload inválido 400/validation_failed; credenciais incorretas e Bearer ausente, inválido ou expirado 401/unauthorized. Expiração quando agora >= expiresAt. `Authentication:SessionMinutes` configura duração, padrão 60, deve ser positivo. Cada login gera token opaco aleatório próprio. Logout e reinício invalidam sessões; logout não invalida outros tokens da mesma conta.
+Email duplicado retorna 409/conflict; payload inválido 400/validation_failed; credenciais incorretas e Bearer ausente, inválido ou expirado 401/unauthorized. Falha SQL retorna 503/storage_unavailable, sem fallback. Expiração quando agora >= expiresAt. `Authentication:SessionMinutes` configura duração, padrão 60, deve ser positivo. Cada login gera token opaco aleatório próprio. Logout revoga apenas a sessão atual. Reiniciar a API preserva contas, perfis e sessões no mesmo banco.
 
-Fixtures por host: Ana, user-1, ana@example.com / teste123 (credenciais fictícias de desenvolvimento compatíveis com o mock). Senha armazenada somente como verificador com salt. Cadastro e alterações não sobrevivem ao reinício.
+Não há conta pré-cadastrada no runtime. Registre uma conta pelo Swagger antes do login. Ana existe apenas nas fixtures do assembly de testes. Cadastro e perfil são gravados na mesma transação; PATCH serializa alterações parciais da mesma conta por bloqueio de linha.
 
-O verificador usa PBKDF2-SHA512, 210.000 iterações, salt aleatório de 16 bytes e resultado de 32 bytes; comparação com FixedTimeEquals. Tokens usam 32 bytes aleatórios representados em hexadecimal. Segredos permanecem no store interno; somente o login entrega o token correspondente.
+O verificador de senha usa PBKDF2-SHA512, 210.000 iterações, salt aleatório de 16 bytes e resultado de 32 bytes; comparação com FixedTimeEquals. Tokens usam 32 bytes aleatórios representados em hexadecimal. SessoesUsuarios guarda somente SHA-256 do token, com índice único, expiração e revogação. Somente o login entrega o token original. Configuração e migrations em [POSTGRES.md](POSTGRES.md).
 
 ## Exemplo local
 

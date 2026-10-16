@@ -19,7 +19,7 @@ public sealed class PublishCommentTests
         Assert.Equal(201, (int)own.StatusCode);
         var first = await own.Content.ReadFromJsonAsync<CommentDto>();
         Assert.NotNull(first);
-        Assert.Equal("user-1", first.UserId);
+        Assert.Equal(1, first.UserId);
         Assert.Equal(review.Id, first.ReviewId);
         Assert.Equal("Own comment", first.Text);
         Assert.Equal(clock.GetUtcNow(), first.CreatedAt);

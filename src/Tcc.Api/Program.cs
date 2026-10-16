@@ -4,15 +4,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddBrowserCors(builder.Configuration);
 builder.Services.AddIgdbAuthentication(builder.Configuration);
 builder.Services.AddCatalogMemory(builder.Configuration);
+builder.Services.AddPostgresPersistence(name =>
+{
+    Func<string, string?> read = Environment.GetEnvironmentVariable;
+    if (builder.Environment.IsDevelopment())
+        read = LocalBackendEnvironment.CreateReader(LocalBackendEnvironment.PathFor(builder.Environment.ContentRootPath), read);
+    return read(name);
+});
 builder.Services.AddIdentityFeature();
 builder.Services.AddOpinionsFeature();
 builder.Services.AddSocialFeature();
 builder.Services.AddQueriesFeature();
 builder.Services.AddApiDocumentation();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<Tcc.Infrastructure.Memory.HostMemory>();
-builder.Services.AddSingleton<Tcc.Application.Memory.IHostSeed>(services =>
-    services.GetRequiredService<Tcc.Infrastructure.Memory.HostMemory>());
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new Tcc.Api.Contracts.UtcDateTimeOffsetConverter()));
 builder.Services.AddControllers().AddJsonOptions(options =>

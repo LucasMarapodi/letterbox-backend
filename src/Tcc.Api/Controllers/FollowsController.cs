@@ -16,28 +16,28 @@ public sealed class FollowsController(FollowUsers users) : ControllerBase
     [ProducesResponseType<FollowStatusResponse>(200)]
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(404)]
-    public ActionResult<FollowStatusResponse> Follow(string userId)
+    public async Task<ActionResult<FollowStatusResponse>> Follow(int userId, CancellationToken cancellationToken)
     {
-        users.Set(userId);
+        await users.Set(userId, cancellationToken);
         return Ok(new FollowStatusResponse(true));
     }
     [Authorize, NoBody, HttpDelete("follow")]
     [ProducesResponseType(204)]
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(404)]
-    public IActionResult Unfollow(string userId) { users.Remove(userId); return NoContent(); }
+    public async Task<IActionResult> Unfollow(int userId, CancellationToken cancellationToken) { await users.Remove(userId, cancellationToken); return NoContent(); }
     [Authorize, HttpGet("follow/me")]
     [ProducesResponseType<FollowStatusResponse>(200)]
     [ProducesResponseType<ApiError>(404)]
-    public ActionResult<FollowStatusResponse> Status(string userId) => Ok(new FollowStatusResponse(users.IsFollowing(userId)));
+    public async Task<ActionResult<FollowStatusResponse>> Status(int userId, CancellationToken cancellationToken) => Ok(new FollowStatusResponse(await users.IsFollowing(userId, cancellationToken)));
     [HttpGet("followers")]
     [ProducesResponseType<IReadOnlyList<PublicUserResponse>>(200)]
     [ProducesResponseType<ApiError>(404)]
-    public ActionResult<IReadOnlyList<PublicUserResponse>> Followers(string userId) =>
-        Ok(users.Followers(userId).Select(PublicUserResponse.From).ToArray());
+    public async Task<ActionResult<IReadOnlyList<PublicUserResponse>>> Followers(int userId, CancellationToken cancellationToken) =>
+        Ok((await users.Followers(userId, cancellationToken)).Select(PublicUserResponse.From).ToArray());
     [HttpGet("following")]
     [ProducesResponseType<IReadOnlyList<PublicUserResponse>>(200)]
     [ProducesResponseType<ApiError>(404)]
-    public ActionResult<IReadOnlyList<PublicUserResponse>> Following(string userId) =>
-        Ok(users.Following(userId).Select(PublicUserResponse.From).ToArray());
+    public async Task<ActionResult<IReadOnlyList<PublicUserResponse>>> Following(int userId, CancellationToken cancellationToken) =>
+        Ok((await users.Following(userId, cancellationToken)).Select(PublicUserResponse.From).ToArray());
 }

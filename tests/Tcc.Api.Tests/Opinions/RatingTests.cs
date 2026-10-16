@@ -25,7 +25,7 @@ public sealed class RatingTests
             id ??= rating.Id;
             Assert.Equal(id, rating.Id);
             Assert.Equal(value, rating.Value);
-            Assert.Equal("user-1", rating.UserId);
+            Assert.Equal(1, rating.UserId);
             Assert.Equal(rating, (await client.GetFromJsonAsync<MyRating>("/api/v1/games/igdb-1/rating/me"))?.Rating);
         }
         using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
