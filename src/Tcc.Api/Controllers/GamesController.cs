@@ -7,8 +7,12 @@ namespace Tcc.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/games")]
-public sealed class GamesController(IAsyncGameCatalog games, DiscoverGame discovery, CatalogUsage usage, LocalRatingAverage averages) : ControllerBase
+public sealed class GamesController(IAsyncGameCatalog games, DiscoverGame discovery, CatalogUsage usage, LocalRatingAverage averages, CatalogFilters filters) : ControllerBase
 {
+    [HttpGet("filters")]
+    [ProducesResponseType<CatalogFilterOptions>(200)]
+    [ProducesResponseType<ApiError>(503)]
+    public async Task<ActionResult<CatalogFilterOptions>> Filters(CancellationToken cancellationToken) => Ok(await filters.GetAsync(cancellationToken));
     [HttpGet("igdb/{igdbId}")]
     [ProducesResponseType<GameResponse>(200)]
     [ProducesResponseType<ApiError>(400)]
@@ -30,9 +34,9 @@ public sealed class GamesController(IAsyncGameCatalog games, DiscoverGame discov
     [ProducesResponseType<ApiError>(503)]
     [ProducesResponseType<ApiError>(504)]
     public async Task<ActionResult<GamePageResponse>> List([FromQuery] string? term, [FromQuery] string? sort,
-        CancellationToken cancellationToken, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        CancellationToken cancellationToken, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] int? genreId = null, [FromQuery] int? platformId = null)
     {
-        var result = await games.SearchAsync(CatalogSearch.Create(term, sort, page, pageSize), cancellationToken);
+        var result = await games.SearchAsync(CatalogSearch.Create(term, sort, page, pageSize, genreId, platformId), cancellationToken);
         usage.Include(result.Metadata);
         var values = await averages.ForGames(result.Items.Select(item => item.Game.Id), cancellationToken);
         return Ok(new GamePageResponse(result.Items.Select(item => GameResponse.From(item.Game, values.GetValueOrDefault(item.Game.Id))).ToArray(),

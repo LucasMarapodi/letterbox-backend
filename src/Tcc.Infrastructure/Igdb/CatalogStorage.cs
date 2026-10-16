@@ -3,9 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Tcc.Infrastructure.Igdb;
 
-internal readonly record struct CatalogKey(string Term, string Sort, int Page, int PageSize)
+internal readonly record struct CatalogKey(string Term, string Sort, int Page, int PageSize, int? GenreId, int? PlatformId)
 {
-    public static CatalogKey From(CatalogSearch query) => new(query.Term.ToUpperInvariant(), query.Sort, query.Page, query.PageSize);
+    public static CatalogKey From(CatalogSearch query) => new(query.Term.ToUpperInvariant(), query.Sort, query.Page, query.PageSize, query.GenreId, query.PlatformId);
 }
 internal static class CatalogStorage
 {

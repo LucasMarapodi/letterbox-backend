@@ -37,7 +37,7 @@ public sealed class CatalogQuerySnapshots(CatalogMemoryOptions options)
         }
     }
 }
-public sealed class PostgresGameCatalog : ILocalGameCatalog
+public sealed partial class PostgresGameCatalog : ILocalGameCatalog, ICatalogFilterStore, ICatalogReleasePages
 {
     private readonly Lazy<TccDbContext> context;
     private readonly TimeProvider clock;
@@ -49,11 +49,13 @@ public sealed class PostgresGameCatalog : ILocalGameCatalog
     { this.context = context; this.clock = clock; this.options = options; this.snapshots = snapshots; }
     public async Task<CatalogPage?> FindPageAsync(CatalogSearch query, CancellationToken ct)
     {
+        if (query.GenreId.HasValue || query.PlatformId.HasValue) await ResolveAsync(query.GenreId, query.PlatformId, ct);
         var snapshot = snapshots.Find(query, clock.GetUtcNow());
         if (snapshot is null) { await Run(db => db.Games.AnyAsync(ct)); return null; }
-        var found = await FindGamesAsync(snapshot.Ids, ct);
+        var found = await Run(db => ReadSnapshot(db, () => Order(ApplyFilters(db, db.Games.AsNoTracking().Where(game => snapshot.Ids.Contains(game.Id)), query, clock.GetUtcNow()), query)
+            .Take(query.PageSize).ToArrayAsync(ct), ct));
         if (found.Count != snapshot.Ids.Length) return null;
-        return CatalogStorage.ReadPage(snapshot.Page, query, snapshot.Ids.Select(id => found[id]).ToArray(), clock.GetUtcNow(), options);
+        return CatalogStorage.ReadPage(snapshot.Page, query, found.Values.ToArray(), clock.GetUtcNow(), options);
     }
     public Task<IReadOnlyDictionary<int, CatalogGame>> FindGamesAsync(IReadOnlyList<int> ids, CancellationToken ct)
     {

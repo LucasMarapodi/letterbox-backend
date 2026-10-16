@@ -19,9 +19,19 @@ public class TestApiFactory : WebApplicationFactory<Program>
         services.AddSingleton<Tcc.Infrastructure.Memory.HostMemory>();
         services.AddSingleton<Tcc.Application.Memory.IHostSeed>(provider => provider.GetRequiredService<Tcc.Infrastructure.Memory.HostMemory>());
         services.AddSingleton<IExternalGameCatalog, FixtureCatalog>();
+        services.AddSingleton<ICatalogFilterStore, FixtureCatalogFilters>();
+        services.AddSingleton<IExternalCatalogFilters, FixtureCatalogFilters>();
         services.AddHostedService<CatalogFixtures>();
         services.AddHostedService<OpinionFixtures>();
     });
+}
+
+internal sealed class FixtureCatalogFilters : ICatalogFilterStore, IExternalCatalogFilters
+{
+    public Task<CatalogFilterOptions> ReadAsync(CancellationToken ct) => Task.FromResult(new CatalogFilterOptions([new(1, "Adventure")], [new(1, "PC")]));
+    Task<ExternalCatalogFilters> IExternalCatalogFilters.ReadAsync(CancellationToken ct) => Task.FromResult(new ExternalCatalogFilters([new(1, "Adventure")], [new(1, "PC")]));
+    public Task SynchronizeAsync(ExternalCatalogFilters filters, CancellationToken ct) => Task.CompletedTask;
+    public Task<CatalogFilterBindings> ResolveAsync(int? genreId, int? platformId, CancellationToken ct) => Task.FromResult(new CatalogFilterBindings(genreId, platformId));
 }
 
 internal sealed class CatalogFixtures(ILocalGameCatalog catalog, TimeProvider clock) : IHostedService

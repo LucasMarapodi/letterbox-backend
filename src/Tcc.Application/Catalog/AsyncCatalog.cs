@@ -7,20 +7,23 @@ namespace Tcc.Application.Catalog;
 
 public sealed record CatalogSearch
 {
-    private CatalogSearch(string term, string sort, int page, int pageSize)
-    { Term = term; Sort = sort; Page = page; PageSize = pageSize; }
+    private CatalogSearch(string term, string sort, int page, int pageSize, int? genreId, int? platformId)
+    { Term = term; Sort = sort; Page = page; PageSize = pageSize; GenreId = genreId; PlatformId = platformId; }
     public string Term { get; }
     public string Sort { get; }
     public int Page { get; }
     public int PageSize { get; }
-    public static CatalogSearch Create(string? term = null, string? sort = null, int page = 1, int pageSize = 20)
+    public int? GenreId { get; }
+    public int? PlatformId { get; }
+    public static CatalogSearch Create(string? term = null, string? sort = null, int page = 1, int pageSize = 20, int? genreId = null, int? platformId = null)
     {
         term = term?.Trim() ?? "";
         sort ??= term.Length == 0 ? "release-desc" : "name-asc";
         if (term.Length > 200 || term.Any(char.IsControl) || sort is not ("release-desc" or "name-asc" or "name-desc")
             || page < 1 || pageSize is < 1 or > 100 || (long)(page - 1) * pageSize > int.MaxValue)
             throw new DomainValidationException("Consulta de catálogo inválida.");
-        return new(term, sort, page, pageSize);
+        if (genreId is <= 0 || platformId is <= 0) throw new InvalidCatalogFilterException();
+        return new(term, sort, page, pageSize, genreId, platformId);
     }
     public int Offset => (Page - 1) * PageSize;
 }
@@ -49,7 +52,7 @@ public static class ExternalCatalogIds
 public sealed record CatalogMetadata(DateTimeOffset FetchedAt, bool IsStale = false);
 public sealed record CatalogGame(Game Game, CatalogMetadata Metadata);
 public sealed record CatalogPage(CatalogSearch Query, IReadOnlyList<CatalogGame> Items, bool HasNextPage,
-    CatalogMetadata Metadata, bool IsComplete = true);
+    CatalogMetadata Metadata, bool IsComplete = true, bool AlreadyPersisted = false);
 public interface ICatalogStore
 {
     Task<CatalogPage?> FindPageAsync(CatalogSearch query, CancellationToken cancellationToken);
@@ -144,7 +147,7 @@ public sealed class AsyncGameCatalog(ICatalogCache cache, ILocalGameCatalog loca
                 throw;
             }
             if (!Usable(page, query)) throw new CatalogIntegrationUnavailableException();
-            var persisted = await local.UpsertAsync(page.Items, ct);
+            var persisted = page.AlreadyPersisted ? page.Items : await local.UpsertAsync(page.Items, ct);
             if (page.Items.Count > 0) await cache.InvalidateAsync(ct);
             var metadata = new CatalogMetadata(persisted.Select(item => item.Metadata.FetchedAt).Append(page.Metadata.FetchedAt).Min(),
                 page.Metadata.IsStale || persisted.Any(item => item.Metadata.IsStale));

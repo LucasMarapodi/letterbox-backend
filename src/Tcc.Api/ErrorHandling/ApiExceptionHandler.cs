@@ -14,6 +14,7 @@ public sealed class ApiExceptionHandler : IExceptionHandler
         var status = exception switch
         {
             DomainValidationException => 400,
+            InvalidCatalogFilterException => 400,
             CatalogIntegrationUnavailableException => 503,
             CatalogInvalidResponseException => 502,
             CatalogTimeoutException => 504,
@@ -29,7 +30,7 @@ public sealed class ApiExceptionHandler : IExceptionHandler
         };
         if (status == 0) return false;
         context.Response.StatusCode = status;
-        var error = exception is DatabaseUnavailableException
+        var error = exception is InvalidCatalogFilterException ? new ApiError("invalid_filter", "Filtro de catálogo inválido ou inexistente.") : exception is DatabaseUnavailableException
             ? new ApiError("storage_unavailable", "Persistência temporariamente indisponível.") : ApiError.FromStatus(status);
         await context.Response.WriteAsJsonAsync(error, cancellationToken);
         return true;

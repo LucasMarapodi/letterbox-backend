@@ -13,6 +13,8 @@ CancellationToken atravessa as portas. Sem rede sob lock/transação SQL, Result
 
 ## Consulta e tradução
 
+Desde [S-PR-05](S-PR-05.md), genreId/platformId são opcionais e locais, resolvidos para IDs externos apenas no adaptador. As combinações fazem parte de cache/snapshot/single-flight. GET /games/filters expõe opções completas com IDs locais; gêneros e plataformas são sincronizados sem depender dos jogos da página. release-desc completa dias de fronteira, usa contagem para offsets avançados e pagina no SQL com desempate por ID local. Limites de janela e operação estão no relatório.
+
 CatalogSearch valida termo com trim (até 200, sem controles), sort permitido, page >= 1, pageSize de 1 a 100 e offset sem overflow. Sem termo: release-desc; com termo: name-asc. Também aceita name-desc. Página usa pageSize+1 para hasNextPage, sem total artificial.
 
 Campos: id, name, summary, cover.image_id, genres.id/genres.name, platforms.id/platforms.name e first_release_date. Sem termo e em release-desc, são excluídos lançamentos ausentes/futuros. Aspas e barras do termo são escapadas; fields/endpoint/expressão não são definidos pelo usuário. Expansões seguem a [documentação oficial IGDB](https://api-docs.igdb.com/#expander).

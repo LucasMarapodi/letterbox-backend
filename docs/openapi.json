@@ -2765,6 +2765,123 @@
         "security": []
       }
     },
+    "/api/v1/games/filters": {
+      "get": {
+        "tags": [
+          "Games"
+        ],
+        "summary": "GET /api/v1/games/filters",
+        "description": "Opções públicas completas de gêneros/plataformas, com IDs locais int32 estáveis. Sincroniza metadados IGDB com cursor/limites e persiste no SQL; cache completo por uma hora. Não deriva opções da página exibida. Falha sem cobertura completa retorna erro, sem lista parcial como sucesso.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "X-Catalog-Stale": {
+                "description": "Presente quando o resultado utiliza catálogo; true se qualquer entrada utilizada estiver desatualizada.",
+                "schema": {
+                  "type": "boolean"
+                }
+              },
+              "X-Catalog-Fetched-At": {
+                "description": "Data UTC mais antiga das entradas utilizadas; reidratar cache preserva a data original.",
+                "schema": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogFilterOptions"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogFilterOptions"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogFilterOptions"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integração ou persistência temporariamente indisponível (integration_unavailable ou storage_unavailable).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_unavailable",
+                  "message": "Integração externa indisponível."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Resposta inválida da integração externa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_invalid_response",
+                  "message": "Resposta inválida da integração externa."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Tempo limite da integração externa excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "integration_timeout",
+                  "message": "Tempo limite da integração externa excedido."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
     "/api/v1/games/igdb/{igdbId}": {
       "get": {
         "tags": [
@@ -2914,6 +3031,7 @@
           "Games"
         ],
         "summary": "GET /api/v1/games",
+        "description": "Combina termo AND gênero AND plataforma antes da paginação. genreId/platformId são IDs locais opcionais obtidos em /games/filters; inválidos/inexistentes retornam 400 invalid_filter. Sem termo: release-desc. Últimos lançados exclui futuros/sem data, ordena data decrescente e ID local crescente. Usa contagem de lançamentos mais novos para páginas avançadas e completa dias de fronteira: janela limitada a 2.000 candidatos, 20 chamadas e 30 segundos; se não comprovar o desempate, falha sem página parcial. Catálogo SQL parcial não equivale a cobertura global.",
         "parameters": [
           {
             "name": "term",
@@ -2954,6 +3072,32 @@
               "type": "integer",
               "format": "int32",
               "default": 20
+            }
+          },
+          {
+            "name": "genreId",
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "type": [
+                "null",
+                "integer"
+              ],
+              "description": "ID local int32 de GET /api/v1/games/filters; omissão significa Todos. Inválido/inexistente retorna 400 invalid_filter.",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "platformId",
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "type": [
+                "null",
+                "integer"
+              ],
+              "description": "ID local int32 de GET /api/v1/games/filters; omissão significa Todos. Inválido/inexistente retorna 400 invalid_filter.",
+              "format": "int32"
             }
           }
         ],
@@ -5140,6 +5284,43 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "CatalogFilterOption": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "CatalogFilterOptions": {
+        "required": [
+          "genres",
+          "platforms"
+        ],
+        "type": "object",
+        "properties": {
+          "genres": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CatalogFilterOption"
+            }
+          },
+          "platforms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CatalogFilterOption"
+            }
           }
         }
       },
