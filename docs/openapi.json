@@ -4765,6 +4765,133 @@
         "security": []
       }
     },
+    "/api/v1/search": {
+      "get": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "GET /api/v1/search",
+        "description": "Busca pública por q com trim, 3–200 caracteres. suggestions: 5 por grupo e page=1; results: 20. scope=all|people|games controla fontes consultadas. Cada grupo: status ready (items e paginação válidos), unavailable (items vazio, paginação null e erro público) ou notRequested (items vazio, paginação null e error null). 200 quando ao menos um grupo solicitado está ready, inclusive vazio; 503 quando todos falham. Jogos inclui metadata fetchedAt/isStale do catálogo quando ready. Pessoas: username exato, prefixo em username/displayName, demais; desempate username/ID. Não pesquisa e-mail/bio. pageSize não é aceito.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 3,
+              "type": "string"
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "suggestions",
+                "results"
+              ],
+              "type": "string",
+              "default": "suggestions"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "all",
+                "people",
+                "games"
+              ],
+              "type": "string",
+              "default": "all"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Todos os grupos solicitados indisponíveis. Mesmo envelope SearchResponse, com error.code=search_unavailable e erros públicos por grupo.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
     "/api/v1/users/{userId}": {
       "get": {
         "tags": [
@@ -5013,6 +5140,23 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "CatalogMetadata": {
+        "required": [
+          "fetchedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "fetchedAt": {
+            "type": "string",
+            "description": "Data UTC em ISO 8601.",
+            "format": "date-time"
+          },
+          "isStale": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -5317,6 +5461,41 @@
           }
         }
       },
+      "GameSearchItem": {
+        "required": [
+          "id",
+          "title",
+          "coverUrl",
+          "summary",
+          "releaseDate"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "coverUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "releaseDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        }
+      },
       "GameSummaryResponse": {
         "required": [
           "id",
@@ -5482,6 +5661,33 @@
               "integer"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "PersonSearchItem": {
+        "required": [
+          "id",
+          "username",
+          "displayName",
+          "avatarUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -5709,6 +5915,174 @@
           }
         }
       },
+      "SearchError": {
+        "required": [
+          "code",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "SearchGroupOfGameSearchItem": {
+        "required": [
+          "status",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/SearchStatus"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameSearchItem"
+            }
+          },
+          "page": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "hasNextPage": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "error": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SearchError"
+              }
+            ]
+          },
+          "metadata": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CatalogMetadata"
+              }
+            ]
+          }
+        }
+      },
+      "SearchGroupOfPersonSearchItem": {
+        "required": [
+          "status",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/SearchStatus"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonSearchItem"
+            }
+          },
+          "page": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "hasNextPage": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "error": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SearchError"
+              }
+            ]
+          },
+          "metadata": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CatalogMetadata"
+              }
+            ]
+          }
+        }
+      },
+      "SearchResponse": {
+        "required": [
+          "query",
+          "people",
+          "games",
+          "error"
+        ],
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "people": {
+            "$ref": "#/components/schemas/SearchGroupOfPersonSearchItem"
+          },
+          "games": {
+            "$ref": "#/components/schemas/SearchGroupOfGameSearchItem"
+          },
+          "error": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SearchError"
+              }
+            ]
+          }
+        }
+      },
+      "SearchStatus": {
+        "enum": [
+          "ready",
+          "unavailable",
+          "notRequested"
+        ]
+      },
       "TextRequest": {
         "examples": [
           {
@@ -5775,6 +6149,9 @@
     },
     {
       "name": "Reviews"
+    },
+    {
+      "name": "Search"
     },
     {
       "name": "Users"
