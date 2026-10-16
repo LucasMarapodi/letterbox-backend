@@ -2,6 +2,7 @@ using Tcc.Api.Authentication;
 using Tcc.Api;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddBrowserCors(builder.Configuration);
 builder.Services.AddIdentityFeature();
 builder.Services.AddOpinionsFeature();
 builder.Services.AddSocialFeature();
@@ -30,6 +31,8 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
 app.UseStatusCodePages(async statusContext =>
     await statusContext.HttpContext.Response.WriteAsJsonAsync(
         Tcc.Api.Contracts.ApiError.FromStatus(statusContext.HttpContext.Response.StatusCode)));
+app.UseRouting();
+app.UseCors(BrowserCorsRegistration.PolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -17,6 +17,10 @@ dotnet run --project src/Tcc.Api --urls http://localhost:5080
 
 `GET /openapi/v1.json` fornece OpenAPI 3.1 com 34 operações funcionais e health, schemas, erros e autenticação Bearer. [Documento exportado](docs/openapi.json) e [mapeamento para o frontend](docs/COMPATIBILITY.md).
 
+A primeira entrega da terceira fase prepara CORS para consumo direto pelo navegador: [origens, execução local e evidências](docs/CORS.md). Em Development, as origens padrão são localhost:5173 e 127.0.0.1:5173; em Production, configure `Cors:AllowedOrigins` explicitamente.
+
+[Contratos para integração HTTP](docs/HTTP-INTEGRATION.md) e [descrição da I-PR-01](docs/I-PR-01.md).
+
 Para validar a entrega completa:
 
 ```powershell
