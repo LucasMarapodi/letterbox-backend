@@ -92,12 +92,19 @@ public static class OpenApiRegistration
                     if (parameter.Name == "sort") { schema.Enum = Nodes("release-desc", "name-asc", "name-desc"); schema.Description = "Omitido: release-desc sem termo, name-asc com termo."; }
                     if (parameter.Name == "page") { schema.Minimum = "1"; schema.Default = JsonValue.Create(1); }
                     if (parameter.Name == "pageSize") { schema.Minimum = "1"; schema.Maximum = "100"; schema.Default = JsonValue.Create(20); }
+                    if (context.Description.RelativePath == "api/v1/community/comments/most-liked" && parameter.Name == "pageSize")
+                    {
+                        schema.Minimum = "10"; schema.Maximum = "50";
+                        schema.Enum = new[] { 10, 20, 50 }.Select(value => (JsonNode)JsonValue.Create(value)).ToList();
+                    }
                     if (parameter.Name == "kind") schema.Enum = Nodes("game", "review");
                     if (parameter.Name == "userId") schema.Minimum = "1";
                     if (parameter.Name is "gameId" or "igdbId" or "reviewId" or "commentId" or "targetId") schema.Minimum = "1";
                     if (parameter.Name is "genreId" or "platformId") { schema.Minimum = "1"; schema.Description = "ID local int32 de GET /api/v1/games/filters; omissão significa Todos. Inválido/inexistente retorna 400 invalid_filter."; }
                 }
-                if (context.Description.RelativePath == "api/v1/reviews/{reviewId}/like/me")
+                if (context.Description.RelativePath == "api/v1/community/comments/most-liked")
+                    operation.Description = "Ranking público/no-store, revalidado no PostgreSQL a cada leitura. period=24h|7d|30d (padrão 7d), page>=1 com offset int32, pageSize=10|20|50 (padrão 20). Conta likes ativos criados no intervalo UTC inclusivo [agora-período, agora], inclusive em comentários antigos e respostas. Ordena periodLikeCount DESC, lastLikeAt DESC, commentId ASC antes da paginação SQL. likeCount é o total ativo; periodLikeCount e lastLikeAt consideram só o período. Unlike retira contribuição; relike usa nova data. Retorna items/page/pageSize/hasNextPage sem estado pessoal ou dados privados de contas. Query inválida: 400; SQL indisponível: 503.";
+                else if (context.Description.RelativePath == "api/v1/reviews/{reviewId}/like/me")
                     operation.Description = "Estado privado do usuário do Bearer, sem cache compartilhado (no-store). Retorna somente likedByMe; não existe estado personalizado nas projeções públicas. Permite curtir a própria review. Alvo inexistente: 404; ID inválido: 400; sem sessão: 401. Likes não criam notificações e são independentes de favoritos.";
                 else if (context.Description.RelativePath == "api/v1/users/me/profile-completion")
                 {
@@ -183,6 +190,11 @@ public static class OpenApiRegistration
                 {
                     likeCount.Minimum = "0";
                     likeCount.Description = "Quantidade inteira de usuários que curtiram a review, agregada em SQL. Favoritos não entram no contador; estado do usuário está somente em GET /reviews/{reviewId}/like/me.";
+                }
+                if (type == typeof(RankedCommentResponse))
+                {
+                    if (schema.Properties["likeCount"] is OpenApiSchema total) total.Minimum = "0";
+                    if (schema.Properties["periodLikeCount"] is OpenApiSchema periodCount) periodCount.Minimum = "1";
                 }
                 if (type == typeof(CommentRequest))
                 {
