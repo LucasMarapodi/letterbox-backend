@@ -50,10 +50,11 @@ public sealed class PublishReview(IReviews reviews, QueryGames games, ICurrentSe
         var draft = Review.Create(0, userId, gameId, text, clock.GetUtcNow());
         var game = await games.GetAsync(gameId, ct);
         var author = await views.Author(userId, ct);
+        var recipients = await notifications.ReviewRecipients(userId, ct);
         await access.Require(current, ct);
         ct.ThrowIfCancellationRequested();
         var review = await reviews.AddAsync(Review.Create(0, userId, gameId, draft.Text, clock.GetUtcNow()), ct,
-            saved => publications.Prepare(() => notifications.Send(notifications.ForReview(saved))))
+            saved => publications.Prepare(() => notifications.Send(notifications.ForReview(saved, recipients))))
             ?? throw new ResourceFailure(ResourceFailureKind.Conflict);
         return new(review, author, new(game.Id, game.Title, game.CoverUrl));
     }

@@ -1,6 +1,6 @@
 # Matriz de modelagem e persistência — quinta fase
 
-P-PR-01–04 validadas localmente: identidade, catálogo, opiniões, comentários e curtidas (doze tabelas). Demais tabelas permanecem planejadas. Cada tabela só fica concluída após suas duas US e testes em PostgreSQL real.
+P-PR-01–05 validadas localmente: identidade, catálogo, opiniões, discussão e relações pessoais (quinze tabelas). Demais tabelas permanecem planejadas. Cada tabela só fica concluída após suas duas US e testes em PostgreSQL real.
 
 | Tabela | Classe .NET relacionada | US A: modelo/DbContext | US B: SQL/retirada de memória | Estado modelo | Estado SQL |
 | --- | --- | --- | --- | --- | --- |
@@ -16,9 +16,9 @@ P-PR-01–04 validadas localmente: identidade, catálogo, opiniões, comentário
 | Avaliacoes | Rating e RatingValue existentes | P-US-20 | P-US-21 | VALIDADO | VALIDADO |
 | Comentarios | Comment adaptada com ParentCommentId | P-US-22 | P-US-23 | VALIDADO | VALIDADO |
 | CurtidasComentarios | CommentLike nova entidade | P-US-24 | P-US-25 | VALIDADO | VALIDADO |
-| JogosFavoritos | GameFavorite nova; adaptador do Favorite atual | P-US-26 | P-US-27 | PLANEJADO | PLANEJADO |
-| ReviewsFavoritas | ReviewFavorite nova; adaptador do Favorite atual | P-US-28 | P-US-29 | PLANEJADO | PLANEJADO |
-| SeguimentosUsuarios | Follow existente adaptada | P-US-30 | P-US-31 | PLANEJADO | PLANEJADO |
+| JogosFavoritos | GameFavorite nova; adaptador do Favorite atual | P-US-26 | P-US-27 | VALIDADO | VALIDADO |
+| ReviewsFavoritas | ReviewFavorite nova; adaptador do Favorite atual | P-US-28 | P-US-29 | VALIDADO | VALIDADO |
+| SeguimentosUsuarios | Follow existente adaptada | P-US-30 | P-US-31 | VALIDADO | VALIDADO |
 | Notificacoes | Notification existente | P-US-32 | P-US-33 | PLANEJADO | PLANEJADO |
 
 ## Evidências a adicionar na conclusão
@@ -36,11 +36,11 @@ Não marcar SQL validado apenas porque um DbSet existe, uma migration foi gerada
 - Reviews/notas e médias SQL, unicidade e autoria: VALIDADO.
 - Comentários principais e respostas de uma camada na mesma review: VALIDADO.
 - Curtidas únicas/idempotentes e contagem SQL: VALIDADO.
-- Favoritos/seguimentos SQL e isolamento: PENDENTE.
+- Favoritos/seguimentos SQL e isolamento: VALIDADO.
 - Notificações na mesma transação da publicação: PENDENTE.
-- Migrations/upgrade em banco isolado e preservação de baseline: VALIDADO até CommentsAndLikes; cinco contas e 42 jogos mantidos no upgrade local.
+- Migrations/upgrade em banco isolado e preservação de baseline: VALIDADO até FavoritesAndFollows; cinco contas e 42 jogos mantidos no upgrade local.
 - Todos os stores de negócio em memória ausentes do runtime: PENDENTE.
-- Falha PostgreSQL não cai em fixture/sucesso local: VALIDADO para identidade, catálogo, opiniões e discussão.
+- Falha PostgreSQL não cai em fixture/sucesso local: VALIDADO para identidade, catálogo, opiniões, discussão e relações pessoais.
 - Testes/análises/build e PRs reais: PENDENTE.
 
 ## Limites
@@ -66,3 +66,7 @@ Review/Rating, OpinionConfigurations, migration Opinions, PostgresReviews/Postgr
 ## Evidências P-PR-04
 
 Comment/CommentLike, CommentConfigurations, migration CommentsAndLikes, PostgresComments/PostgresCommentLikes, portas assíncronas. InMemoryComments somente no assembly de testes. FK composta garante mesma review; trigger impede segundo nível e alteração de vínculo publicado; likes idempotentes por PK composta. CommentPersistenceTests verifica SQL real, restart, concorrência/isolamento, constraints, rollback de preparação, rankings e migration Down/Up isolada. 405 testes validados; build/analisadores sem avisos e Swagger/OpenAPI local atualizado. Upgrade preservou 5 contas e 42 jogos. Notificações duráveis permanecem pendentes. Descrição P-PR-04.md.
+
+## Evidências P-PR-05
+
+GameFavorite/ReviewFavorite/Follow, SocialConfigurations, migration FavoritesAndFollows, PostgresFavorites/PostgresFollows. Tabelas jogos_favoritos/reviews_favoritas com FKs específicas e seguimentos_usuarios com PK direcional e CHECK sem auto-seguimento. Stores InMemoryFavorites/InMemoryFollows somente em testes. SocialPersistenceTests cobre SQL real, restart, concorrência/isolamento, ID/CreatedAt preservados, constraints, feed/dashboard, remoção idempotente e destinatários SQL de notificação. 409 testes aprovados; build/analisadores sem avisos, upgrade preservado e Swagger/OpenAPI local atualizado. Notificações duráveis continuam pendentes. Descrição P-PR-05.md.

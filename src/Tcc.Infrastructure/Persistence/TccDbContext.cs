@@ -11,6 +11,9 @@ public sealed class TccDbContext(DbContextOptions<TccDbContext> options) : DbCon
     public DbSet<Tcc.Domain.Opinions.Rating> Ratings => Set<Tcc.Domain.Opinions.Rating>();
     public DbSet<Tcc.Domain.Opinions.Comment> Comments => Set<Tcc.Domain.Opinions.Comment>();
     public DbSet<Tcc.Domain.Opinions.CommentLike> CommentLikes => Set<Tcc.Domain.Opinions.CommentLike>();
+    public DbSet<Tcc.Domain.Social.GameFavorite> GameFavorites => Set<Tcc.Domain.Social.GameFavorite>();
+    public DbSet<Tcc.Domain.Social.ReviewFavorite> ReviewFavorites => Set<Tcc.Domain.Social.ReviewFavorite>();
+    public DbSet<Tcc.Domain.Social.Follow> Follows => Set<Tcc.Domain.Social.Follow>();
     public DbSet<Tcc.Domain.Catalog.Game> Games => Set<Tcc.Domain.Catalog.Game>();
     public DbSet<Tcc.Domain.Catalog.Genre> Genres => Set<Tcc.Domain.Catalog.Genre>();
     public DbSet<Tcc.Domain.Catalog.Platform> Platforms => Set<Tcc.Domain.Catalog.Platform>();

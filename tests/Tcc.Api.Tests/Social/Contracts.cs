@@ -5,7 +5,7 @@ using Tcc.Api.Tests.Opinions;
 namespace Tcc.Api.Tests.Social;
 
 public sealed record FollowStatus(bool Following);
-public sealed record FavoriteDto(string Id, int UserId, string TargetType, string TargetId);
+public sealed record FavoriteDto(int Id, int UserId, string TargetType, int TargetId);
 public sealed record FavoriteStatus(FavoriteDto? Favorite);
 public sealed record FavoriteLists(GameDto[] Games, ReviewDto[] Reviews);
 public sealed record NotificationDto(string Id, int UserId, int ActorId, int ReviewId,

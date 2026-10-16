@@ -5,15 +5,15 @@ namespace Tcc.Domain.Social;
 public enum FavoriteKind { Game, Review }
 public sealed record Favorite
 {
-    public string Id { get; }
+    public int Id { get; }
     public int UserId { get; }
     public FavoriteKind Kind { get; }
-    public string TargetId { get; }
-    public Favorite(string id, int userId, FavoriteKind kind, string targetId)
+    public int TargetId { get; }
+    public Favorite(int id, int userId, FavoriteKind kind, int targetId)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(id);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(userId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(targetId);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(targetId);
         if (!Enum.IsDefined(kind)) throw new DomainValidationException("Tipo de favorito inválido.");
         Id = id; UserId = userId; Kind = kind; TargetId = targetId;
     }

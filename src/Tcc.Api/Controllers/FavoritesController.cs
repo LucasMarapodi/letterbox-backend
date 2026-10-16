@@ -21,7 +21,7 @@ public sealed class FavoritesController(PersonalFavorites favorites, LocalRating
     [ProducesResponseType<FavoriteStatusResponse>(200)]
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(404)]
-    public async Task<ActionResult<FavoriteStatusResponse>> Get(string kind, string targetId, CancellationToken cancellationToken)
+    public async Task<ActionResult<FavoriteStatusResponse>> Get(string kind, int targetId, CancellationToken cancellationToken)
     {
         var favorite = await favorites.Get(kind, targetId, cancellationToken);
         return Ok(new FavoriteStatusResponse(favorite is null ? null : FavoriteResponse.From(favorite)));
@@ -30,10 +30,10 @@ public sealed class FavoritesController(PersonalFavorites favorites, LocalRating
     [ProducesResponseType<FavoriteResponse>(200)]
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(404)]
-    public async Task<ActionResult<FavoriteResponse>> Put(string kind, string targetId, CancellationToken cancellationToken) => Ok(FavoriteResponse.From(await favorites.Set(kind, targetId, cancellationToken)));
+    public async Task<ActionResult<FavoriteResponse>> Put(string kind, int targetId, CancellationToken cancellationToken) => Ok(FavoriteResponse.From(await favorites.Set(kind, targetId, cancellationToken)));
     [NoBody, HttpDelete("{kind}/{targetId}")]
     [ProducesResponseType(204)]
     [ProducesResponseType<ApiError>(400)]
     [ProducesResponseType<ApiError>(404)]
-    public async Task<IActionResult> Delete(string kind, string targetId, CancellationToken cancellationToken) { await favorites.Remove(kind, targetId, cancellationToken); return NoContent(); }
+    public async Task<IActionResult> Delete(string kind, int targetId, CancellationToken cancellationToken) { await favorites.Remove(kind, targetId, cancellationToken); return NoContent(); }
 }

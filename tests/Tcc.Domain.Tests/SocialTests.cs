@@ -7,7 +7,7 @@ public sealed class SocialTests
 {
     [Fact]
     public void Following_self_is_rejected_in_domain() =>
-        Assert.Throws<DomainValidationException>(() => Follow.Create(1, 1));
+        Assert.Throws<DomainValidationException>(() => Follow.Create(1, 1, DateTimeOffset.UtcNow));
 
     [Theory]
     [InlineData("other")]

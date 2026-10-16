@@ -4,14 +4,10 @@ using Tcc.Application.Social;
 using Tcc.Domain.Opinions;
 
 namespace Tcc.Application.Queries;
-public sealed class FollowingFeed(IFollows follows, IReviews reviews, ReviewProjection projection,
+public sealed class FollowingFeed(IFollows follows, ReviewProjection projection,
     ICurrentSession current, SessionAccess access)
 {
-    public Task<IReadOnlyList<Review>> SnapshotFor(int userId, CancellationToken ct = default)
-    {
-        var followed = follows.Following(userId);
-        return reviews.QueryAsync(new(Authors: followed), ct);
-    }
+    public Task<IReadOnlyList<Review>> SnapshotFor(int userId, CancellationToken ct = default) => follows.FeedAsync(userId, ct);
     public async Task<IReadOnlyList<Review>> Snapshot(CancellationToken cancellationToken = default)
     {
         var userId = (await access.Require(current, cancellationToken)).UserId;
