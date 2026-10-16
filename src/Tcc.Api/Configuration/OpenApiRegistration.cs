@@ -97,7 +97,9 @@ public static class OpenApiRegistration
                     if (parameter.Name is "gameId" or "igdbId" or "reviewId" or "commentId" or "targetId") schema.Minimum = "1";
                     if (parameter.Name is "genreId" or "platformId") { schema.Minimum = "1"; schema.Description = "ID local int32 de GET /api/v1/games/filters; omissão significa Todos. Inválido/inexistente retorna 400 invalid_filter."; }
                 }
-                if (context.Description.RelativePath == "api/v1/users/me/profile-completion")
+                if (context.Description.RelativePath == "api/v1/reviews/{reviewId}/like/me")
+                    operation.Description = "Estado privado do usuário do Bearer, sem cache compartilhado (no-store). Retorna somente likedByMe; não existe estado personalizado nas projeções públicas. Permite curtir a própria review. Alvo inexistente: 404; ID inválido: 400; sem sessão: 401. Likes não criam notificações e são independentes de favoritos.";
+                else if (context.Description.RelativePath == "api/v1/users/me/profile-completion")
                     operation.Description = "Privado, sem cache compartilhado; usuário exclusivamente do Bearer. Conclusão calculada: país, estado e bio preenchidos e pelo menos três jogos distintos existentes; avatar opcional. GET retorna todos os favoritos. PUT salva perfil e conjunto completo de favoritos atomicamente, reconciliando diferenças e preservando vínculos mantidos; repetição idempotente. Textos recebem trim, país/estado até 100, bio até 2000 caracteres. avatarUrl omitido preserva, null remove. IDs locais positivos int32; duplicados não contam para o mínimo. 400 para dados inválidos, 404 para jogo inexistente, 503 para persistência indisponível; nenhuma gravação parcial.";
                 else if (context.Description.RelativePath == "api/v1/games/filters")
                     operation.Description = "Opções públicas completas de gêneros/plataformas, com IDs locais int32 estáveis. Sincroniza metadados IGDB com cursor/limites e persiste no SQL; cache completo por uma hora. Não deriva opções da página exibida. Falha sem cobertura completa retorna erro, sem lista parcial como sucesso.";
@@ -171,6 +173,11 @@ public static class OpenApiRegistration
                 {
                     reviewRating.Minimum = "0"; reviewRating.Maximum = "5";
                     reviewRating.Description = "Nota da avaliação única do autor/jogo; null somente para legado ainda não regularizado pelo autor.";
+                }
+                if (type == typeof(ReviewResponse) && schema.Properties["likeCount"] is OpenApiSchema likeCount)
+                {
+                    likeCount.Minimum = "0";
+                    likeCount.Description = "Quantidade inteira de usuários que curtiram a review, agregada em SQL. Favoritos não entram no contador; estado do usuário está somente em GET /reviews/{reviewId}/like/me.";
                 }
                 if (type == typeof(CommentRequest))
                 {

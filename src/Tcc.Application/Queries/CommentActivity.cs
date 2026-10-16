@@ -36,6 +36,7 @@ public sealed class MostCommentedReviews(CommentActivity activity, OpinionViews 
         var snapshot = ActivityOrdering.Sort(await activity.Execute(period, cancellationToken), item => item.CommentCount, item => item.LastCommentAt, item => item.Review.Id).ToArray();
         var found = await games.ResolveAsync(snapshot.Select(item => item.Review.GameId), cancellationToken);
         var authors = await views.Authors(snapshot.Select(item => item.Review.UserId), cancellationToken);
-        return snapshot.Select(item => new RankedReviewDetails(views.Review(item.Review, found[item.Review.GameId], authors[item.Review.UserId]), item.CommentCount, item.LastCommentAt)).ToArray();
+        var counts = await views.LikeCounts(snapshot.Select(item => item.Review), cancellationToken);
+        return snapshot.Select(item => new RankedReviewDetails(views.Review(item.Review, found[item.Review.GameId], authors[item.Review.UserId], counts.GetValueOrDefault(item.Review.Id)), item.CommentCount, item.LastCommentAt)).ToArray();
     }
 }

@@ -426,6 +426,27 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Tcc.Domain.Opinions.ReviewLike", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("usuario_id");
+
+                    b.Property<int>("ReviewId")
+                        .HasColumnType("integer")
+                        .HasColumnName("review_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.HasKey("UserId", "ReviewId");
+
+                    b.HasIndex("ReviewId");
+
+                    b.ToTable("curtidas_reviews", (string)null);
+                });
+
             modelBuilder.Entity("Tcc.Domain.Social.Follow", b =>
                 {
                     b.Property<int>("FollowerId")
@@ -724,6 +745,21 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                     b.HasOne("Tcc.Domain.Catalog.Game", null)
                         .WithMany()
                         .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Opinions.ReviewLike", b =>
+                {
+                    b.HasOne("Tcc.Domain.Opinions.Review", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

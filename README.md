@@ -4,6 +4,8 @@ API .NET 10 da plataforma de avaliações e reviews de jogos. Catálogo IGDB ass
 
 ## Executar
 
+A [S-PR-08](docs/S-PR-08.md) persiste likes de reviews: PUT/DELETE idempotentes, GET privado de likedByMe e likeCount agregado em SQL nas projeções. Curtidas são independentes de favoritos e não geram notificações. Consumo visual na S-PR-09.
+
 A [S-PR-21](docs/S-PR-21.md) unifica publicação/edição de review e nota: POST exige rating de 0 a 5, descrição é opcional e PATCH salva ambos atomicamente. PUT legado de nota cria/atualiza a mesma review; leituras incluem rating nullable para legados. A integração do formulário pertence à S-PR-22.
 
 A [S-PR-16](docs/S-PR-16.md) adiciona GET/PUT privados de conclusão do perfil, país/estado opcionais no banco e salvamento atômico de perfil e jogos favoritos. Conclusão exige localização, bio e três jogos distintos, com avatar opcional. O formulário permanece na S-PR-17.
@@ -25,7 +27,7 @@ dotnet run --project src/Tcc.Api --urls http://localhost:5080
 
 `GET /health` retorna `200 {"status":"ok"}`. Endpoints de negócio estão em `/api/v1`; contratos e exemplos em [AUTH.md](docs/AUTH.md), [OPINIONS.md](docs/OPINIONS.md), [SOCIAL.md](docs/SOCIAL.md) e [FEEDS.md](docs/FEEDS.md).
 
-`GET /openapi/v1.json` fornece OpenAPI 3.1 com 42 operações funcionais e health, schemas, erros e autenticação Bearer. [Documento exportado](docs/openapi.json) e [mapeamento para o frontend](docs/COMPATIBILITY.md).
+`GET /openapi/v1.json` fornece OpenAPI 3.1 com 45 operações funcionais e health, schemas, erros e autenticação Bearer. [Documento exportado](docs/openapi.json) e [mapeamento para o frontend](docs/COMPATIBILITY.md).
 
 Swagger UI em [http://localhost:5080/swagger](http://localhost:5080/swagger), usando o mesmo documento OpenAPI. Permite explorar contratos e executar chamadas; para operações privadas, faça login e informe o token no botão **Authorize**. [Guia do Swagger](docs/SWAGGER.md).
 

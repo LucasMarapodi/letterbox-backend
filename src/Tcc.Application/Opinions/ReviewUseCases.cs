@@ -15,8 +15,8 @@ public interface IReviews
 }
 public sealed record PublicAuthor(int Id, string DisplayName, string? AvatarUrl);
 public sealed record PublicGame(int Id, string Title, string? CoverUrl);
-public sealed record ReviewDetails(Review Review, PublicAuthor Author, PublicGame Game);
-public sealed class OpinionViews(IUserAccounts accounts, QueryGames games)
+public sealed record ReviewDetails(Review Review, PublicAuthor Author, PublicGame Game, int LikeCount = 0);
+public sealed class OpinionViews(IUserAccounts accounts, QueryGames games, IReviewLikes likes)
 {
     public async Task<PublicAuthor> Author(int userId, CancellationToken cancellationToken = default)
     {
@@ -37,9 +37,17 @@ public sealed class OpinionViews(IUserAccounts accounts, QueryGames games)
         }
         return result;
     }
-    public ReviewDetails Review(Review review, Game game, PublicAuthor author) => new(review, author, new(game.Id, game.Title, game.CoverUrl));
+    public async Task<IReadOnlyDictionary<int, int>> LikeCounts(IEnumerable<Review> reviews, CancellationToken ct = default)
+    {
+        var result = new Dictionary<int,int>();
+        foreach (var chunk in reviews.Select(review => review.Id).Distinct().Chunk(500))
+            foreach (var entry in await likes.CountsAsync(chunk, ct)) result.Add(entry.Key, entry.Value);
+        return result;
+    }
+    public ReviewDetails Review(Review review, Game game, PublicAuthor author, int likeCount) => new(review, author, new(game.Id, game.Title, game.CoverUrl), likeCount);
     public async Task<ReviewDetails> ReviewAsync(Review review, CancellationToken cancellationToken = default) =>
-        Review(review, await games.GetAsync(review.GameId, cancellationToken), await Author(review.UserId, cancellationToken));
+        Review(review, await games.GetAsync(review.GameId, cancellationToken), await Author(review.UserId, cancellationToken),
+            (await LikeCounts([review], cancellationToken)).GetValueOrDefault(review.Id));
 }
 public sealed class PublishReview(IReviews reviews, QueryGames games, ICurrentSession current,
     SessionAccess access, TimeProvider clock, OpinionViews views, PublicationNotifications notifications)

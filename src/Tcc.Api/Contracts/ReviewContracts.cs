@@ -24,10 +24,10 @@ public sealed record GameSummaryResponse(int Id, string Title, string? CoverUrl)
 public sealed record MyReviewResponse(ReviewResponse? Review);
 public sealed record GameOpinionsResponse(double? AverageRating, IReadOnlyList<ReviewResponse> Reviews);
 public sealed record ReviewResponse(int Id, int UserId, int GameId, string Text,
-    DateTimeOffset CreatedAt, DateTimeOffset? UpdatedAt, AuthorResponse Author, GameSummaryResponse Game, double? Rating)
+    DateTimeOffset CreatedAt, DateTimeOffset? UpdatedAt, AuthorResponse Author, GameSummaryResponse Game, double? Rating, int LikeCount)
 {
     public static ReviewResponse From(ReviewDetails details) => new(details.Review.Id, details.Review.UserId,
         details.Review.GameId, details.Review.Text, details.Review.CreatedAt, details.Review.UpdatedAt,
         new(details.Author.Id, details.Author.DisplayName, details.Author.AvatarUrl),
-        new(details.Game.Id, details.Game.Title, details.Game.CoverUrl), details.Review.Evaluation?.Value.Value);
+        new(details.Game.Id, details.Game.Title, details.Game.CoverUrl), details.Review.Evaluation?.Value.Value, details.LikeCount);
 }
