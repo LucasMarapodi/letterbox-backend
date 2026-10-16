@@ -44,7 +44,7 @@ public sealed class NotificationQueryTests
         Assert.NotNull(items);
         Assert.Equal(3, items.Length);
         Assert.All(items, item => Assert.Equal(b.Id, item.UserId));
-        Assert.Equal(items.OrderByDescending(item => item.CreatedAt).ThenBy(item => item.Id, StringComparer.Ordinal).Select(item => item.Id), items.Select(item => item.Id));
+        Assert.Equal(items.OrderByDescending(item => item.CreatedAt).ThenBy(item => item.Id).Select(item => item.Id), items.Select(item => item.Id));
         Assert.Equal(first.Id, items[^1].ReviewId);
         Assert.Contains(items, item => item.Type == "new-review" && item.ReviewId == last.Id && item.CommentId is null);
         Assert.Contains(items, item => item.Type == "review-comment" && item.ReviewId == bReview.Id && item.CommentId == comment?.Id);

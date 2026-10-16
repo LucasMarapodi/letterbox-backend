@@ -10,12 +10,12 @@ JogosFavoritos e ReviewsFavoritas usam tabelas separadas, FKs reais e pares úni
 
 Feed usa EXISTS SQL sobre as relações do titular; listas de reviews favoritas usam JOIN filtrado no SQL. Os dois grupos de favoritos compartilham snapshot RepeatableRead, com projeções de catálogo/autores em lotes. Reiniciar o host preserva favoritos, rede e feed. Detalhes em [P-PR-05.md](P-PR-05.md).
 
-Notificações: nova review notifica os seguidores observados na leitura SQL anterior à publicação; comentário/resposta notifica o autor da review se for outra pessoa. Edição e curtidas não notificam. Tipos: new-review/review-comment. Deduplicação por tipo/evento/destinatário. Destinatários são consultados fora dos locks síncronos, antes de iniciar a transação de publicação.
+Notificações: nova review notifica os seguidores consultados na transação SQL de publicação; comentário/resposta notifica o autor da review se for outra pessoa. Edição e curtidas não notificam. Tipos: new-review/review-comment. Deduplicação por tipo/evento/destinatário. Destinatários e eventos são consultados/gravados com o contexto scoped da transação, sem locks síncronos de negócio.
 
-Review/comentário recebe ID no SQL antes de preparar eventos. Falha na preparação cancela a transação e eventos pendentes; eventos em memória tornam-se visíveis após commit. Notificações continuam transitórias até P-PR-06: não há durabilidade garantida entre commit SQL e publicação em memória, nem snapshot global com alterações concorrentes de seguimento. Novo host inicia somente as notificações vazias, sem gerar eventos retroativos.
+Review/comentário recebe ID no SQL antes de gravar eventos no mesmo contexto/transação. Falha na gravação cancela ambos; novas publicações e eventos só ficam visíveis após commit. Notificações persistem após reinício desde P-PR-06, sem eventos retroativos. A consulta de seguidores observa o snapshot SQL vigente na transação. Consulte P-PR-06.md.
 
-GET /notifications é privado e retorna eventos do titular por createdAt decrescente e ID textual ordinal crescente. DTO: id textual, userId/actorId/reviewId numéricos, createdAt, type, actor (id,displayName,avatarUrl); commentId numérico apenas para review-comment. Sem campo read, envio manual ou e-mail.
+GET /notifications é privado e retorna eventos do titular por createdAt decrescente e ID numérico crescente. DTO: id numérico, userId/actorId/reviewId numéricos, createdAt, type, actor (id,displayName,avatarUrl); commentId numérico apenas para review-comment. Sem campo read, envio manual ou e-mail.
 
-O Front não foi alterado. Tipos/decoders devem aceitar Favorite.id/targetId numéricos, além dos IDs e referências migrados nas PRs anteriores. Tokens opacos permanecem strings de autenticação.
+O Front não foi alterado. Tipos/decoders devem aceitar Favorite.id/targetId e Notification.id numéricos, além dos IDs e referências migrados nas PRs anteriores. Tokens opacos permanecem strings de autenticação.
 
 Exemplos sem corpo: PUT /api/v1/users/1/follow e PUT /api/v1/favorites/game/1, com Authorization: Bearer <token>. Em ambos, a identidade do titular vem da sessão.

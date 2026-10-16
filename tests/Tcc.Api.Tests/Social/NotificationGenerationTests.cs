@@ -10,8 +10,8 @@ namespace Tcc.Api.Tests.Social;
 
 public sealed class NotificationGenerationTests
 {
-    private static IReadOnlyList<Notification> Events(WebApplicationFactory<Program> host, int userId) =>
-        host.Services.GetService<INotifications>()?.ForUser(userId) ?? [];
+    private static async Task<IReadOnlyList<Notification>> Events(WebApplicationFactory<Program> host, int userId) =>
+        await host.Services.GetRequiredService<INotifications>().ForUserAsync(userId);
 
     [Fact]
     public async Task Successful_review_notifies_only_current_followers_once_even_with_concurrent_duplicate()
@@ -39,25 +39,25 @@ public sealed class NotificationGenerationTests
         finally { foreach (var response in responses) response.Dispose(); }
         foreach (var recipient in new[] { b, c })
         {
-            var notification = Assert.Single(Events(host, recipient.Id));
+            var notification = Assert.Single((await Events(host, recipient.Id)));
             Assert.Equal(NotificationType.NewReview, notification.Type);
             Assert.Equal(review.Id, notification.ReviewId);
             Assert.Equal(1, notification.ActorId);
             Assert.Equal(clock.GetUtcNow(), notification.CreatedAt);
             Assert.Null(notification.CommentId);
         }
-        Assert.Empty(Events(host, d.Id));
-        Assert.Empty(Events(host, 1));
+        Assert.Empty((await Events(host, d.Id)));
+        Assert.Empty((await Events(host, 1)));
         using var edit = await client.PatchAsJsonAsync($"/api/v1/reviews/{review.Id}", new TextInput("Edited"));
         edit.EnsureSuccessStatusCode();
-        Assert.Single(Events(host, b.Id));
+        Assert.Single((await Events(host, b.Id)));
         await ApiTest.SignIn(client, "B@example.com", "p");
         using var unfollow = await client.DeleteAsync("/api/v1/users/1/follow");
         unfollow.EnsureSuccessStatusCode();
         await ApiTest.SignIn(client);
         await ApiTest.Publish(client, 2);
-        Assert.Single(Events(host, b.Id));
-        Assert.Equal(2, Events(host, c.Id).Count);
+        Assert.Single((await Events(host, b.Id)));
+        Assert.Equal(2, (await Events(host, c.Id)).Count);
     }
 
     [Fact]
@@ -71,23 +71,23 @@ public sealed class NotificationGenerationTests
         var url = $"/api/v1/reviews/{review.Id}/comments";
         using var own = await client.PostAsJsonAsync(url, new TextInput("Own"));
         own.EnsureSuccessStatusCode();
-        Assert.Empty(Events(host, 1));
+        Assert.Empty((await Events(host, 1)));
         await ApiTest.SignIn(client, "B@example.com", "p");
         using var response = await client.PostAsJsonAsync(url, new TextInput("Other"));
         response.EnsureSuccessStatusCode();
         var comment = await response.Content.ReadFromJsonAsync<CommentDto>();
-        var notification = Assert.Single(Events(host, 1));
+        var notification = Assert.Single((await Events(host, 1)));
         Assert.Equal(NotificationType.ReviewComment, notification.Type);
         Assert.Equal(comment?.Id, notification.CommentId);
         Assert.Equal(comment?.CreatedAt, notification.CreatedAt);
         Assert.Equal(b.Id, notification.ActorId);
-        Assert.Empty(Events(host, b.Id));
+        Assert.Empty((await Events(host, b.Id)));
         using var invalid = await client.PostAsJsonAsync(url, new TextInput(" "));
         Assert.Equal(400, (int)invalid.StatusCode);
         using var missing = await client.PostAsJsonAsync("/api/v1/reviews/999999/comments", new TextInput("Text"));
         Assert.Equal(404, (int)missing.StatusCode);
-        Assert.Single(Events(host, 1));
-        host.Services.GetRequiredService<INotifications>().AddRange([notification, notification]);
-        Assert.Single(Events(host, 1));
+        Assert.Single((await Events(host, 1)));
+        await host.Services.GetRequiredService<INotifications>().AddRangeAsync([notification, notification]);
+        Assert.Single((await Events(host, 1)));
     }
 }

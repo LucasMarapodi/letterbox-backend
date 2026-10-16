@@ -8,13 +8,13 @@ public sealed record CommentWithLikes(Comment Comment, int LikeCount);
 public sealed record CommentActivitySummary(int ReviewId, int Count, DateTimeOffset Last);
 public interface IComments
 {
-    Task<Comment> AddAsync(Comment comment, CancellationToken ct = default, Func<Comment, IPreparedPublication>? prepare = null);
+    Task<Comment> AddAsync(Comment comment, CancellationToken ct = default, Func<Comment, CancellationToken, Task>? publish = null);
     Task<Comment?> FindAsync(int id, CancellationToken ct = default);
     Task<IReadOnlyList<CommentWithLikes>> ForReviewAsync(int reviewId, CancellationToken ct = default);
     Task<IReadOnlyList<CommentActivitySummary>> ActivityAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
 }
 public sealed class PublishComment(IComments comments, GetReview reviews, OpinionViews views,
-    ICurrentSession current, SessionAccess access, TimeProvider clock, PublicationNotifications notifications, IPublicationScope publications)
+    ICurrentSession current, SessionAccess access, TimeProvider clock, PublicationNotifications notifications)
 {
     public async Task<CommentDetails> Execute(int reviewId, string? text, CancellationToken cancellationToken = default, int? parentCommentId = null)
     {
@@ -30,7 +30,7 @@ public sealed class PublishComment(IComments comments, GetReview reviews, Opinio
         var author = await views.Author(userId, cancellationToken);
         await access.Require(current, cancellationToken);
         var saved = await comments.AddAsync(draft, cancellationToken,
-            comment => publications.Prepare(() => notifications.Send(notifications.ForComment(comment, review.UserId))));
+            (comment, ct) => notifications.ForCommentAsync(comment, review.UserId, ct));
         return new(saved, author);
     }
 }

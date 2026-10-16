@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "TCC Games API",
-    "description": "Usuários, perfis, sessões, catálogo, reviews, avaliações, comentários/respostas, curtidas, favoritos e seguimentos persistidos em PostgreSQL. IDs locais são inteiros; igdbId é externo de 64 bits. Cache → PostgreSQL → IGDB. Notificações seguem em memória até sua PR. Listagem de jogos usa envelope paginado.",
+    "description": "Usuários, perfis, sessões, catálogo, reviews, avaliações, comentários/respostas, curtidas, favoritos, seguimentos e notificações persistidos em PostgreSQL. IDs locais são inteiros; igdbId é externo de 64 bits. Publicação e eventos compartilham transação SQL. Cache → PostgreSQL → IGDB. Listagem de jogos usa envelope paginado.",
     "version": "v1"
   },
   "servers": [
@@ -5446,7 +5446,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "integer",
+            "format": "int32"
           },
           "userId": {
             "type": "integer",

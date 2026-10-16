@@ -157,7 +157,7 @@ public sealed class CommentPersistenceTests
         finally { foreach (var response in deletions) response.Dispose(); }
         await using var db = PostgresTestDatabase.Context();
         Assert.Equal(1, await db.CommentLikes.CountAsync());
-        Assert.Empty(host.Services.GetRequiredService<INotifications>().ForUser(login.User.Id));
+        Assert.Equal(0, await db.Notifications.CountAsync());
     }
 
     [PostgresFact]
@@ -168,14 +168,14 @@ public sealed class CommentPersistenceTests
         using var client = normal.CreateClient();
         var (userId, reviewId) = await Seed(client);
         await using var failedHost = normal.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<INotifications>(provider => new FailingNotifications(new InMemoryNotifications(provider.GetRequiredService<InMemoryPublicationScope>())))));
+            services.AddScoped<INotifications>(provider => new FailingNotifications(new Tcc.Infrastructure.Persistence.Repositories.PostgresNotifications(provider.GetRequiredService<Lazy<TccDbContext>>())))));
         using var failedClient = failedHost.CreateClient();
         failedClient.DefaultRequestHeaders.Authorization = client.DefaultRequestHeaders.Authorization;
         using var failed = await failedClient.PostAsJsonAsync($"/api/v1/reviews/{reviewId}/comments", new { text = "Must roll back" });
         Assert.Equal(500, (int)failed.StatusCode);
         await using var db = PostgresTestDatabase.Context();
         Assert.Equal(0, await db.Comments.CountAsync());
-        Assert.Empty(failedHost.Services.GetRequiredService<INotifications>().ForUser(userId));
+        Assert.Equal(0, await db.Notifications.CountAsync());
     }
     [Fact]
     public void Comments_and_likes_use_integer_relational_keys()

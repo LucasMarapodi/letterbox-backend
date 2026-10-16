@@ -1,6 +1,6 @@
 # Matriz de modelagem e persistência — quinta fase
 
-P-PR-01–05 validadas localmente: identidade, catálogo, opiniões, discussão e relações pessoais (quinze tabelas). Demais tabelas permanecem planejadas. Cada tabela só fica concluída após suas duas US e testes em PostgreSQL real.
+P-PR-01–06 validadas localmente: as dezesseis tabelas possuem modelo e fonte SQL. A validação final do conjunto na P-PR-07 permanece pendente. Cada tabela só fica concluída após suas duas US e testes em PostgreSQL real.
 
 | Tabela | Classe .NET relacionada | US A: modelo/DbContext | US B: SQL/retirada de memória | Estado modelo | Estado SQL |
 | --- | --- | --- | --- | --- | --- |
@@ -19,7 +19,7 @@ P-PR-01–05 validadas localmente: identidade, catálogo, opiniões, discussão 
 | JogosFavoritos | GameFavorite nova; adaptador do Favorite atual | P-US-26 | P-US-27 | VALIDADO | VALIDADO |
 | ReviewsFavoritas | ReviewFavorite nova; adaptador do Favorite atual | P-US-28 | P-US-29 | VALIDADO | VALIDADO |
 | SeguimentosUsuarios | Follow existente adaptada | P-US-30 | P-US-31 | VALIDADO | VALIDADO |
-| Notificacoes | Notification existente | P-US-32 | P-US-33 | PLANEJADO | PLANEJADO |
+| Notificacoes | Notification existente | P-US-32 | P-US-33 | VALIDADO | VALIDADO |
 
 ## Evidências a adicionar na conclusão
 
@@ -37,10 +37,10 @@ Não marcar SQL validado apenas porque um DbSet existe, uma migration foi gerada
 - Comentários principais e respostas de uma camada na mesma review: VALIDADO.
 - Curtidas únicas/idempotentes e contagem SQL: VALIDADO.
 - Favoritos/seguimentos SQL e isolamento: VALIDADO.
-- Notificações na mesma transação da publicação: PENDENTE.
-- Migrations/upgrade em banco isolado e preservação de baseline: VALIDADO até FavoritesAndFollows; cinco contas e 42 jogos mantidos no upgrade local.
-- Todos os stores de negócio em memória ausentes do runtime: PENDENTE.
-- Falha PostgreSQL não cai em fixture/sucesso local: VALIDADO para identidade, catálogo, opiniões, discussão e relações pessoais.
+- Notificações na mesma transação da publicação: VALIDADO.
+- Migrations/upgrade em banco isolado e preservação de baseline: VALIDADO até PersistentNotifications; seis contas, 43 jogos e conteúdo/relações existentes mantidos no upgrade local.
+- Todos os stores de negócio em memória ausentes do runtime: VALIDADO; cache/snapshots/token Twitch continuam transitórios.
+- Falha PostgreSQL não cai em fixture/sucesso local: VALIDADO para identidade, catálogo, opiniões, discussão, relações e notificações.
 - Testes/análises/build e PRs reais: PENDENTE.
 
 ## Limites
@@ -70,3 +70,7 @@ Comment/CommentLike, CommentConfigurations, migration CommentsAndLikes, Postgres
 ## Evidências P-PR-05
 
 GameFavorite/ReviewFavorite/Follow, SocialConfigurations, migration FavoritesAndFollows, PostgresFavorites/PostgresFollows. Tabelas jogos_favoritos/reviews_favoritas com FKs específicas e seguimentos_usuarios com PK direcional e CHECK sem auto-seguimento. Stores InMemoryFavorites/InMemoryFollows somente em testes. SocialPersistenceTests cobre SQL real, restart, concorrência/isolamento, ID/CreatedAt preservados, constraints, feed/dashboard, remoção idempotente e destinatários SQL de notificação. 409 testes aprovados; build/analisadores sem avisos, upgrade preservado e Swagger/OpenAPI local atualizado. Notificações duráveis continuam pendentes. Descrição P-PR-05.md.
+
+## Evidências P-PR-06
+
+Notification, NotificationConfiguration, migration PersistentNotifications, PostgresNotifications e callbacks assíncronos de IReviews/IComments. Chaves numéricas, quatro FKs RESTRICT, comentário coerente com review, CHECKs por tipo/auto-notificação e índices parciais únicos. InMemoryNotifications/InMemoryPublicationScope somente em testes. NotificationPersistenceTests prova SQL real, restart/privacidade, concorrência/deduplicação, constraints, rollback e invisibilidade antes do commit. 414 testes aprovados; build/analisadores sem avisos. Upgrade preservado e Swagger/OpenAPI atualizados. Descrição P-PR-06.md. P-PR-07 ainda pendente.

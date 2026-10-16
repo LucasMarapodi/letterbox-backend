@@ -1,5 +1,5 @@
 using Tcc.Application.Social;
-using Tcc.Infrastructure.Social;
+
 
 namespace Tcc.Api.Configuration;
 
@@ -11,9 +11,7 @@ public static class SocialRegistration
         services.AddScoped<FollowUsers>();
         services.AddScoped<IFavorites, Tcc.Infrastructure.Persistence.Repositories.PostgresFavorites>();
         services.AddScoped<PersonalFavorites>();
-        services.AddSingleton<InMemoryPublicationScope>();
-        services.AddSingleton<IPublicationScope>(provider => provider.GetRequiredService<InMemoryPublicationScope>());
-        services.AddSingleton<INotifications, InMemoryNotifications>();
+        services.AddScoped<INotifications, Tcc.Infrastructure.Persistence.Repositories.PostgresNotifications>();
         services.AddScoped<PublicationNotifications>();
         services.AddScoped<QueryNotifications>();
         return services;

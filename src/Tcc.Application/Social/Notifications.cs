@@ -7,26 +7,20 @@ namespace Tcc.Application.Social;
 
 public interface INotifications
 {
-    void AddRange(IReadOnlyList<Notification> notifications);
-    IReadOnlyList<Notification> ForUser(int userId);
+    Task AddRangeAsync(IReadOnlyList<Notification> notifications, CancellationToken ct = default);
+    Task<IReadOnlyList<Notification>> ForUserAsync(int userId, CancellationToken ct = default);
 }
 
-public interface IPublicationScope
-{
-    T Execute<T>(Func<T> action);
-    IPreparedPublication Prepare(Action action);
-}
-
-public interface IPreparedPublication : IDisposable { void Commit(); }
 public sealed class PublicationNotifications(IFollows follows, INotifications notifications)
 {
-    public Task<IReadOnlyList<int>> ReviewRecipients(int userId, CancellationToken ct = default) => follows.FollowersAsync(userId, ct);
-    public IReadOnlyList<Notification> ForReview(Review review, IReadOnlyList<int> recipients) => recipients
-        .Select(userId => Notification.NewReview(userId, review.UserId, review.Id, review.CreatedAt)).ToArray();
-    public IReadOnlyList<Notification> ForComment(Comment comment, int reviewAuthor) =>
-        comment.UserId == reviewAuthor ? [] : [Notification.ReviewComment(reviewAuthor, comment.UserId,
-            comment.ReviewId, comment.Id, comment.CreatedAt)];
-    public void Send(IReadOnlyList<Notification> events) => notifications.AddRange(events);
+    public async Task ForReviewAsync(Review review, CancellationToken ct = default)
+    {
+        var recipients = await follows.FollowersAsync(review.UserId, ct);
+        await notifications.AddRangeAsync(recipients.Select(userId => Notification.NewReview(userId, review.UserId, review.Id, review.CreatedAt)).ToArray(), ct);
+    }
+    public Task ForCommentAsync(Comment comment, int reviewAuthor, CancellationToken ct = default) =>
+        notifications.AddRangeAsync(comment.UserId == reviewAuthor ? [] : [Notification.ReviewComment(reviewAuthor, comment.UserId,
+            comment.ReviewId, comment.Id, comment.CreatedAt)], ct);
 }
 
 public sealed record NotificationDetails(Notification Notification, PublicAuthor Actor);
@@ -35,7 +29,7 @@ public sealed class QueryNotifications(INotifications notifications, ICurrentSes
     public async Task<IReadOnlyList<NotificationDetails>> Execute(CancellationToken cancellationToken = default)
     {
         var userId = (await access.Require(current, cancellationToken)).UserId;
-        var snapshot = notifications.ForUser(userId).OrderByDescending(item => item.CreatedAt).ThenBy(item => item.Id, StringComparer.Ordinal).ToArray();
+        var snapshot = await notifications.ForUserAsync(userId, cancellationToken);
         var authors = await views.Authors(snapshot.Select(item => item.ActorId), cancellationToken);
         return snapshot.Select(item => new NotificationDetails(item, authors[item.ActorId])).ToArray();
     }

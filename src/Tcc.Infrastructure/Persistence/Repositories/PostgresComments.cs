@@ -7,16 +7,15 @@ namespace Tcc.Infrastructure.Persistence.Repositories;
 
 public sealed class PostgresComments(Lazy<TccDbContext> context) : IComments
 {
-    public Task<Comment> AddAsync(Comment comment, CancellationToken ct = default, Func<Comment, IPreparedPublication>? prepare = null) => OpinionStorage.Run(async () =>
+    public Task<Comment> AddAsync(Comment comment, CancellationToken ct = default, Func<Comment, CancellationToken, Task>? publish = null) => OpinionStorage.Run(async () =>
     {
         var db = context.Value;
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         db.Comments.Add(comment);
         await db.SaveChangesAsync(ct);
-        using var publication = prepare?.Invoke(comment);
+        if (publish is not null) await publish(comment, ct);
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
-        publication?.Commit();
         return comment;
     });
     public Task<Comment?> FindAsync(int id, CancellationToken ct = default) => OpinionStorage.Run(() => context.Value.Comments.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, ct));

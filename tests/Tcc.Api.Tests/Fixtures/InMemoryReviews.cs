@@ -17,19 +17,17 @@ public sealed class InMemoryReviews(InMemoryPublicationScope publications) : IRe
     }
     public Review? Find(int id) { lock (publications.Gate) return reviews.GetValueOrDefault(id); }
     public IReadOnlyList<Review> All() { lock (publications.Gate) return reviews.Values.ToArray(); }
-    public Task<Review?> AddAsync(Review review, CancellationToken ct = default, Func<Review, IPreparedPublication>? prepare = null)
+    public Task<Review?> AddAsync(Review review, CancellationToken ct = default, Func<Review, CancellationToken, Task>? publish = null) => publications.ExecuteAsync<Review?>(async () =>
     {
-        ct.ThrowIfCancellationRequested();
+        Review saved;
         lock (publications.Gate)
         {
-            if (reviews.Values.Any(item => item.UserId == review.UserId && item.GameId == review.GameId)) return Task.FromResult<Review?>(null);
-            var saved = Review.Create(review.Id == 0 ? ++next : review.Id, review.UserId, review.GameId, review.Text, review.CreatedAt);
-            using var publication = prepare?.Invoke(saved);
-            if (!TryAdd(saved)) return Task.FromResult<Review?>(null);
-            try { publication?.Commit(); return Task.FromResult<Review?>(saved); }
-            catch { reviews.Remove(saved.Id); throw; }
+            if (reviews.Values.Any(item => item.UserId == review.UserId && item.GameId == review.GameId)) return null;
+            saved = Review.Create(review.Id == 0 ? ++next : review.Id, review.UserId, review.GameId, review.Text, review.CreatedAt);
         }
-    }
+        if (publish is not null) await publish(saved, ct);
+        return TryAdd(saved) ? saved : null;
+    }, ct);
     public Task<Review?> FindAsync(int id, CancellationToken ct = default) { ct.ThrowIfCancellationRequested(); return Task.FromResult(Find(id)); }
     public Task<IReadOnlyList<Review>> QueryAsync(ReviewQuery query, CancellationToken ct = default)
     {
