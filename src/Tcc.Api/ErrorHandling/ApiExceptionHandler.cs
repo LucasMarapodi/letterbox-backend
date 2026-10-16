@@ -20,6 +20,7 @@ public sealed class ApiExceptionHandler : IExceptionHandler
             CatalogTimeoutException => 504,
             DatabaseUnavailableException => 503,
             ReviewOwnershipException => 403,
+            ReviewTitleException => 400,
             ResourceFailure { Kind: ResourceFailureKind.NotFound } => 404,
             ResourceFailure { Kind: ResourceFailureKind.Conflict } => 409,
             ResourceFailure { Kind: ResourceFailureKind.Forbidden } => 403,
@@ -30,8 +31,14 @@ public sealed class ApiExceptionHandler : IExceptionHandler
         };
         if (status == 0) return false;
         context.Response.StatusCode = status;
-        var error = exception is InvalidCatalogFilterException ? new ApiError("invalid_filter", "Filtro de catálogo inválido ou inexistente.") : exception is DatabaseUnavailableException
-            ? new ApiError("storage_unavailable", "Persistência temporariamente indisponível.") : ApiError.FromStatus(status);
+        var error = exception switch
+        {
+            ReviewTitleException title => new ApiError(title.Kind == ReviewTitleFailureKind.Required
+                ? "review_title_required" : "review_title_too_long", title.Message),
+            InvalidCatalogFilterException => new ApiError("invalid_filter", "Filtro de catálogo inválido ou inexistente."),
+            DatabaseUnavailableException => new ApiError("storage_unavailable", "Persistência temporariamente indisponível."),
+            _ => ApiError.FromStatus(status)
+        };
         await context.Response.WriteAsJsonAsync(error, cancellationToken);
         return true;
     }

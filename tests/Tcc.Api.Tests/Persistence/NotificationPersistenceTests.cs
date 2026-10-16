@@ -28,7 +28,7 @@ public sealed class NotificationPersistenceTests
     }
     private static async Task<int> Review(HttpClient client, int game)
     {
-        using var response = await client.PostAsJsonAsync($"/api/v1/games/{game}/reviews", new { rating = 3, text = "Atomic review" });
+        using var response = await client.PostAsJsonAsync($"/api/v1/games/{game}/reviews", new { title = "Fixture review", rating = 3, text = "Atomic review" });
         Assert.Equal(201, (int)response.StatusCode);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         return json.RootElement.GetProperty("id").GetInt32();
@@ -45,7 +45,7 @@ public sealed class NotificationPersistenceTests
             services.AddScoped<INotifications>(provider => new FailingNotifications(new PostgresNotifications(provider.GetRequiredService<Lazy<TccDbContext>>())))));
         using var failed = failing.CreateClient();
         failed.DefaultRequestHeaders.Authorization = new("Bearer", setup.Author.Token);
-        using var failedReview = await failed.PostAsJsonAsync($"/api/v1/games/{setup.Game}/reviews", new { rating = 3, text = "Rollback review" });
+        using var failedReview = await failed.PostAsJsonAsync($"/api/v1/games/{setup.Game}/reviews", new { title = "Fixture review", rating = 3, text = "Rollback review" });
         Assert.Equal(500, (int)failedReview.StatusCode);
         await using var db = PostgresTestDatabase.Context();
         Assert.Equal(0, await db.Reviews.CountAsync());
@@ -70,7 +70,7 @@ public sealed class NotificationPersistenceTests
             services.AddScoped<INotifications>(provider => new PausedNotifications(new PostgresNotifications(provider.GetRequiredService<Lazy<TccDbContext>>()), gate))));
         using var client = host.CreateClient();
         var setup = await Seed(client);
-        var pending = client.PostAsJsonAsync($"/api/v1/games/{setup.Game}/reviews", new { rating = 3, text = "Not yet visible" });
+        var pending = client.PostAsJsonAsync($"/api/v1/games/{setup.Game}/reviews", new { title = "Fixture review", rating = 3, text = "Not yet visible" });
         try
         {
             await gate.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
@@ -125,7 +125,7 @@ public sealed class NotificationPersistenceTests
         var duplicate = await Assert.ThrowsAsync<PostgresException>(() => db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO notificacoes(destinatario_id,ator_id,review_id,tipo,criado_em) VALUES({setup.Reader.Id},{setup.Author.Id},{reviewId},{"new-review"},now())"));
         Assert.Equal(PostgresErrorCodes.UniqueViolation, duplicate.SqlState);
         var game = Assert.Single(await PostgresCatalogTests.Repository(db).UpsertAsync([PostgresCatalogTests.Payload(4_000_000_001)], default)).Game;
-        db.Reviews.Add(Tcc.Domain.Opinions.Review.Create(0, setup.Author.Id, game.Id, "Other review", DateTimeOffset.UtcNow));
+        db.Reviews.Add(Tcc.Domain.Opinions.Review.Create(0, setup.Author.Id, game.Id, "Other review", DateTimeOffset.UtcNow, "Fixture review"));
         await db.SaveChangesAsync();
         var other = await db.Reviews.SingleAsync(item => item.GameId == game.Id && item.UserId == setup.Author.Id);
         var third = await Register(client, "coherence-recipient@example.com");
@@ -169,7 +169,7 @@ public sealed class NotificationPersistenceTests
         using var followed = await client.PutAsync($"/api/v1/users/{author.Id}/follow", null);
         followed.EnsureSuccessStatusCode();
         client.DefaultRequestHeaders.Authorization = new("Bearer", author.Token);
-        var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { rating = 3, text = "Atomic review" })));
+        var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { title = "Fixture review", rating = 3, text = "Atomic review" })));
         try { Assert.Single(results, result => (int)result.StatusCode == 201); Assert.Equal(7, results.Count(result => (int)result.StatusCode == 409)); }
         finally { foreach (var result in results) result.Dispose(); }
         client.DefaultRequestHeaders.Authorization = new("Bearer", reader.Token);

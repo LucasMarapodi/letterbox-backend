@@ -33,7 +33,8 @@ public sealed class MostCommentedReviews(CommentActivity activity, OpinionViews 
 {
     public async Task<IReadOnlyList<RankedReviewDetails>> Execute(string? period, CancellationToken cancellationToken = default)
     {
-        var snapshot = ActivityOrdering.Sort(await activity.Execute(period, cancellationToken), item => item.CommentCount, item => item.LastCommentAt, item => item.Review.Id).ToArray();
+        var snapshot = (await activity.Execute(period, cancellationToken)).OrderByDescending(item => item.CommentCount)
+            .ThenByDescending(item => ReviewOrdering.HasTitle(item.Review)).ThenByDescending(item => item.LastCommentAt).ThenBy(item => item.Review.Id).ToArray();
         var found = await games.ResolveAsync(snapshot.Select(item => item.Review.GameId), cancellationToken);
         var authors = await views.Authors(snapshot.Select(item => item.Review.UserId), cancellationToken);
         var counts = await views.LikeCounts(snapshot.Select(item => item.Review), cancellationToken);

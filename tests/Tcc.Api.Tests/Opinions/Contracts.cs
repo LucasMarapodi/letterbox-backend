@@ -14,7 +14,7 @@ public sealed record MyReview(ReviewDto? Review);
 public sealed record OpinionsDto(double? AverageRating, ReviewDto[] Reviews);
 public sealed record CommentDto(int Id, int UserId, int ReviewId, string Text, DateTimeOffset CreatedAt, AuthorDto Author);
 public sealed record TextInput(string? Text);
-public sealed record ReviewInput(string? Text, double Rating = 3);
+public sealed record ReviewInput(string? Text, double Rating = 3, string? Title = "Fixture review");
 public sealed record RatingInput(double Value);
 
 internal static class ApiTest

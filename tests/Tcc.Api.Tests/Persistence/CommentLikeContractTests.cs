@@ -140,7 +140,7 @@ public sealed class CommentLikeContractTests
     private static async Task<int> Review(HttpClient client)
     {
         var game = (await ProfileCompletionTests.Games())[0];
-        using var response = await client.PostAsJsonAsync($"/api/v1/games/{game}/reviews", new { rating = 3, text = "Discussion" });
+        using var response = await client.PostAsJsonAsync($"/api/v1/games/{game}/reviews", new { rating = 3, title = "Fixture review", text = "Discussion" });
         response.EnsureSuccessStatusCode();
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         return json.RootElement.GetProperty("id").GetInt32();

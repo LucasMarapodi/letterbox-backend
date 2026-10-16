@@ -56,8 +56,9 @@ public sealed class ConsumerWireContractTests
         Assert.Equal(201, (int)published.StatusCode);
         using var review = JsonDocument.Parse(await published.Content.ReadAsStringAsync());
         var root = review.RootElement;
-        Assert.Equal(new[] { "author", "createdAt", "game", "gameId", "id", "likeCount", "rating", "text", "updatedAt", "userId" },
+        Assert.Equal(new[] { "author", "createdAt", "game", "gameId", "id", "likeCount", "rating", "text", "title", "updatedAt", "userId" },
             root.EnumerateObject().Select(property => property.Name).Order());
+        Assert.Equal("Fixture review", root.GetProperty("title").GetString());
         Assert.True(root.GetProperty("id").GetInt32() > 0);
         Assert.Equal(JsonValueKind.Null, root.GetProperty("updatedAt").ValueKind);
         var createdAt = root.GetProperty("createdAt").GetString();

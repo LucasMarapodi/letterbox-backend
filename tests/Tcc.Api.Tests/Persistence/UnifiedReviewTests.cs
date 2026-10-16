@@ -18,7 +18,7 @@ public sealed class UnifiedReviewTests
         using var client = host.CreateClient();
         var author = await NotificationPersistenceTests.Register(client, "unified-validation@example.com");
         var route = $"/api/v1/games/{game}/reviews";
-        foreach (var body in new object[] { new { rating = -1 }, new { rating = 5.01 }, new { rating = (double?)null }, new { rating = "3" }, new { rating = 3, text = new string('x',10001) }, new { rating = 3, userId = author.Id } })
+        foreach (var body in new object[] { new { rating = -1 }, new { rating = 5.01 }, new { rating = (double?)null }, new { rating = "3" }, new { title = "Fixture review", rating = 3, text = new string('x',10001) }, new { rating = 3, userId = author.Id } })
         {
             using var invalid = await client.PostAsJsonAsync(route, body);
             Assert.Equal(400, (int)invalid.StatusCode);
@@ -26,7 +26,7 @@ public sealed class UnifiedReviewTests
         await using var db = PostgresTestDatabase.Context();
         Assert.Equal(0, await db.Ratings.CountAsync());
         Assert.Equal(0, await db.Reviews.CountAsync());
-        using var created = await client.PostAsJsonAsync(route, new { rating = 0, text = "Original" });
+        using var created = await client.PostAsJsonAsync(route, new { title = "Fixture review", rating = 0, text = "Original" });
         created.EnsureSuccessStatusCode();
         using var first = JsonDocument.Parse(await created.Content.ReadAsStringAsync());
         var id = first.RootElement.GetProperty("id").GetInt32();
@@ -59,7 +59,7 @@ public sealed class UnifiedReviewTests
         var reader = await NotificationPersistenceTests.Register(client, "unified-reader@example.com");
         using (var follow = await client.PutAsync($"/api/v1/users/{author.Id}/follow", null)) follow.EnsureSuccessStatusCode();
         client.DefaultRequestHeaders.Authorization = new("Bearer", author.Token);
-        using var created = await client.PostAsJsonAsync($"/api/v1/games/{game}/reviews", new { rating = 0, text = " " });
+        using var created = await client.PostAsJsonAsync($"/api/v1/games/{game}/reviews", new { title = "Fixture review", rating = 0, text = " " });
         created.EnsureSuccessStatusCode();
         using var published = JsonDocument.Parse(await created.Content.ReadAsStringAsync());
         var id = published.RootElement.GetProperty("id").GetInt32();
@@ -123,7 +123,9 @@ public sealed class UnifiedReviewTests
         await db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO avaliacoes(usuario_id,jogo_id,nota,criado_em,atualizado_em) VALUES({owner.Id},{games[0]},3.25,{now},{now}),({owner.Id},{games[1]},0,{now},{now})");
         var reviewIds = await db.Reviews.AsNoTracking().OrderBy(item => item.GameId).Select(item => item.Id).ToArrayAsync();
         await db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO reviews_favoritas(usuario_id,review_id,criado_em) VALUES({owner.Id},{reviewIds[0]},{now})");
-        using (var comment = await client.PostAsJsonAsync($"/api/v1/reviews/{reviewIds[0]}/comments", new { text = "Preserved legacy comment" })) comment.EnsureSuccessStatusCode();
+        // This historical schema predates Title; create the relationship without querying a current Review model.
+        db.Comments.Add(Tcc.Domain.Opinions.Comment.Create(0, owner.Id, reviewIds[0], "Preserved legacy comment", now));
+        await db.SaveChangesAsync();
         var commentId = (await db.Comments.AsNoTracking().SingleAsync()).Id;
         using (var like = await client.PutAsync($"/api/v1/comments/{commentId}/like", null)) like.EnsureSuccessStatusCode();
         var ratingsBefore = await db.Ratings.AsNoTracking().OrderBy(item => item.Id).ToArrayAsync();
@@ -150,7 +152,7 @@ public sealed class UnifiedReviewTests
             using var pending = JsonDocument.Parse(await client.GetStringAsync($"/api/v1/reviews/{reviewIds[1]}"));
             Assert.Equal(JsonValueKind.Null, pending.RootElement.GetProperty("rating").ValueKind);
             using (var invalid = await client.PatchAsJsonAsync($"/api/v1/reviews/{reviewIds[1]}", new { text = "Requires rating" })) Assert.Equal(400, (int)invalid.StatusCode);
-            using (var resolve = await client.PatchAsJsonAsync($"/api/v1/reviews/{reviewIds[1]}", new { rating = 0 })) resolve.EnsureSuccessStatusCode();
+            using (var resolve = await client.PatchAsJsonAsync($"/api/v1/reviews/{reviewIds[1]}", new { rating = 0, title = "Resolved legacy" })) resolve.EnsureSuccessStatusCode();
             Assert.Equal(3, await db.Ratings.CountAsync());
         }
         finally { await db.Database.MigrateAsync(); }
@@ -171,7 +173,7 @@ public sealed class UnifiedReviewTests
         var id = json.RootElement.GetProperty("id").GetInt32();
         Assert.Equal(0, json.RootElement.GetProperty("rating").GetDouble());
         Assert.Equal("", json.RootElement.GetProperty("text").GetString());
-        using (var edit = await client.PatchAsJsonAsync($"/api/v1/reviews/{id}", new { text = " Text ", rating = 3.25 })) edit.EnsureSuccessStatusCode();
+        using (var edit = await client.PatchAsJsonAsync($"/api/v1/reviews/{id}", new { title = "Fixture review", text = " Text ", rating = 3.25 })) edit.EnsureSuccessStatusCode();
         using (var legacy = await client.PutAsJsonAsync($"/api/v1/games/{game}/rating/me", new { value = 5 })) legacy.EnsureSuccessStatusCode();
         using var restored = JsonDocument.Parse(await client.GetStringAsync($"/api/v1/reviews/{id}"));
         Assert.Equal("Text", restored.RootElement.GetProperty("text").GetString());
@@ -192,7 +194,7 @@ public sealed class UnifiedReviewTests
         using (var legacy = await client.PutAsJsonAsync($"/api/v1/games/{games[0]}/rating/me", new { value = 0 })) legacy.EnsureSuccessStatusCode();
         await using var db = PostgresTestDatabase.Context();
         Assert.Equal(1, await db.Reviews.CountAsync());
-        var results = await Task.WhenAll(Enumerable.Range(0,8).Select(index => client.PostAsJsonAsync($"/api/v1/games/{games[1]}/reviews", new { rating = index % 6, text = " " })));
+        var results = await Task.WhenAll(Enumerable.Range(0,8).Select(index => client.PostAsJsonAsync($"/api/v1/games/{games[1]}/reviews", new { title = "Fixture review", rating = index % 6, text = " " })));
         try
         {
             Assert.Single(results, result => (int)result.StatusCode == 201);

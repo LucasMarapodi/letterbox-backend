@@ -58,7 +58,7 @@ public sealed class OpinionPersistenceTests
         registered.EnsureSuccessStatusCode();
         var login = await LoginTests.Login(client, "rollback@example.com", "synthetic-password");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
-        using var failed = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { rating = 3, text = "Must roll back" });
+        using var failed = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { title = "Fixture review", rating = 3, text = "Must roll back" });
         Assert.Equal(500, (int)failed.StatusCode);
         Assert.Equal(0, await db.Reviews.CountAsync());
         Assert.Equal(0, await db.Notifications.CountAsync());
@@ -84,7 +84,7 @@ public sealed class OpinionPersistenceTests
         var ratings = scope.ServiceProvider.GetRequiredService<IRatings>();
         var now = DateTimeOffset.UtcNow;
         // Seed legacy review-only pairs to exercise the rating repository under its new FK.
-        db.Reviews.AddRange(users.Select(userId => Review.Create(0, userId, game.Id, "Legacy", now)));
+        db.Reviews.AddRange(users.Select(userId => Review.Create(0, userId, game.Id, "Legacy", now, "Fixture review")));
         await db.SaveChangesAsync();
         var first = await ratings.SetAsync(users[0], game.Id, RatingValue.Create(0), now);
         await ratings.SetAsync(users[1], game.Id, RatingValue.Create(5), now);
@@ -126,7 +126,7 @@ public sealed class OpinionPersistenceTests
         registered.EnsureSuccessStatusCode();
         var login = await LoginTests.Login(client, "writer@example.com", "synthetic-password");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
-        var responses = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { rating = 3, text = "Persisted review" })));
+        var responses = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { title = "Fixture review", rating = 3, text = "Persisted review" })));
         int id;
         try
         {

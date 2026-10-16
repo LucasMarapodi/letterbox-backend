@@ -401,6 +401,11 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(10000)")
                         .HasColumnName("texto");
 
+                    b.Property<string>("Title")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("titulo");
+
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("atualizado_em");

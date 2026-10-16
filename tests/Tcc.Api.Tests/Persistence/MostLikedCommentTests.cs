@@ -207,7 +207,7 @@ public sealed class MostLikedCommentTests
         var third = await NotificationPersistenceTests.Register(client, "rank-third@example.com");
         client.DefaultRequestHeaders.Authorization = new("Bearer", owner.Token);
         var game = (await ProfileCompletionTests.Games())[0];
-        using var response = await client.PostAsJsonAsync($"/api/v1/games/{game}/reviews", new { rating = 3, text = "Ranking review" });
+        using var response = await client.PostAsJsonAsync($"/api/v1/games/{game}/reviews", new { rating = 3, title = "Fixture review", text = "Ranking review" });
         response.EnsureSuccessStatusCode();
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         return (owner.Id, reader.Id, third.Id, json.RootElement.GetProperty("id").GetInt32(), game);

@@ -127,9 +127,9 @@ public static class OpenApiRegistration
                 if (context.Description.RelativePath?.EndsWith("comments", StringComparison.Ordinal) == true && context.Description.HttpMethod == "POST")
                     operation.Description = "Texto obrigatório não vazio após trim; até 2.000 caracteres. parentCommentId omitido/null cria principal; inteiro positivo responde a principal da mesma review, sem segundo nível. Autoria vem do Bearer. Lista plana inclui parentCommentId e likeCount SQL. Vínculo de review/pai é imutável após publicação.";
                 else if (context.Description.HttpMethod is "POST" or "PATCH" && context.Description.RelativePath?.Contains("reviews", StringComparison.Ordinal) == true)
-                    operation.Description = "Review e nota salvas na mesma transação. POST exige rating numérico finito de 0 a 5 (zero válido); text omitido/null/espaços vira vazio, até 10.000 caracteres após trim. PATCH preserva campos omitidos, text null limpa e rating null é inválido; legado sem nota exige informá-la antes de salvar. Uma review por usuário/jogo; apenas o autor edita, preservando identidade/publicação/vínculos. rating nullable na resposta somente para histórico sem nota. Publicação notifica uma vez; edição não publica novamente.";
+                    operation.Description = "Review e nota salvas na mesma transação. POST exige rating numérico finito de 0 a 5 (zero válido). Title opcional/nullable, trim e até 150; obrigatório quando o texto final não está vazio. Text omitido/null/espaços vira vazio, até 10.000. PATCH: omissão preserva, title/text null limpam; remover título mantendo descrição retorna 400 review_title_required; limite retorna 400 review_title_too_long. Rating null é inválido. Histórico textual sem título continua legível, mas exige título ao editar mantendo texto; legado sem nota também deve informá-la. Uma review por usuário/jogo; apenas autor edita, preservando identidade/publicação/vínculos. Edição não publica novamente.";
                 else if (context.Description.RelativePath == "api/v1/games/{gameId}/rating/me" && context.Description.HttpMethod == "PUT")
-                    operation.Description = "Compatibilidade: delega ao fluxo unificado. Cria review real sem descrição quando ausente ou altera a nota preservando texto/ID da existente, atomicamente. Não cria avaliação órfã. O novo formulário deve usar POST/PATCH de reviews.";
+                    operation.Description = "Compatibilidade: delega ao fluxo unificado. Cria review real somente com nota quando ausente ou altera a nota preservando texto/título/ID da existente, atomicamente. Histórico textual sem título exige regularização por PATCH antes de alterar a nota; não contorna a regra título/descrição. Não cria avaliação órfã.";
                 else if (context.Description.ActionDescriptor.EndpointMetadata.OfType<NoBodyAttribute>().Any())
                     operation.Description = "Comando idempotente, sem corpo. Identidade exclusivamente pelo Bearer; enviar corpo retorna 400.";
             });
@@ -181,8 +181,15 @@ public static class OpenApiRegistration
                         rating.Description = "Nota finita obrigatória na criação; zero válido. PATCH: omitir preserva, null inválido; legado sem nota deve informá-la.";
                     }
                     if (schema.Properties["text"] is OpenApiSchema text)
-                        text.Description = "Opcional e nullable, até 10.000 caracteres após trim. POST: omissão/null/espaços = vazio. PATCH: omissão preserva, null limpa.";
+                        text.Description = "Opcional e nullable, até 10.000 caracteres após trim. Quando preenchido, exige title final. POST: omissão/null/espaços = vazio. PATCH: omissão preserva, null limpa.";
                 }
+                if (type == typeof(ReviewCreateRequest) || type == typeof(ReviewPatchRequest) || type == typeof(ReviewResponse))
+                    if (schema.Properties["title"] is OpenApiSchema title)
+                    {
+                        title.Type = JsonSchemaType.String | JsonSchemaType.Null;
+                        title.MaxLength = 150;
+                        title.Description = "Título após trim, nullable; obrigatório para novas gravações com descrição. PATCH omitido preserva, null/vazio limpa apenas se descrição final vazia. Histórico sem título permanece legível. Erros: review_title_required ou review_title_too_long.";
+                    }
                 if (type == typeof(ReviewResponse) && schema.Properties["rating"] is OpenApiSchema reviewRating)
                 {
                     reviewRating.Minimum = "0"; reviewRating.Maximum = "5";

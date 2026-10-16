@@ -1,6 +1,7 @@
 using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Tcc.Application.Social;
+using Tcc.Application.Opinions;
 using Tcc.Domain.Opinions;
 using Tcc.Domain.Social;
 
@@ -53,11 +54,11 @@ public sealed class PostgresFavorites(Lazy<TccDbContext> context) : IFavorites
         var db = context.Value;
         await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, ct);
         var games = await db.GameFavorites.AsNoTracking().Where(item => item.UserId == userId).OrderBy(item => item.GameId).Select(item => item.GameId).ToArrayAsync(ct);
-        var reviews = await (from favorite in db.ReviewFavorites.AsNoTracking()
+        var reviewQuery = from favorite in db.ReviewFavorites.AsNoTracking()
                              join review in db.Reviews.AsNoTracking() on favorite.ReviewId equals review.Id
                              where favorite.UserId == userId
-                             orderby favorite.ReviewId
-                             select review).ToArrayAsync(ct);
+                          select review;
+        var reviews = await ReviewOrdering.Common(reviewQuery).ToArrayAsync(ct);
         await tx.CommitAsync(ct);
         return new FavoriteSnapshot(games, reviews);
     });
@@ -75,6 +76,6 @@ public sealed class PostgresFollows(Lazy<TccDbContext> context) : IFollows
     public Task<IReadOnlyList<int>> FollowingAsync(int userId, CancellationToken ct = default) => OpinionStorage.Run<IReadOnlyList<int>>(async () =>
         await context.Value.Follows.AsNoTracking().Where(item => item.FollowerId == userId).OrderBy(item => item.FollowedId).Select(item => item.FollowedId).ToArrayAsync(ct));
     public Task<IReadOnlyList<Review>> FeedAsync(int userId, CancellationToken ct = default) => OpinionStorage.Run<IReadOnlyList<Review>>(async () =>
-        await context.Value.Reviews.AsNoTracking().Where(review => context.Value.Follows.Any(follow => follow.FollowerId == userId && follow.FollowedId == review.UserId))
-            .OrderByDescending(review => review.CreatedAt).ThenBy(review => review.Id).ToArrayAsync(ct));
+        await ReviewOrdering.Common(context.Value.Reviews.AsNoTracking().Where(review => context.Value.Follows.Any(follow => follow.FollowerId == userId && follow.FollowedId == review.UserId)))
+            .ToArrayAsync(ct));
 }

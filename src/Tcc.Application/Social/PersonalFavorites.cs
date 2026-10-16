@@ -53,7 +53,7 @@ public sealed class PersonalFavorites(IFavorites favorites, QueryGames games, Ge
     }
     public Task<FavoriteSnapshot> SnapshotFor(int userId, CancellationToken ct = default) => favorites.SnapshotAsync(userId, ct);
     public FavoriteCollections Project(FavoriteSnapshot snapshot, IReadOnlyDictionary<int, Game> found, IReadOnlyDictionary<int, PublicAuthor> authors, IReadOnlyDictionary<int, int> counts) =>
-        new(snapshot.GameIds.Select(id => found[id]).ToArray(), snapshot.Reviews.Select(review => views.Review(review, found[review.GameId], authors[review.UserId], counts.GetValueOrDefault(review.Id))).ToArray());
+        new(snapshot.GameIds.Select(id => found[id]).ToArray(), ReviewOrdering.Common(snapshot.Reviews).Select(review => views.Review(review, found[review.GameId], authors[review.UserId], counts.GetValueOrDefault(review.Id))).ToArray());
     public async Task<FavoriteCollections> List(CancellationToken cancellationToken = default)
     {
         var snapshot = await Snapshot(cancellationToken);
