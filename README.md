@@ -66,6 +66,8 @@ Configuração `Authentication:SessionMinutes` em src/Tcc.Api/appsettings.json, 
 - Api: composição, DTOs, autenticação Bearer e pipeline HTTP.
 - tests: fixtures isoladas, regressões HTTP e integração com PostgreSQL real.
 
+A composição da API fica em `DependencyInjection`; `Configuration` mantém o leitor de ambiente e `Catalog/Adapters` reúne os adaptadores de escopo. `ApiRegistration` configura HTTP/JSON/erros globais, e `Extensions/ApiPipelineExtensions` organiza middleware e endpoints. Handlers de autenticação e erros permanecem em suas pastas. Estrutura e verificações em [S-PR-31](docs/S-PR-31.md).
+
 A [P-PR-01](docs/P-PR-01.md) persiste usuários, perfis e sessões. Cadastro conta/perfil é atômico; PATCH serializa mudanças parciais; sessões guardam somente SHA-256 do token. Reiniciar a API preserva identidade no mesmo banco. Configuração, migrations e testes em [POSTGRES.md](docs/POSTGRES.md).
 
 `TimeProvider` pode ser substituído por host. Reviews/comentários e notificações compartilham a mesma transação SQL. I/O SQL ocorre fora dos locks em memória. Projeções carregam autores em lote. O catálogo local agora usa PostgreSQL na [P-PR-02](docs/P-PR-02.md), mantendo cache/snapshots transitórios e a ordem cache → SQL → IGDB. Reviews/notas usam PostgreSQL desde a [P-PR-03](docs/P-PR-03.md); comentários/respostas/curtidas usam PostgreSQL desde a [P-PR-04](docs/P-PR-04.md). Favoritos e seguimentos usam PostgreSQL desde a [P-PR-05](docs/P-PR-05.md); notificações usam PostgreSQL desde a [P-PR-06](docs/P-PR-06.md), sem coordenação de negócio em memória.

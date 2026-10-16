@@ -2,7 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Tcc.Api.Configuration;
+using Tcc.Api.DependencyInjection;
 using Tcc.Api.Tests.Igdb;
 using Tcc.Application.Catalog;
 

@@ -1,13 +1,14 @@
 using Tcc.Application.Queries;
+using Tcc.Infrastructure.Persistence.Repositories;
 
-namespace Tcc.Api.Configuration;
+namespace Tcc.Api.DependencyInjection;
 
 public static class QueriesRegistration
 {
     public static IServiceCollection AddQueriesFeature(this IServiceCollection services)
     {
         services.AddScoped<FollowingFeed>();
-        services.AddScoped<IPeopleSearch, Tcc.Infrastructure.Persistence.Repositories.PostgresPeopleSearch>();
+        services.AddScoped<IPeopleSearch, PostgresPeopleSearch>();
         services.AddScoped<AggregatedSearch>();
         services.AddScoped<PersonalDashboard>();
         services.AddScoped<RecentReviews>();

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using Tcc.Api.Configuration;
+using Tcc.Api.DependencyInjection;
 using Tcc.Infrastructure.Persistence;
 
 namespace Tcc.Api.Tests.Persistence;

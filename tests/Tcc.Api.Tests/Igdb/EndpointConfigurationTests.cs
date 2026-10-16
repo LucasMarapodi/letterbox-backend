@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Tcc.Api.Configuration;
+using Tcc.Api.DependencyInjection;
 using Tcc.Application.Catalog;
 using Tcc.Infrastructure.Igdb;
 

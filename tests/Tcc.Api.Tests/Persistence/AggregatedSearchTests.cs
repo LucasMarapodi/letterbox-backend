@@ -148,7 +148,7 @@ public sealed class AggregatedSearchTests
         await using var host = new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.ConfigureLogging(logging => logging.ClearProviders());
-            builder.ConfigureServices(services => Tcc.Api.Configuration.PersistenceRegistration.AddPostgresPersistence(services, _ =>
+            builder.ConfigureServices(services => Tcc.Api.DependencyInjection.PersistenceRegistration.AddPostgresPersistence(services, _ =>
                 "Host=127.0.0.1;Port=1;Database=unavailable;Username=synthetic;Password=synthetic-search-sentinel;Timeout=1"));
         });
         using var client = host.CreateClient();
