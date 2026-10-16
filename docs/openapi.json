@@ -603,6 +603,7 @@
           "CommentLikes"
         ],
         "summary": "GET /api/v1/comments/{commentId}/like/me",
+        "description": "Estado privado do usuário do Bearer, sem cache compartilhado (no-store). Retorna somente likedByMe; listagens públicas incluem apenas likeCount agregado em SQL, sem estado pessoal. Permite curtir o próprio comentário e respostas. Alvo inexistente: 404; ID inválido: 400; sem sessão: 401. Likes não criam notificações.",
         "parameters": [
           {
             "name": "commentId",
@@ -5894,11 +5895,11 @@
       },
       "CommentLikeStatusResponse": {
         "required": [
-          "liked"
+          "likedByMe"
         ],
         "type": "object",
         "properties": {
-          "liked": {
+          "likedByMe": {
             "type": "boolean"
           }
         }
@@ -5978,7 +5979,9 @@
             "format": "int32"
           },
           "likeCount": {
+            "minimum": 0,
             "type": "integer",
+            "description": "Quantidade inteira de usuários que curtiram o comentário ou resposta, agregada em SQL na listagem. Estado pessoal somente em GET /comments/{commentId}/like/me, privado/no-store.",
             "format": "int32"
           }
         }

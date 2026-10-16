@@ -97,7 +97,9 @@ public static class OpenApiRegistration
                     if (parameter.Name is "gameId" or "igdbId" or "reviewId" or "commentId" or "targetId") schema.Minimum = "1";
                     if (parameter.Name is "genreId" or "platformId") { schema.Minimum = "1"; schema.Description = "ID local int32 de GET /api/v1/games/filters; omissão significa Todos. Inválido/inexistente retorna 400 invalid_filter."; }
                 }
-                if (context.Description.RelativePath == "api/v1/reviews/{reviewId}/like/me")
+                if (context.Description.RelativePath == "api/v1/comments/{commentId}/like/me")
+                    operation.Description = "Estado privado do usuário do Bearer, sem cache compartilhado (no-store). Retorna somente likedByMe; listagens públicas incluem apenas likeCount agregado em SQL, sem estado pessoal. Permite curtir o próprio comentário e respostas. Alvo inexistente: 404; ID inválido: 400; sem sessão: 401. Likes não criam notificações.";
+                else if (context.Description.RelativePath == "api/v1/reviews/{reviewId}/like/me")
                     operation.Description = "Estado privado do usuário do Bearer, sem cache compartilhado (no-store). Retorna somente likedByMe; não existe estado personalizado nas projeções públicas. Permite curtir a própria review. Alvo inexistente: 404; ID inválido: 400; sem sessão: 401. Likes não criam notificações e são independentes de favoritos.";
                 else if (context.Description.RelativePath == "api/v1/users/me/profile-completion")
                 {
@@ -183,6 +185,11 @@ public static class OpenApiRegistration
                 {
                     likeCount.Minimum = "0";
                     likeCount.Description = "Quantidade inteira de usuários que curtiram a review, agregada em SQL. Favoritos não entram no contador; estado do usuário está somente em GET /reviews/{reviewId}/like/me.";
+                }
+                if (type == typeof(CommentResponse) && schema.Properties["likeCount"] is OpenApiSchema commentLikeCount)
+                {
+                    commentLikeCount.Minimum = "0";
+                    commentLikeCount.Description = "Quantidade inteira de usuários que curtiram o comentário ou resposta, agregada em SQL na listagem. Estado pessoal somente em GET /comments/{commentId}/like/me, privado/no-store.";
                 }
                 if (type == typeof(CommentRequest))
                 {
