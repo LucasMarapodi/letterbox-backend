@@ -1,4 +1,6 @@
-using Tcc.Application.Queries;
+using Tcc.Application.Opinions;
+using Tcc.Application.Social;
+using Tcc.Application;
 using Tcc.Infrastructure.Persistence.Repositories;
 
 namespace Tcc.Api.DependencyInjection;

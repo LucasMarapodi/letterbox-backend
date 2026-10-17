@@ -66,6 +66,8 @@ Configuração `Authentication:SessionMinutes` em src/Tcc.Api/appsettings.json, 
 - Api: composição, DTOs, autenticação Bearer e pipeline HTTP.
 - tests: fixtures isoladas, regressões HTTP e integração com PostgreSQL real.
 
+Application e Domain mantêm quatro áreas funcionais rasas: `Catalog`, `Identity`, `Opinions` e `Social`. Consultas de reviews/comentários ficam em Opinions e o feed de seguidos em Social. Busca agregada e dashboard ficam na raiz de Application, junto de `ResourceFailure`, `DatabaseUnavailableException` e `IHostSeed`; `DomainValidationException` fica na raiz de Domain. `IHostSeed` preserva as fixtures existentes, sem stores de negócio em memória no runtime. Movimentos e validações em [S-PR-39](docs/S-PR-39.md).
+
 A composição da API fica em `DependencyInjection`; `Configuration` mantém o leitor de ambiente e `Catalog/Adapters` reúne os adaptadores de escopo. `ApiRegistration` configura HTTP/JSON/erros globais, e `Extensions/ApiPipelineExtensions` organiza middleware e endpoints. Handlers de autenticação e erros permanecem em suas pastas. Estrutura e verificações em [S-PR-31](docs/S-PR-31.md).
 
 A [P-PR-01](docs/P-PR-01.md) persiste usuários, perfis e sessões. Cadastro conta/perfil é atômico; PATCH serializa mudanças parciais; sessões guardam somente SHA-256 do token. Reiniciar a API preserva identidade no mesmo banco. Configuração, migrations e testes em [POSTGRES.md](docs/POSTGRES.md).

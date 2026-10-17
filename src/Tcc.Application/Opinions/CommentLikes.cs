@@ -1,6 +1,5 @@
-using Tcc.Domain.Identity;
-using Tcc.Application.Catalog;
 using Tcc.Application.Identity;
+using Tcc.Domain;
 
 namespace Tcc.Application.Opinions;
 

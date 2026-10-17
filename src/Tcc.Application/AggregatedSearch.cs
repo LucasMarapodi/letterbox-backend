@@ -1,8 +1,7 @@
 using Tcc.Application.Catalog;
-using Tcc.Application.Identity;
-using Tcc.Domain.Identity;
+using Tcc.Domain;
 
-namespace Tcc.Application.Queries;
+namespace Tcc.Application;
 
 public sealed record SearchRequest
 {

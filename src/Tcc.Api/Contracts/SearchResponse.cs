@@ -1,4 +1,4 @@
-using Tcc.Application.Queries;
+using Tcc.Application;
 
 namespace Tcc.Api.Contracts;
 

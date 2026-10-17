@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tcc.Application.Catalog;
 using Tcc.Application.Opinions;
+using Tcc.Application;
 using Tcc.Domain.Catalog;
 using Tcc.Domain.Opinions;
 
@@ -17,11 +18,11 @@ public class TestApiFactory : WebApplicationFactory<Program>
         Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(services);
         Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(services);
         services.AddSingleton<Tcc.Infrastructure.Memory.HostMemory>();
-        services.AddSingleton<Tcc.Application.Memory.IHostSeed>(provider => provider.GetRequiredService<Tcc.Infrastructure.Memory.HostMemory>());
+        services.AddSingleton<IHostSeed>(provider => provider.GetRequiredService<Tcc.Infrastructure.Memory.HostMemory>());
         services.AddSingleton<IExternalGameCatalog, FixtureCatalog>();
         services.AddSingleton<ICatalogFilterStore, FixtureCatalogFilters>();
         services.AddSingleton<IExternalCatalogFilters, FixtureCatalogFilters>();
-        services.AddSingleton<Tcc.Application.Queries.ICommentRanking, Fixtures.EmptyCommentRanking>();
+        services.AddSingleton<ICommentRanking, Fixtures.EmptyCommentRanking>();
         services.AddHostedService<CatalogFixtures>();
         services.AddHostedService<OpinionFixtures>();
     });

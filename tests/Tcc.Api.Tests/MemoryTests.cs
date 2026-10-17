@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Tcc.Application;
 using Tcc.Infrastructure.Memory;
 
 namespace Tcc.Api.Tests;
@@ -27,7 +28,7 @@ public sealed class MemoryTests
         Assert.Same(firstState, first.Services.GetRequiredService<HostMemory>());
         otherScope.ServiceProvider.GetRequiredService<HostMemory>().SeedOnce(() => value = "overwritten");
         Assert.Equal("written", value);
-        Assert.Same(firstState, first.Services.GetRequiredService<Tcc.Application.Memory.IHostSeed>());
+        Assert.Same(firstState, first.Services.GetRequiredService<IHostSeed>());
         Assert.Equal(TimeSpan.Zero, first.Services.GetRequiredService<TimeProvider>().GetUtcNow().Offset);
     }
 

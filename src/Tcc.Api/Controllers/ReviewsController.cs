@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Tcc.Api.Contracts;
 using Tcc.Application.Opinions;
+using Tcc.Domain;
 
 namespace Tcc.Api.Controllers;
 
@@ -33,7 +34,7 @@ public sealed class ReviewsController(PublishReview publish, GetReview reviews, 
     [ProducesResponseType<ApiError>(404)]
     public async Task<ActionResult<ReviewResponse>> Edit(int reviewId, ReviewPatchRequest request, CancellationToken cancellationToken)
     {
-        if (request.RatingSpecified && request.Rating is null) throw new Tcc.Domain.Identity.DomainValidationException("Nota não pode ser null.");
+        if (request.RatingSpecified && request.Rating is null) throw new DomainValidationException("Nota não pode ser null.");
         return Ok(ReviewResponse.From(await edit.Execute(reviewId, request.TextSpecified, request.Text, request.Rating, cancellationToken, request.TitleSpecified, request.Title)));
     }
 

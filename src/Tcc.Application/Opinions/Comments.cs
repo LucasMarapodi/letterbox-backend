@@ -1,9 +1,11 @@
-using Tcc.Domain.Opinions;
 using Tcc.Application.Catalog;
 using Tcc.Application.Identity;
 using Tcc.Application.Social;
+using Tcc.Domain.Opinions;
+using Tcc.Domain;
 
 namespace Tcc.Application.Opinions;
+
 public sealed record CommentWithLikes(Comment Comment, int LikeCount);
 public sealed record CommentActivitySummary(int ReviewId, int Count, DateTimeOffset Last);
 public interface IComments
@@ -19,7 +21,7 @@ public sealed class PublishComment(IComments comments, GetReview reviews, Opinio
     public async Task<CommentDetails> Execute(int reviewId, string? text, CancellationToken cancellationToken = default, int? parentCommentId = null)
     {
         var userId = (await access.Require(current, cancellationToken)).UserId;
-        if (reviewId <= 0) throw new Tcc.Domain.Identity.DomainValidationException("ID de review inválido.");
+        if (reviewId <= 0) throw new DomainValidationException("ID de review inválido.");
         var draft = Comment.Create(0, userId, reviewId, text, clock.GetUtcNow(), parentCommentId);
         var review = await reviews.FindAsync(reviewId, cancellationToken);
         if (parentCommentId is int parentId)

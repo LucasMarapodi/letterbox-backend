@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Tcc.Api.Contracts;
-using Tcc.Application.Queries;
+using Tcc.Application.Opinions;
 
 namespace Tcc.Api.Controllers;
 

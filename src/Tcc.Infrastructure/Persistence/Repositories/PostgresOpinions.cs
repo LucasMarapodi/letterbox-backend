@@ -4,6 +4,7 @@ using Tcc.Application.Catalog;
 using Tcc.Application.Identity;
 using Tcc.Application.Opinions;
 using Tcc.Application.Social;
+using Tcc.Application;
 using Tcc.Domain.Opinions;
 
 namespace Tcc.Infrastructure.Persistence.Repositories;

@@ -1,7 +1,7 @@
-using Tcc.Domain.Catalog;
-using Tcc.Domain.Identity;
-using System.Globalization;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using Tcc.Domain.Catalog;
+using Tcc.Domain;
 
 namespace Tcc.Application.Catalog;
 

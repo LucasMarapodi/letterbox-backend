@@ -1,8 +1,7 @@
-using Tcc.Application.Opinions;
-using Tcc.Domain.Identity;
 using Tcc.Domain.Opinions;
+using Tcc.Domain;
 
-namespace Tcc.Application.Queries;
+namespace Tcc.Application.Opinions;
 
 public sealed record RankedCommentDetails(int CommentId, int ReviewId, int GameId, int? ParentCommentId,
     string Text, DateTimeOffset CreatedAt, PublicAuthor Author, int LikeCount, int PeriodLikeCount, DateTimeOffset LastLikeAt);

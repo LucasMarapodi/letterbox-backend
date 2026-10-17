@@ -1,6 +1,8 @@
 using Tcc.Domain.Identity;
+using Tcc.Domain;
 
 namespace Tcc.Application.Identity;
+
 public sealed class GetUserProfile(IUserAccounts accounts)
 {
     public Task<UserAccount> Execute(int id, CancellationToken cancellationToken = default) => Get(id, cancellationToken);

@@ -1,8 +1,10 @@
 using Tcc.Application.Opinions;
 using Tcc.Application.Social;
+using Tcc.Application;
 using Tcc.Domain.Opinions;
 using Tcc.Infrastructure.Social;
 namespace Tcc.Infrastructure.Opinions;
+
 public sealed class InMemoryReviews(InMemoryPublicationScope publications, IRatings ratings) : IReviews
 {
     private readonly Dictionary<int, Review> reviews = [];
@@ -20,8 +22,8 @@ public sealed class InMemoryReviews(InMemoryPublicationScope publications, IRati
     public Task<Review> WriteAsync(ReviewWrite command, Func<Review, CancellationToken, Task> publish, CancellationToken ct = default) => publications.ExecuteAsync(async () =>
     {
         var original = All().SingleOrDefault(item => item.UserId == command.UserId && item.GameId == command.GameId);
-        if (command.ReviewId is int id && original?.Id != id) throw new Tcc.Application.Catalog.ResourceFailure(Tcc.Application.Catalog.ResourceFailureKind.NotFound);
-        if (original is not null && command.CreateOnly) throw new Tcc.Application.Catalog.ResourceFailure(Tcc.Application.Catalog.ResourceFailureKind.Conflict);
+        if (command.ReviewId is int id && original?.Id != id) throw new ResourceFailure(ResourceFailureKind.NotFound);
+        if (original is not null && command.CreateOnly) throw new ResourceFailure(ResourceFailureKind.Conflict);
         var saved = original is null
             ? Review.Create(++next, command.UserId, command.GameId, command.Text, command.Now, command.Title) with { Evaluation = Review.CreateRated(command.UserId, command.GameId, command.Text, command.Rating, command.Now, command.Title).Evaluation }
             : original.EditRated(command.UserId, command.TextSpecified, command.Text, command.Rating, command.Now, command.TitleSpecified, command.Title);

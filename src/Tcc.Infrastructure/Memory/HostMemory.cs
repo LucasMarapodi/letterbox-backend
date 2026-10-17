@@ -1,6 +1,7 @@
+using Tcc.Application;
 namespace Tcc.Infrastructure.Memory;
 
-public sealed class HostMemory : Tcc.Application.Memory.IHostSeed
+public sealed class HostMemory : IHostSeed
 {
     private readonly Lock gate = new();
     private bool seeded;

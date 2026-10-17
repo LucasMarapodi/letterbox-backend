@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Tcc.Api.Contracts;
 using Tcc.Application.Catalog;
 using Tcc.Application.Opinions;
+using Tcc.Application;
 
 namespace Tcc.Api.Controllers;
 

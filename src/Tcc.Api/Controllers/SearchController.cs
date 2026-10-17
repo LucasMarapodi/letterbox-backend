@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Tcc.Api.Contracts;
-using Tcc.Application.Queries;
-using Tcc.Domain.Identity;
+using Tcc.Application;
+using Tcc.Domain;
 
 namespace Tcc.Api.Controllers;
 

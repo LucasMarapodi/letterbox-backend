@@ -1,7 +1,8 @@
-using Tcc.Application.Identity;
-using Tcc.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Tcc.Application.Identity;
+using Tcc.Application;
+using Tcc.Domain.Identity;
 
 namespace Tcc.Infrastructure.Persistence.Repositories;
 

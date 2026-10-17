@@ -1,4 +1,4 @@
-using Tcc.Application.Queries;
+using Tcc.Application.Opinions;
 
 namespace Tcc.Api.Tests.Fixtures;
 

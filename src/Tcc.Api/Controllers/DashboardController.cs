@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Tcc.Api.Contracts;
 using Tcc.Application.Opinions;
-using Tcc.Application.Queries;
+using Tcc.Application;
 
 namespace Tcc.Api.Controllers;
 

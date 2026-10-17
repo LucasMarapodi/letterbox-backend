@@ -1,8 +1,7 @@
-using Tcc.Application.Opinions;
-using Tcc.Application.Social;
+using Tcc.Application.Catalog;
 using Tcc.Domain.Opinions;
 
-namespace Tcc.Application.Queries;
+namespace Tcc.Application.Opinions;
 
 public sealed record ReviewActivity(Review Review, int CommentCount, DateTimeOffset LastCommentAt);
 
@@ -29,7 +28,7 @@ internal static class ActivityOrdering
 }
 
 public sealed record RankedReviewDetails(ReviewDetails Review, int CommentCount, DateTimeOffset LastCommentAt);
-public sealed class MostCommentedReviews(CommentActivity activity, OpinionViews views, Tcc.Application.Catalog.QueryGames games)
+public sealed class MostCommentedReviews(CommentActivity activity, OpinionViews views, QueryGames games)
 {
     public async Task<IReadOnlyList<RankedReviewDetails>> Execute(string? period, CancellationToken cancellationToken = default)
     {
