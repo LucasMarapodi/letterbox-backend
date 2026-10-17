@@ -1,5 +1,6 @@
 using Tcc.Application.Catalog;
 using Tcc.Domain.Identity;
+using Tcc.Domain;
 using Tcc.Infrastructure.Igdb;
 
 namespace Tcc.Api.Tests.Igdb;

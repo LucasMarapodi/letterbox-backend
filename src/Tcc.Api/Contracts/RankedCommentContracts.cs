@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
-using Tcc.Application.Queries;
+using Tcc.Application.Opinions;
 
 namespace Tcc.Api.Contracts;
 

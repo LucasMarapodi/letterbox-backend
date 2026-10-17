@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Tcc.Api.Contracts;
-using Tcc.Application.Identity;
-using Tcc.Domain.Identity;
 using Tcc.Application.Catalog;
+using Tcc.Application.Identity;
+using Tcc.Application;
 using Tcc.Domain.Opinions;
+using Tcc.Domain;
 
 namespace Tcc.Api.ErrorHandling;
 

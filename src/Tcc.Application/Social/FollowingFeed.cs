@@ -1,9 +1,9 @@
 using Tcc.Application.Identity;
 using Tcc.Application.Opinions;
-using Tcc.Application.Social;
 using Tcc.Domain.Opinions;
 
-namespace Tcc.Application.Queries;
+namespace Tcc.Application.Social;
+
 public sealed class FollowingFeed(IFollows follows, ReviewProjection projection,
     ICurrentSession current, SessionAccess access)
 {

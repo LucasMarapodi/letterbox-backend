@@ -1,8 +1,7 @@
 using Tcc.Application.Catalog;
-using Tcc.Application.Opinions;
 using Tcc.Domain.Catalog;
 
-namespace Tcc.Application.Queries;
+namespace Tcc.Application.Opinions;
 
 public sealed record GameActivity(int GameId, int CommentCount, DateTimeOffset LastCommentAt);
 public sealed record RankedGameDetails(Game Game, double? AverageRating, int CommentCount, DateTimeOffset LastCommentAt);

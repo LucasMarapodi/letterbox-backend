@@ -1,6 +1,7 @@
 using Tcc.Domain.Identity;
 
 namespace Tcc.Application.Identity;
+
 public interface IUserAccounts
 {
     Task<UserAccount?> AddAsync(UserAccount account, CancellationToken cancellationToken = default);
@@ -15,4 +16,3 @@ public interface IPasswordHasher
     string Hash(string password);
     bool Verify(string password, string verifier);
 }
-public sealed class DatabaseUnavailableException() : Exception("Persistência temporariamente indisponível.");

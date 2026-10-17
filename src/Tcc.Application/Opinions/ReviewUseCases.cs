@@ -1,10 +1,12 @@
 using Tcc.Application.Catalog;
 using Tcc.Application.Identity;
-using Tcc.Domain.Opinions;
 using Tcc.Application.Social;
 using Tcc.Domain.Catalog;
+using Tcc.Domain.Opinions;
+using Tcc.Domain;
 
 namespace Tcc.Application.Opinions;
+
 public sealed record ReviewQuery(int? GameId = null, int? UserId = null, IReadOnlyList<int>? Authors = null, IReadOnlyList<int>? Ids = null);
 public sealed record ReviewWrite(int UserId, int GameId, int? ReviewId, bool CreateOnly, bool TextSpecified, string? Text, double? Rating, DateTimeOffset Now, bool TitleSpecified = false, string? Title = null);
 public interface IReviews
@@ -68,7 +70,7 @@ public sealed class GetReview(IReviews reviews, OpinionViews views)
 {
     public async Task<Review> FindAsync(int id, CancellationToken ct = default)
     {
-        if (id <= 0) throw new Tcc.Domain.Identity.DomainValidationException("ID de review inválido.");
+        if (id <= 0) throw new DomainValidationException("ID de review inválido.");
         return await reviews.FindAsync(id, ct) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
     }
     public async Task<ReviewDetails> ExecuteAsync(int id, CancellationToken ct = default) => await views.ReviewAsync(await FindAsync(id, ct), ct);
@@ -78,7 +80,7 @@ public sealed class EditReview(IReviews reviews, ICurrentSession current, Sessio
     public async Task<ReviewDetails> Execute(int id, bool textSpecified, string? text, double? rating, CancellationToken ct = default, bool titleSpecified = false, string? title = null)
     {
         var userId = (await access.Require(current, ct)).UserId;
-        if (id <= 0) throw new Tcc.Domain.Identity.DomainValidationException("ID de review inválido.");
+        if (id <= 0) throw new DomainValidationException("ID de review inválido.");
         var original = await reviews.FindAsync(id, ct) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
         var prepared = original.EditRated(userId, textSpecified, text, rating, clock.GetUtcNow(), titleSpecified, title);
         var projection = await views.ReviewAsync(prepared, ct);

@@ -1,6 +1,7 @@
 using Tcc.Application.Catalog;
 using Tcc.Application.Identity;
-using Tcc.Application.Queries;
+using Tcc.Application;
+using Tcc.Domain;
 
 namespace Tcc.Api.Tests.Persistence;
 
@@ -51,7 +52,7 @@ public sealed class AggregatedSearchBehaviorTests
     public void Query_limit_is_validated_after_trim_and_before_work()
     {
         Assert.Equal(200, SearchRequest.Create(" " + new string('x', 200) + " ").Query.Length);
-        Assert.Throws<Tcc.Domain.Identity.DomainValidationException>(() => SearchRequest.Create(new string('x', 201)));
+        Assert.Throws<DomainValidationException>(() => SearchRequest.Create(new string('x', 201)));
     }
 
     private sealed class PeopleProbe : IPeopleSearch

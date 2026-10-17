@@ -1,9 +1,9 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Tcc.Api.Contracts;
 using Tcc.Api.ErrorHandling;
-using Tcc.Application.Queries;
+using Tcc.Application;
 
 namespace Tcc.Api.DependencyInjection;
 

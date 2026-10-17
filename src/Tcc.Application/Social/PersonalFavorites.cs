@@ -2,7 +2,9 @@ using Tcc.Application.Catalog;
 using Tcc.Application.Identity;
 using Tcc.Application.Opinions;
 using Tcc.Domain.Catalog;
+using Tcc.Domain.Opinions;
 using Tcc.Domain.Social;
+using Tcc.Domain;
 
 namespace Tcc.Application.Social;
 
@@ -14,14 +16,14 @@ public interface IFavorites
     Task<FavoriteSnapshot> SnapshotAsync(int userId, CancellationToken ct = default);
 }
 public sealed record FavoriteCollections(IReadOnlyList<Game> Games, IReadOnlyList<ReviewDetails> Reviews);
-public sealed record FavoriteSnapshot(IReadOnlyList<int> GameIds, IReadOnlyList<Tcc.Domain.Opinions.Review> Reviews);
+public sealed record FavoriteSnapshot(IReadOnlyList<int> GameIds, IReadOnlyList<Review> Reviews);
 
 public sealed class PersonalFavorites(IFavorites favorites, QueryGames games, GetReview reviews,
     ICurrentSession current, SessionAccess access, OpinionViews views, TimeProvider clock)
 {
     private async Task<FavoriteKind> Validate(string kind, int targetId, CancellationToken cancellationToken)
     {
-        if (targetId <= 0) throw new Tcc.Domain.Identity.DomainValidationException("ID local inválido.");
+        if (targetId <= 0) throw new DomainValidationException("ID local inválido.");
         var type = Favorite.ParseKind(kind);
         if (type == FavoriteKind.Game) await games.GetAsync(targetId, cancellationToken); else await reviews.FindAsync(targetId, cancellationToken);
         return type;

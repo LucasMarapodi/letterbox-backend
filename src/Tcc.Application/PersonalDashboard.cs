@@ -1,11 +1,13 @@
+using Tcc.Application.Catalog;
+using Tcc.Application.Identity;
 using Tcc.Application.Opinions;
 using Tcc.Application.Social;
 
-namespace Tcc.Application.Queries;
+namespace Tcc.Application;
 
 public sealed record DashboardDetails(FavoriteCollections Favorites, IReadOnlyList<ReviewDetails> Feed);
-public sealed class PersonalDashboard(PersonalFavorites favorites, FollowingFeed feed, Tcc.Application.Catalog.QueryGames games,
-    OpinionViews views, Tcc.Application.Identity.ICurrentSession current, Tcc.Application.Identity.SessionAccess access)
+public sealed class PersonalDashboard(PersonalFavorites favorites, FollowingFeed feed, QueryGames games,
+    OpinionViews views, ICurrentSession current, SessionAccess access)
 {
     public async Task<DashboardDetails> Execute(CancellationToken cancellationToken = default)
     {

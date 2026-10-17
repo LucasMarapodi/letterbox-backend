@@ -2,8 +2,9 @@ using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Tcc.Application.Catalog;
 using Tcc.Application.Identity;
-using Tcc.Domain.Social;
+using Tcc.Application;
 using Tcc.Domain.Identity;
+using Tcc.Domain.Social;
 
 namespace Tcc.Infrastructure.Persistence.Repositories;
 

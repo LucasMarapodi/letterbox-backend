@@ -1,6 +1,8 @@
 using Tcc.Domain.Identity;
+using Tcc.Domain;
 
 namespace Tcc.Application.Identity;
+
 public sealed class RegisterAccount(IUserAccounts accounts, IPasswordHasher passwords, TimeProvider clock)
 {
     public async Task<UserAccount> Execute(string? name, string? email, string? password, CancellationToken cancellationToken = default)

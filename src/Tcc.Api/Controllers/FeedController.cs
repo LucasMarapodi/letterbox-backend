@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Tcc.Api.Contracts;
-using Tcc.Application.Queries;
+using Tcc.Application.Social;
 
 namespace Tcc.Api.Controllers;
 

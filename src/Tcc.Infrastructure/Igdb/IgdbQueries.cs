@@ -1,6 +1,6 @@
-using Tcc.Application.Catalog;
 using System.Globalization;
-using Tcc.Domain.Identity;
+using Tcc.Application.Catalog;
+using Tcc.Domain;
 
 namespace Tcc.Infrastructure.Igdb;
 

@@ -1,4 +1,4 @@
-namespace Tcc.Application.Memory;
+namespace Tcc.Application;
 
 public interface IHostSeed
 {

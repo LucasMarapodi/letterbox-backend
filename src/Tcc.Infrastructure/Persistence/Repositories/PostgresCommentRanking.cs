@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Tcc.Application.Opinions;
-using Tcc.Application.Queries;
 
 namespace Tcc.Infrastructure.Persistence.Repositories;
 

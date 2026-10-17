@@ -1,11 +1,7 @@
 using Tcc.Domain.Catalog;
 
 namespace Tcc.Application.Catalog;
-public enum ResourceFailureKind { NotFound, Conflict, Forbidden }
-public sealed class ResourceFailure(ResourceFailureKind kind) : Exception("Operação rejeitada.")
-{
-    public ResourceFailureKind Kind { get; } = kind;
-}
+
 public sealed class QueryGames(IAsyncGameCatalog catalog, CatalogUsage usage)
 {
     public async Task<Game> GetAsync(int id, CancellationToken cancellationToken = default)

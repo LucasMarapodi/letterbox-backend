@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Tcc.Application.Queries;
+using Tcc.Application;
 
 namespace Tcc.Infrastructure.Persistence.Repositories;
 

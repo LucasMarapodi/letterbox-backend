@@ -1,7 +1,6 @@
-using Tcc.Application.Opinions;
-using Tcc.Application.Social;
 
-namespace Tcc.Application.Queries;
+namespace Tcc.Application.Opinions;
+
 public sealed class RecentReviews(IReviews reviews, ReviewProjection projection)
 {
     public async Task<IReadOnlyList<ReviewDetails>> Execute(CancellationToken cancellationToken = default) =>
