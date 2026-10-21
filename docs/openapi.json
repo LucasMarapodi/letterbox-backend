@@ -1465,6 +1465,121 @@
         "security": []
       }
     },
+    "/api/v1/community/reviews/most-liked": {
+      "get": {
+        "tags": [
+          "CommunityReviewLikes"
+        ],
+        "summary": "GET /api/v1/community/reviews/most-liked",
+        "description": "Ranking público/no-store de curtidas de reviews: likes ativos no intervalo UTC inclusivo, inclusive reviews antigas. Ordena periodLikeCount DESC, lastLikeAt DESC, reviewId ASC antes da paginação SQL. Retorna review pública completa, total de likes independente do período e métricas da janela, sem likedByMe. period 24h|7d|30d (padrão 7d), page>=1, pageSize 10|20|50 (padrão 20).",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "24h",
+                "7d",
+                "30d"
+              ],
+              "type": "string",
+              "default": "7d"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 10,
+              "enum": [
+                10,
+                20,
+                50
+              ],
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikedReviewPageResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikedReviewPageResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikedReviewPageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
     "/api/v1/dashboard": {
       "get": {
         "tags": [
@@ -6380,6 +6495,56 @@
           }
         }
       },
+      "LikedReviewPageResponse": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "hasNextPage"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LikedReviewResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LikedReviewResponse": {
+        "required": [
+          "review",
+          "periodLikeCount",
+          "lastLikeAt"
+        ],
+        "type": "object",
+        "properties": {
+          "review": {
+            "$ref": "#/components/schemas/ReviewResponse"
+          },
+          "periodLikeCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastLikeAt": {
+            "type": "string",
+            "description": "Data UTC em ISO 8601.",
+            "format": "date-time"
+          }
+        }
+      },
       "LoginRequest": {
         "examples": [
           {
@@ -7313,6 +7478,9 @@
     },
     {
       "name": "Community"
+    },
+    {
+      "name": "CommunityReviewLikes"
     },
     {
       "name": "Dashboard"
