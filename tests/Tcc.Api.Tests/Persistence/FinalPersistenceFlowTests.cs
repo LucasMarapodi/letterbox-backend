@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Tcc.Api.DependencyInjection;
 using Tcc.Api.Tests.Identity;
 using Tcc.Application.Catalog;
+using Tcc.Application.Forum;
 using Tcc.Application.Identity;
 using Tcc.Application.Opinions;
 using Tcc.Application.Social;
@@ -29,6 +30,7 @@ public sealed class FinalPersistenceFlowTests
             (typeof(IReviews), typeof(PostgresReviews)), (typeof(IRatings), typeof(PostgresRatings)),
             (typeof(IComments), typeof(PostgresComments)), (typeof(ICommentLikes), typeof(PostgresCommentLikes)),
             (typeof(IReviewLikes), typeof(PostgresReviewLikes)),
+            (typeof(IForum), typeof(PostgresForum)),
             (typeof(IFavorites), typeof(PostgresFavorites)), (typeof(IFollows), typeof(PostgresFollows)),
             (typeof(INotifications), typeof(PostgresNotifications))
         };
@@ -48,7 +50,7 @@ public sealed class FinalPersistenceFlowTests
     public async Task Two_accounts_populate_all_tables_and_keep_content_relationships_and_session_revocation_after_API_restart()
     {
         await PostgresCatalogTests.Reset();
-        int gameId, reviewId, rootId, replyId;
+        int gameId, reviewId, rootId, replyId, forumTopicId, forumReplyId;
         (int Id, string Token) author, reader;
         string revoked;
         var offline = new PostgresCatalogTests.NoSupplier();
@@ -64,8 +66,10 @@ public sealed class FinalPersistenceFlowTests
             await Put(client, $"/api/v1/users/{author.Id}/follow");
             client.DefaultRequestHeaders.Authorization = new("Bearer", author.Token);
             reviewId = await Publish(client, $"/api/v1/games/{gameId}/reviews", new { title = "Fixture review", rating = 4.5, text = "Complete SQL lifecycle" });
+            forumTopicId = await Publish(client, $"/api/v1/games/{gameId}/forum/topics", new { title = "Persistent forum", text = "Independent initial message" });
             using (var rating = await client.PutAsJsonAsync($"/api/v1/games/{gameId}/rating/me", new { value = 4.5 })) rating.EnsureSuccessStatusCode();
             client.DefaultRequestHeaders.Authorization = new("Bearer", reader.Token);
+            forumReplyId = await Publish(client, $"/api/v1/forum/topics/{forumTopicId}/replies", new { text = "Persistent forum reply" });
             rootId = await Publish(client, $"/api/v1/reviews/{reviewId}/comments", new { text = "Persistent root" });
             replyId = await Publish(client, $"/api/v1/reviews/{reviewId}/comments", new { text = "Persistent reply", parentCommentId = rootId });
             await Put(client, $"/api/v1/reviews/{reviewId}/like");
@@ -73,7 +77,7 @@ public sealed class FinalPersistenceFlowTests
             revoked = (await LoginTests.Login(client, "final-author@example.com", "synthetic-password")).Token;
             client.DefaultRequestHeaders.Authorization = new("Bearer", revoked);
             using (var logout = await client.PostAsync("/api/v1/auth/logout", null)) Assert.Equal(204, (int)logout.StatusCode);
-            foreach (var (key, token, path) in Reads(author, reader, gameId, reviewId, rootId))
+            foreach (var (key, token, path) in Reads(author, reader, gameId, reviewId, rootId, forumTopicId))
             {
                 client.DefaultRequestHeaders.Authorization = new("Bearer", token);
                 snapshots[key] = await client.GetStringAsync(path);
@@ -82,7 +86,7 @@ public sealed class FinalPersistenceFlowTests
         // Original host is disposed; the second host has fresh singleton caches and the same SQL target.
         await using var restarted = OfflineHost(offline);
         using var other = restarted.CreateClient();
-        foreach (var (key, token, path) in Reads(author, reader, gameId, reviewId, rootId))
+        foreach (var (key, token, path) in Reads(author, reader, gameId, reviewId, rootId, forumTopicId))
         {
             other.DefaultRequestHeaders.Authorization = new("Bearer", token);
             Assert.Equal(snapshots[key], await other.GetStringAsync(path));
@@ -113,6 +117,18 @@ public sealed class FinalPersistenceFlowTests
             Assert.Equal(0, empty.RootElement.GetProperty("reviews").GetArrayLength());
         }
         using (var like = JsonDocument.Parse(snapshots["like"])) Assert.True(like.RootElement.GetProperty("likedByMe").GetBoolean());
+        using (var topic = JsonDocument.Parse(snapshots["forum-topic"]))
+        {
+            Assert.Equal(1, topic.RootElement.GetProperty("replyCount").GetInt32());
+            Assert.Equal(author.Id, topic.RootElement.GetProperty("author").GetProperty("id").GetInt32());
+        }
+        using (var replies = JsonDocument.Parse(snapshots["forum-replies"]))
+        {
+            var reply = Assert.Single(replies.RootElement.GetProperty("items").EnumerateArray());
+            Assert.Equal(forumReplyId, reply.GetProperty("id").GetInt32());
+            Assert.Equal(forumTopicId, reply.GetProperty("topicId").GetInt32());
+            Assert.Equal(reader.Id, reply.GetProperty("author").GetProperty("id").GetInt32());
+        }
         Assert.Equal(0, offline.Calls);
         await using var audit = PostgresTestDatabase.Context();
         foreach (var table in audit.Model.GetRelationalModel().Tables)
@@ -126,8 +142,11 @@ public sealed class FinalPersistenceFlowTests
     private static Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> OfflineHost(PostgresCatalogTests.NoSupplier supplier) =>
         new PostgresApiFactory().WithWebHostBuilder(builder => builder.ConfigureServices(services => services.AddSingleton<IExternalGameCatalog>(supplier)));
 
-    private static IEnumerable<(string Key, string Token, string Path)> Reads((int Id, string Token) author, (int Id, string Token) reader, int game, int review, int comment)
+    private static IEnumerable<(string Key, string Token, string Path)> Reads((int Id, string Token) author, (int Id, string Token) reader, int game, int review, int comment, int topic)
     {
+        yield return ("forum-topics", reader.Token, $"/api/v1/games/{game}/forum/topics");
+        yield return ("forum-topic", reader.Token, $"/api/v1/forum/topics/{topic}");
+        yield return ("forum-replies", reader.Token, $"/api/v1/forum/topics/{topic}/replies");
         yield return ("author-me", author.Token, "/api/v1/auth/me");
         yield return ("reader-me", reader.Token, "/api/v1/auth/me");
         yield return ("rating", author.Token, $"/api/v1/games/{game}/rating/me");

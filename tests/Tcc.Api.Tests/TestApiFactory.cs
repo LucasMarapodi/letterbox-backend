@@ -24,6 +24,7 @@ public class TestApiFactory : WebApplicationFactory<Program>
         services.AddSingleton<IExternalCatalogFilters, FixtureCatalogFilters>();
         services.AddSingleton<ICommentRanking, Fixtures.EmptyCommentRanking>();
         services.AddSingleton<IReviewRanking, Fixtures.EmptyReviewRanking>();
+        services.AddSingleton<Tcc.Application.Forum.IForum, Fixtures.ForumFixture>();
         services.AddHostedService<CatalogFixtures>();
         services.AddHostedService<OpinionFixtures>();
     });

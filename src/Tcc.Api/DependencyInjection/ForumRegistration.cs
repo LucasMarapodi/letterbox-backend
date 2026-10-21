@@ -9,6 +9,7 @@ public static class ForumRegistration
     {
         services.AddScoped<IForum, PostgresForum>();
         services.AddScoped<ForumQueries>();
+        services.AddScoped<ForumWrites>();
         return services;
     }
 }

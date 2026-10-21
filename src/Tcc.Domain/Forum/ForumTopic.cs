@@ -9,7 +9,7 @@ public sealed class ForumTopic
     public string Text { get; }
     public DateTimeOffset CreatedAt { get; }
 
-    public ForumTopic(int id, int gameId, int userId, string title, string text, DateTimeOffset createdAt)
+    public ForumTopic(int id, int gameId, int userId, string? title, string? text, DateTimeOffset createdAt)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(id);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(gameId);

@@ -1,3 +1,5 @@
+using Tcc.Application;
+using Tcc.Domain.Forum;
 using Microsoft.EntityFrameworkCore;
 using Tcc.Application.Forum;
 
@@ -5,6 +7,27 @@ namespace Tcc.Infrastructure.Persistence.Repositories;
 
 public sealed class PostgresForum(Lazy<TccDbContext> context) : IForum
 {
+    public Task<ForumTopicDetails> AddTopicAsync(ForumTopic topic, CancellationToken ct) => OpinionStorage.Run(async () =>
+    {
+        var db = context.Value;
+        db.ForumTopics.Add(topic);
+        await db.SaveChangesAsync(ct);
+        return await TopicAsync(topic.Id, ct) ?? throw new ResourceFailure(ResourceFailureKind.NotFound);
+    });
+
+    public Task<ForumReplyDetails> AddReplyAsync(ForumReply reply, CancellationToken ct) => OpinionStorage.Run(async () =>
+    {
+        var db = context.Value;
+        db.ForumReplies.Add(reply);
+        await db.SaveChangesAsync(ct);
+        return await (from row in db.ForumReplies.AsNoTracking()
+                      where row.Id == reply.Id
+                      join author in db.Users.AsNoTracking() on row.UserId equals author.Id
+                      select new ForumReplyDetails(row.Id, row.TopicId,
+                          new ForumAuthor(author.Id, author.Username, author.Profile.DisplayName, author.Profile.AvatarUrl), row.Text, row.CreatedAt))
+            .SingleAsync(ct);
+    });
+
     private static IQueryable<Activity> Activities(TccDbContext db) => db.ForumReplies.AsNoTracking()
         .GroupBy(reply => reply.TopicId)
         .Select(group => new Activity { TopicId = group.Key, Count = group.Count(), Last = group.Max(reply => reply.CreatedAt) });

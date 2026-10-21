@@ -8,7 +8,7 @@ public sealed class ForumReply
     public string Text { get; }
     public DateTimeOffset CreatedAt { get; }
 
-    public ForumReply(int id, int topicId, int userId, string text, DateTimeOffset createdAt)
+    public ForumReply(int id, int topicId, int userId, string? text, DateTimeOffset createdAt)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(id);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(topicId);

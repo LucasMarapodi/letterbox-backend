@@ -22,7 +22,7 @@ public sealed class CatalogModelTests
                 Assert.Contains(entity.GetIndexes(), index => index.IsUnique && index.Properties.Single().Name == "IgdbId");
             }
         }
-        Assert.Equal(17, db.Model.GetEntityTypes().Count());
+        Assert.Equal(19, db.Model.GetEntityTypes().Count());
         Assert.False(db.Database.HasPendingModelChanges());
     }
 }

@@ -60,6 +60,8 @@ Configuração `Authentication:SessionMinutes` em src/Tcc.Api/appsettings.json, 
 
 ## Camadas
 
+O [fórum por jogo](docs/FORUM.md), da F-PR-01, oferece leitura pública e criação autenticada de tópicos/respostas independentes de reviews. Domain e Application receberam uma área funcional `Forum`; persistência em duas tabelas com FKs Restrict e páginas de 20 itens. A interface com abas Reviews/Fórum pertence à F-PR-02. A migration de fórum foi aplicada somente no banco exclusivo de testes e precisa ser aplicada explicitamente no ambiente que ativar esta versão.
+
 - Domain: entidades e invariantes sem dependências externas.
 - Application: casos de uso e portas assíncronas para identidade.
 - Infrastructure: EF Core/Npgsql para os dados de negócio, hashing, integração IGDB e cache transitório de catálogo.

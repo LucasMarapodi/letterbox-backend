@@ -1,3 +1,5 @@
+using Tcc.Domain.Forum;
+
 namespace Tcc.Application.Forum;
 
 public sealed record ForumAuthor(int Id, string Username, string DisplayName, string? AvatarUrl);
@@ -11,6 +13,8 @@ public sealed record ForumPage<T>(IReadOnlyList<T> Items, int Page, int PageSize
 
 public interface IForum
 {
+    Task<ForumTopicDetails> AddTopicAsync(ForumTopic topic, CancellationToken ct);
+    Task<ForumReplyDetails> AddReplyAsync(ForumReply reply, CancellationToken ct);
     Task<IReadOnlyList<ForumTopicSummary>> TopicsAsync(int gameId, int offset, int limit, CancellationToken ct);
     Task<ForumTopicDetails?> TopicAsync(int id, CancellationToken ct);
     Task<IReadOnlyList<ForumReplyDetails>> RepliesAsync(int topicId, int offset, int limit, CancellationToken ct);

@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data.Common;
 using Tcc.Infrastructure.Persistence;
+using Tcc.Api.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Tcc.Domain.Forum;
 using Tcc.Domain.Identity;
 
@@ -15,6 +17,21 @@ namespace Tcc.Api.Tests.Persistence;
 [Collection("PostgreSQL identity")]
 public sealed class ForumReadTests
 {
+    [Fact]
+    public async Task Unavailable_SQL_returns_safe_503_without_connection_details()
+    {
+        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureLogging(logging => logging.ClearProviders());
+            builder.ConfigureServices(services => services.AddPostgresPersistence(_ =>
+                "Host=127.0.0.1;Port=1;Database=unavailable;Username=synthetic;Password=forum-synthetic-secret;Timeout=1"));
+        });
+        using var response = await host.CreateClient().GetAsync("/api/v1/forum/topics/1");
+        Assert.Equal(503, (int)response.StatusCode);
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("storage_unavailable", content); Assert.DoesNotContain("forum-synthetic-secret", content);
+    }
+
     [Theory]
     [InlineData("/api/v1/games/0/forum/topics")]
     [InlineData("/api/v1/games/1/forum/topics?page=0")]

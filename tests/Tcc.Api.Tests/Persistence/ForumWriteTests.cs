@@ -83,5 +83,10 @@ public sealed class ForumWriteTests
         using var logout = await client.PostAsync("/api/v1/auth/logout", null); logout.EnsureSuccessStatusCode();
         using var revoked = await client.PostAsJsonAsync(repliesPath, new { text = "Must not persist" });
         Assert.Equal(401, (int)revoked.StatusCode); Assert.Equal(12, await db.ForumReplies.CountAsync());
+        await using var canceledDb = PostgresTestDatabase.Context();
+        var repository = new Tcc.Infrastructure.Persistence.Repositories.PostgresForum(new Lazy<Tcc.Infrastructure.Persistence.TccDbContext>(() => canceledDb));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => repository.AddTopicAsync(
+            new Tcc.Domain.Forum.ForumTopic(0, game, owner.Id, "Canceled", "Must not persist", DateTimeOffset.UtcNow), new CancellationToken(true)));
+        Assert.Equal(2, await db.ForumTopics.CountAsync());
     }
 }
