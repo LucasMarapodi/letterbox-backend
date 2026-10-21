@@ -2,6 +2,11 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
+using System.Data.Common;
+using Tcc.Infrastructure.Persistence;
 using Tcc.Domain.Forum;
 using Tcc.Domain.Identity;
 
@@ -29,7 +34,7 @@ public sealed class ForumReadTests
         await PostgresApiFactory.ResetAsync();
         var games = await ProfileCompletionTests.Games();
         await using var db = PostgresTestDatabase.Context();
-        var now = DateTimeOffset.UtcNow;
+        var now = new DateTimeOffset(2026, 10, 21, 12, 0, 0, TimeSpan.Zero);
         var author = new UserAccount(0, "", Email.Create("forum-read@example.com"), "synthetic", UserProfile.Create("Public author", ""), now);
         db.Users.Add(author); await db.SaveChangesAsync();
         var topics = Enumerable.Range(0, 21).Select(i => new ForumTopic(0, games[0], author.Id, "Topic " + i, "Initial text", now.AddDays(-2))).ToArray();
@@ -39,10 +44,17 @@ public sealed class ForumReadTests
         db.ForumReplies.AddRange(replies);
         db.ForumReplies.Add(new(0, foreign.Id, author.Id, "Foreign reply", now));
         await db.SaveChangesAsync();
-        await using var host = new PostgresApiFactory();
+        var repository = new Tcc.Infrastructure.Persistence.Repositories.PostgresForum(new Lazy<Tcc.Infrastructure.Persistence.TccDbContext>(() => db));
+        Assert.Equal(21, (await repository.TopicsAsync(games[0], 0, 21, default)).Count);
+        var capture = new Capture();
+        await using var host = new PostgresApiFactory().WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+            services.AddDbContext<TccDbContext>(options => options.AddInterceptors(capture))));
         using var client = host.CreateClient();
         using var first = await Read(client, $"/api/v1/games/{games[0]}/forum/topics");
         var items = first.RootElement.GetProperty("items");
+        var sql = Assert.Single(capture.Commands, command => command.Contains("topicos_forum", StringComparison.Ordinal));
+        Assert.Contains("GROUP BY", sql); Assert.Contains("ORDER BY", sql); Assert.Contains("LIMIT", sql);
+        Assert.True(capture.Commands.Count <= 6, "A página não deve consultar cada autor/tópico separadamente.");
         Assert.Equal(20, items.GetArrayLength()); Assert.True(first.RootElement.GetProperty("hasNextPage").GetBoolean());
         Assert.Equal(topics[0].Id, items[0].GetProperty("id").GetInt32());
         Assert.Equal(topics[20].Id, items[1].GetProperty("id").GetInt32());
@@ -75,5 +87,13 @@ public sealed class ForumReadTests
         using var response = await client.GetAsync(path);
         Assert.Equal(200, (int)response.StatusCode);
         return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+    }
+
+    private sealed class Capture : DbCommandInterceptor
+    {
+        public List<string> Commands { get; } = [];
+        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command,
+            CommandEventData eventData, InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
+        { Commands.Add(command.CommandText); return ValueTask.FromResult(result); }
     }
 }
