@@ -9,3 +9,9 @@ internal sealed class EmptyCommentRanking : ICommentRanking
         int offset, int limit, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<RankedCommentDetails>>([]);
 }
+
+internal sealed class EmptyReviewRanking : IReviewRanking
+{
+    public Task<IReadOnlyList<LikedReviewDetails>> ReadAsync(DateTimeOffset from, DateTimeOffset to,
+        int offset, int limit, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LikedReviewDetails>>([]);
+}

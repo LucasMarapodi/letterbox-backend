@@ -23,6 +23,7 @@ public class TestApiFactory : WebApplicationFactory<Program>
         services.AddSingleton<ICatalogFilterStore, FixtureCatalogFilters>();
         services.AddSingleton<IExternalCatalogFilters, FixtureCatalogFilters>();
         services.AddSingleton<ICommentRanking, Fixtures.EmptyCommentRanking>();
+        services.AddSingleton<IReviewRanking, Fixtures.EmptyReviewRanking>();
         services.AddHostedService<CatalogFixtures>();
         services.AddHostedService<OpinionFixtures>();
     });

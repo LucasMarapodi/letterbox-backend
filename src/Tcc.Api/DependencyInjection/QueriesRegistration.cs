@@ -19,6 +19,8 @@ public static class QueriesRegistration
         services.AddScoped<GamesInDiscussion>();
         services.AddScoped<ICommentRanking, PostgresCommentRanking>();
         services.AddScoped<MostLikedComments>();
+        services.AddScoped<IReviewRanking, PostgresReviewRanking>();
+        services.AddScoped<MostLikedReviews>();
         return services;
     }
 }

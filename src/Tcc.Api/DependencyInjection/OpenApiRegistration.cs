@@ -92,7 +92,7 @@ public static class OpenApiRegistration
                     if (parameter.Name == "sort") { schema.Enum = Nodes("release-desc", "name-asc", "name-desc"); schema.Description = "Omitido: release-desc sem termo, name-asc com termo."; }
                     if (parameter.Name == "page") { schema.Minimum = "1"; schema.Default = JsonValue.Create(1); }
                     if (parameter.Name == "pageSize") { schema.Minimum = "1"; schema.Maximum = "100"; schema.Default = JsonValue.Create(20); }
-                    if (context.Description.RelativePath == "api/v1/community/comments/most-liked" && parameter.Name == "pageSize")
+                    if ((context.Description.RelativePath is "api/v1/community/comments/most-liked" or "api/v1/community/reviews/most-liked") && parameter.Name == "pageSize")
                     {
                         schema.Minimum = "10"; schema.Maximum = "50";
                         schema.Enum = new[] { 10, 20, 50 }.Select(value => (JsonNode)JsonValue.Create(value)).ToList();
@@ -102,7 +102,9 @@ public static class OpenApiRegistration
                     if (parameter.Name is "gameId" or "igdbId" or "reviewId" or "commentId" or "targetId") schema.Minimum = "1";
                     if (parameter.Name is "genreId" or "platformId") { schema.Minimum = "1"; schema.Description = "ID local int32 de GET /api/v1/games/filters; omissão significa Todos. Inválido/inexistente retorna 400 invalid_filter."; }
                 }
-                if (context.Description.RelativePath == "api/v1/community/comments/most-liked")
+                if (context.Description.RelativePath == "api/v1/community/reviews/most-liked")
+                    operation.Description = "Ranking público/no-store de curtidas de reviews: likes ativos no intervalo UTC inclusivo, inclusive reviews antigas. Ordena periodLikeCount DESC, lastLikeAt DESC, reviewId ASC antes da paginação SQL. Retorna review pública completa, total de likes independente do período e métricas da janela, sem likedByMe. period 24h|7d|30d (padrão 7d), page>=1, pageSize 10|20|50 (padrão 20).";
+                else if (context.Description.RelativePath == "api/v1/community/comments/most-liked")
                     operation.Description = "Ranking público/no-store, revalidado no PostgreSQL a cada leitura. period=24h|7d|30d (padrão 7d), page>=1 com offset int32, pageSize=10|20|50 (padrão 20). Conta likes ativos criados no intervalo UTC inclusivo [agora-período, agora], inclusive em comentários antigos e respostas. Ordena periodLikeCount DESC, lastLikeAt DESC, commentId ASC antes da paginação SQL. likeCount é o total ativo; periodLikeCount e lastLikeAt consideram só o período. Unlike retira contribuição; relike usa nova data. Retorna items/page/pageSize/hasNextPage sem estado pessoal ou dados privados de contas. Query inválida: 400; SQL indisponível: 503.";
                 else if (context.Description.RelativePath == "api/v1/comments/{commentId}/like/me")
                     operation.Description = "Estado privado do usuário do Bearer, sem cache compartilhado (no-store). Retorna somente likedByMe; listagens públicas incluem apenas likeCount agregado em SQL, sem estado pessoal. Permite curtir o próprio comentário e respostas. Alvo inexistente: 404; ID inválido: 400; sem sessão: 401. Likes não criam notificações.";
