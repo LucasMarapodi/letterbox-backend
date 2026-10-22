@@ -168,6 +168,92 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Tcc.Domain.Forum.ForumReply", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasColumnName("texto");
+
+                    b.Property<int>("TopicId")
+                        .HasColumnType("integer")
+                        .HasColumnName("topico_id");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("usuario_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("TopicId", "CreatedAt", "Id");
+
+                    b.ToTable("respostas_forum", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_respostas_forum_texto", "char_length(texto) BETWEEN 1 AND 10000 AND texto ~ '[^[:space:]]'");
+                        });
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Forum.ForumTopic", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<int>("GameId")
+                        .HasColumnType("integer")
+                        .HasColumnName("jogo_id");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(10000)
+                        .HasColumnType("character varying(10000)")
+                        .HasColumnName("texto");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("titulo");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("usuario_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("GameId", "CreatedAt", "Id");
+
+                    b.ToTable("topicos_forum", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_topicos_forum_texto", "char_length(texto) BETWEEN 1 AND 10000 AND texto ~ '[^[:space:]]'");
+
+                            t.HasCheckConstraint("ck_topicos_forum_titulo", "char_length(titulo) BETWEEN 1 AND 150 AND titulo ~ '[^[:space:]]'");
+                        });
+                });
+
             modelBuilder.Entity("Tcc.Domain.Identity.UserAccount", b =>
                 {
                     b.Property<int>("Id")
@@ -623,6 +709,36 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                     b.HasOne("Tcc.Domain.Catalog.Platform", null)
                         .WithMany()
                         .HasForeignKey("PlatformId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Forum.ForumReply", b =>
+                {
+                    b.HasOne("Tcc.Domain.Forum.ForumTopic", null)
+                        .WithMany()
+                        .HasForeignKey("TopicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Tcc.Domain.Forum.ForumTopic", b =>
+                {
+                    b.HasOne("Tcc.Domain.Catalog.Game", null)
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Tcc.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

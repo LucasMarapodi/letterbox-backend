@@ -54,5 +54,5 @@ public sealed class PermissionMatrixTests
     }
 
     private static string Resolve(string path) => path.Replace("{igdbId}", "1").Replace("{userId}", "1").Replace("{gameId}", "1")
-        .Replace("{reviewId}", "1").Replace("{commentId}", "1").Replace("{kind}", "game").Replace("{targetId}", "1");
+        .Replace("{reviewId}", "1").Replace("{commentId}", "1").Replace("{kind}", "game").Replace("{targetId}", "1").Replace("{topicId}", "1");
 }

@@ -6,6 +6,7 @@ using Microsoft.OpenApi;
 using Tcc.Api.Contracts;
 using Tcc.Api.Filters;
 using Tcc.Application.Identity;
+using Tcc.Application.Forum;
 
 namespace Tcc.Api.DependencyInjection;
 
@@ -20,7 +21,7 @@ public static class OpenApiRegistration
             options.AddDocumentTransformer((document, _, _) =>
             {
                 document.Info = new() { Title = "TCC Games API", Version = "v1",
-                    Description = "Usuários, perfis, sessões, catálogo, reviews, avaliações, comentários/respostas, curtidas, favoritos, seguimentos e notificações persistidos em PostgreSQL. IDs locais são inteiros; igdbId é externo de 64 bits. Publicação e eventos compartilham transação SQL. Cache → PostgreSQL → IGDB. Listagem de jogos usa envelope paginado." };
+                    Description = "Usuários, perfis, sessões, catálogo, reviews, avaliações, comentários/respostas, curtidas, favoritos, seguimentos, notificações e fórum por jogo persistidos em PostgreSQL. IDs locais são inteiros; igdbId é externo de 64 bits. Publicação e eventos compartilham transação SQL. Cache → PostgreSQL → IGDB. Listagem de jogos usa envelope paginado." };
                 document.Servers = [new OpenApiServer { Url = "/" }];
                 document.Components ??= new();
                 document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
@@ -79,6 +80,8 @@ public static class OpenApiRegistration
                         } }
                     };
                 }
+                if (context.Description.RelativePath?.Contains("forum/", StringComparison.Ordinal) == true)
+                    operation.Description = "Fórum separado de reviews/comentários. Leitura pública/no-store; POST exige sessão e recebe autor somente do Bearer, sem campos extras. Tópicos por última atividade DESC/ID DESC; respostas por criação ASC/ID ASC. page>=1 com offset int32, páginas fixas de 20 e hasNextPage. Título 1–150 e mensagens 1–10.000 após trim. Sem edição, exclusão, likes, notificações ou retries automáticos de POST. Texto simples em JSON; frontend deve renderizar como texto.";
                 foreach (var parameter in operation.Parameters ?? [])
                 {
                     if (parameter.Schema is not OpenApiSchema schema) continue;
@@ -99,7 +102,7 @@ public static class OpenApiRegistration
                     }
                     if (parameter.Name == "kind") schema.Enum = Nodes("game", "review");
                     if (parameter.Name == "userId") schema.Minimum = "1";
-                    if (parameter.Name is "gameId" or "igdbId" or "reviewId" or "commentId" or "targetId") schema.Minimum = "1";
+                    if (parameter.Name is "gameId" or "igdbId" or "reviewId" or "commentId" or "targetId" or "topicId") schema.Minimum = "1";
                     if (parameter.Name is "genreId" or "platformId") { schema.Minimum = "1"; schema.Description = "ID local int32 de GET /api/v1/games/filters; omissão significa Todos. Inválido/inexistente retorna 400 invalid_filter."; }
                 }
                 if (context.Description.RelativePath == "api/v1/community/reviews/most-liked")
@@ -211,6 +214,17 @@ public static class OpenApiRegistration
                 {
                     commentLikeCount.Minimum = "0";
                     commentLikeCount.Description = "Quantidade inteira de usuários que curtiram o comentário ou resposta, agregada em SQL na listagem. Estado pessoal somente em GET /comments/{commentId}/like/me, privado/no-store.";
+                }
+                if (type == typeof(ForumTopicRequest) || type == typeof(ForumReplyRequest))
+                {
+                    if (schema.Properties.TryGetValue("title", out var titleSchema) && titleSchema is OpenApiSchema title) { title.MinLength = 1; title.MaxLength = 150; }
+                    if (schema.Properties.TryGetValue("text", out var textSchema) && textSchema is OpenApiSchema text) { text.MinLength = 1; text.MaxLength = 10000; }
+                    schema.Description = "Conteúdo obrigatório e limites após trim; campos extras (autor, review, nota ou resposta pai) são rejeitados.";
+                }
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ForumPage<>))
+                {
+                    if (schema.Properties["pageSize"] is OpenApiSchema size) { size.Minimum = "20"; size.Maximum = "20"; }
+                    if (schema.Properties["page"] is OpenApiSchema page) page.Minimum = "1";
                 }
                 if (type == typeof(CommentRequest))
                 {

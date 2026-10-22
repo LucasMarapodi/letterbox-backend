@@ -6,6 +6,8 @@ namespace Tcc.Infrastructure.Persistence;
 public sealed class TccDbContext(DbContextOptions<TccDbContext> options) : DbContext(options)
 {
     public DbSet<UserAccount> Users => Set<UserAccount>();
+    public DbSet<Tcc.Domain.Forum.ForumTopic> ForumTopics => Set<Tcc.Domain.Forum.ForumTopic>();
+    public DbSet<Tcc.Domain.Forum.ForumReply> ForumReplies => Set<Tcc.Domain.Forum.ForumReply>();
     public DbSet<UserSession> Sessions => Set<UserSession>();
     public DbSet<Tcc.Domain.Opinions.Review> Reviews => Set<Tcc.Domain.Opinions.Review>();
     public DbSet<Tcc.Domain.Opinions.Rating> Ratings => Set<Tcc.Domain.Opinions.Rating>();

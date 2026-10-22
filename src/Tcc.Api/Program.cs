@@ -10,6 +10,7 @@ builder.Services.AddIdentityFeature();
 builder.Services.AddOpinionsFeature();
 builder.Services.AddSocialFeature();
 builder.Services.AddQueriesFeature();
+builder.Services.AddForumFeature();
 builder.Services.AddApiDocumentation();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddApiHttp();
