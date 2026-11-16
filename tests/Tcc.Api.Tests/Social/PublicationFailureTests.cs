@@ -17,14 +17,14 @@ public sealed class PublicationFailureTests
         await using var host = new FailingNotificationFactory();
         using var client = host.CreateClient();
         var b = await SocialTest.Register(client, "B");
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         await SocialTest.Follow(client, 1);
         await ApiTest.SignIn(client);
         using var failedReview = await client.PostAsJsonAsync("/api/v1/games/1/reviews", new ReviewInput("Review"));
         Assert.Equal(500, (int)failedReview.StatusCode);
         Assert.Empty((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/1/reviews")) ?? []);
         Assert.Empty(await host.Services.GetRequiredService<INotifications>().ForUserAsync(b.Id));
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         using var failedComment = await client.PostAsJsonAsync("/api/v1/reviews/1/comments", new TextInput("Comment"));
         Assert.Equal(500, (int)failedComment.StatusCode);
         Assert.Equal(3, (await client.GetFromJsonAsync<CommentDto[]>("/api/v1/reviews/1/comments"))?.Length);

@@ -7440,7 +7440,7 @@
           }
         },
         "additionalProperties": false,
-        "description": "Credenciais fictícias. Email normalizado por trim/lowercase; senha preservada, obrigatória, sem política adicional."
+        "description": "Credenciais fictícias de login. Email normalizado por trim/lowercase; senha preservada, obrigatória, sem aplicar a política de cadastro a contas existentes."
       },
       "LoginResponse": {
         "required": [
@@ -7979,7 +7979,7 @@
           {
             "name": "Exemplo",
             "email": "exemplo@example.com",
-            "password": "senha-ficticia"
+            "password": "Exemplo1!"
           }
         ],
         "required": [
@@ -7996,13 +7996,15 @@
             "type": "string"
           },
           "password": {
+            "minLength": 6,
             "type": "string",
+            "description": "A senha deve ter pelo menos 6 caracteres, uma letra maiúscula, um número e um caractere especial. Espaços e controles não contam como especial. Minúscula não é obrigatória. A senha é preservada sem Trim ou normalização.",
             "format": "password",
             "writeOnly": true
           }
         },
         "additionalProperties": false,
-        "description": "Credenciais fictícias. Email normalizado por trim/lowercase; senha preservada, obrigatória, sem política adicional."
+        "description": "Credenciais fictícias de cadastro. Email normalizado por trim/lowercase; senha obrigatória conforme a política descrita no campo password."
       },
       "ReviewCreateRequest": {
         "required": [

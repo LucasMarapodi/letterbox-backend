@@ -19,7 +19,7 @@ public sealed class FollowTests
         try { Assert.All(results, response => Assert.Equal(200, (int)response.StatusCode)); }
         finally { foreach (var response in results) response.Dispose(); }
         Assert.True((await client.GetFromJsonAsync<FollowStatus>($"/api/v1/users/{b.Id}/follow/me"))?.Following);
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         await SocialTest.Follow(client, c.Id);
         Assert.False((await client.GetFromJsonAsync<FollowStatus>("/api/v1/users/1/follow/me"))?.Following);
         client.DefaultRequestHeaders.Authorization = null;

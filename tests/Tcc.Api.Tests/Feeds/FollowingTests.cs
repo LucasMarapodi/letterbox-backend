@@ -18,9 +18,9 @@ public sealed class FollowingTests
         await SocialTest.Register(client, "C");
         await ApiTest.SignIn(client);
         var ana = await ApiTest.Publish(client);
-        await ApiTest.SignIn(client, "C@example.com", "p");
+        await ApiTest.SignIn(client, "C@example.com", "Abc1!x");
         var c = await ApiTest.Publish(client);
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         var own = await ApiTest.Publish(client);
         Assert.Empty((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/feed/following")) ?? []);
         await SocialTest.Follow(client, 1);
@@ -35,12 +35,12 @@ public sealed class FollowingTests
         await ApiTest.SignIn(client);
         clock.UtcNow = clock.UtcNow.AddMinutes(1);
         var newest = await ApiTest.Publish(client, 2);
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         Assert.Equal(newest.Id, (await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/feed/following"))?[0].Id);
         using var deleted = await client.DeleteAsync("/api/v1/users/1/follow");
         deleted.EnsureSuccessStatusCode();
         Assert.Equal(c.Id, Assert.Single((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/feed/following")) ?? []).Id);
-        await ApiTest.SignIn(client, "C@example.com", "p");
+        await ApiTest.SignIn(client, "C@example.com", "Abc1!x");
         Assert.Empty((await client.GetFromJsonAsync<ReviewDto[]>($"/api/v1/feed/following?userId={b.Id}")) ?? []);
     }
 

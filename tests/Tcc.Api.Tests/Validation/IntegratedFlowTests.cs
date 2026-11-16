@@ -19,7 +19,7 @@ public sealed class IntegratedFlowTests
         using var follower = host.CreateClient();
         using var fresh = restarted.CreateClient();
         var b = await SocialTest.Register(follower, "B");
-        await ApiTest.SignIn(follower, "B@example.com", "p");
+        await ApiTest.SignIn(follower, "B@example.com", "Abc1!x");
         var oldAuthorization = follower.DefaultRequestHeaders.Authorization;
         using var profile = await follower.PatchAsJsonAsync("/api/v1/users/me/profile", new ProfileUpdate("B edited"));
         profile.EnsureSuccessStatusCode();

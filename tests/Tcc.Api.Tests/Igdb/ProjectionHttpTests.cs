@@ -58,7 +58,7 @@ public sealed class ProjectionHttpTests
         reviews.TryAdd(Review.Create(108, 1, 11, "C", CatalogFlow.Metadata.FetchedAt, "Fixture review"));
         using var client = host.CreateClient();
         // A second author is registered locally, with no external request.
-        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "test"));
+        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "Abc1!x"));
         registration.EnsureSuccessStatusCode();
         // Replace b with a valid local author's ID by using the account port.
         var accounts = host.Services.GetRequiredService<Tcc.Application.Identity.IUserAccounts>();

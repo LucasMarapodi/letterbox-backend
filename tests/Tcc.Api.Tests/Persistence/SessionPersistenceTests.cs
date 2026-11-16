@@ -18,10 +18,10 @@ public sealed class SessionPersistenceTests
         await using var host = new PostgresApiFactory();
         using var first = host.CreateClient();
         using var second = host.CreateClient();
-        using var a = await first.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("A", "a@example.com", "synthetic-password"));
-        using var b = await second.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "synthetic-password"));
+        using var a = await first.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("A", "a@example.com", "Synthetic1!password"));
+        using var b = await second.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "Synthetic1!password"));
         a.EnsureSuccessStatusCode(); b.EnsureSuccessStatusCode();
-        var logins = await Task.WhenAll(LoginTests.Login(first, "a@example.com", "synthetic-password"), LoginTests.Login(second, "b@example.com", "synthetic-password"));
+        var logins = await Task.WhenAll(LoginTests.Login(first, "a@example.com", "Synthetic1!password"), LoginTests.Login(second, "b@example.com", "Synthetic1!password"));
         Assert.NotEqual(logins[0].User.Id, logins[1].User.Id);
         first.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", logins[0].Token);
         second.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", logins[1].Token);
@@ -39,7 +39,7 @@ public sealed class SessionPersistenceTests
         await PostgresApiFactory.ResetAsync();
         await using var host = new PostgresApiFactory();
         using var client = host.CreateClient();
-        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Expired", "expired@example.com", "synthetic-password"));
+        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Expired", "expired@example.com", "Synthetic1!password"));
         registered.EnsureSuccessStatusCode();
         var user = await registered.Content.ReadFromJsonAsync<PublicUser>();
         Assert.NotNull(user);
@@ -81,10 +81,10 @@ public sealed class SessionPersistenceTests
         await PostgresApiFactory.ResetAsync();
         await using var first = new PostgresApiFactory();
         using var client = first.CreateClient();
-        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Session", "session@example.com", "synthetic-password"));
+        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Session", "session@example.com", "Synthetic1!password"));
         registered.EnsureSuccessStatusCode();
-        var a = await LoginTests.Login(client, "session@example.com", "synthetic-password");
-        var b = await LoginTests.Login(client, "session@example.com", "synthetic-password");
+        var a = await LoginTests.Login(client, "session@example.com", "Synthetic1!password");
+        var b = await LoginTests.Login(client, "session@example.com", "Synthetic1!password");
         Assert.True(a.Token != b.Token, "Cada login deve gerar token distinto.");
         await using var restarted = new PostgresApiFactory();
         using var other = restarted.CreateClient();

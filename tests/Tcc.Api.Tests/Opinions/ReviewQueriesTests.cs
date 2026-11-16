@@ -16,9 +16,9 @@ public sealed class ReviewQueriesTests
         await ApiTest.SignIn(client);
         var ana = await ApiTest.Publish(client);
         await ApiTest.Publish(client, 2);
-        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
+        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "Abc1!x"));
         registration.EnsureSuccessStatusCode();
-        await ApiTest.SignIn(client, "b@example.com", "p");
+        await ApiTest.SignIn(client, "b@example.com", "Abc1!x");
         clock.UtcNow = clock.UtcNow.AddMinutes(1);
         var b = await ApiTest.Publish(client);
         Assert.Equal(b.Id, (await client.GetFromJsonAsync<MyReview>("/api/v1/games/1/reviews/me"))?.Review?.Id);
@@ -46,9 +46,9 @@ public sealed class ReviewQueriesTests
         using var zero = await client.PutAsJsonAsync("/api/v1/games/1/rating/me", new RatingInput(0));
         zero.EnsureSuccessStatusCode();
         Assert.Equal(0d, (await client.GetFromJsonAsync<OpinionsDto>("/api/v1/games/1/opinions"))?.AverageRating);
-        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
+        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "Abc1!x"));
         registration.EnsureSuccessStatusCode();
-        await ApiTest.SignIn(client, "b@example.com", "p");
+        await ApiTest.SignIn(client, "b@example.com", "Abc1!x");
         using var five = await client.PutAsJsonAsync("/api/v1/games/1/rating/me", new RatingInput(5));
         five.EnsureSuccessStatusCode();
         Assert.Equal(2.5d, (await client.GetFromJsonAsync<OpinionsDto>("/api/v1/games/1/opinions"))?.AverageRating);

@@ -21,9 +21,9 @@ public sealed class CommentPersistenceTests
     {
         await using var db = PostgresTestDatabase.Context();
         var game = Assert.Single(await PostgresCatalogTests.Repository(db).UpsertAsync([PostgresCatalogTests.Payload()], default)).Game;
-        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Writer", "discussion@example.com", "synthetic-password"));
+        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Writer", "discussion@example.com", "Synthetic1!password"));
         registered.EnsureSuccessStatusCode();
-        var login = await LoginTests.Login(client, "discussion@example.com", "synthetic-password");
+        var login = await LoginTests.Login(client, "discussion@example.com", "Synthetic1!password");
         client.DefaultRequestHeaders.Authorization = new("Bearer", login.Token);
         using var response = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { title = "Fixture review", rating = 3, text = "Review" });
         response.EnsureSuccessStatusCode();
@@ -132,9 +132,9 @@ public sealed class CommentPersistenceTests
         Assert.Equal(400, (int)invalidReview.StatusCode);
         using var own = await client.PutAsync($"/api/v1/comments/{root}/like", null);
         Assert.Equal(204, (int)own.StatusCode);
-        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Other", "other-like@example.com", "synthetic-password"));
+        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Other", "other-like@example.com", "Synthetic1!password"));
         registered.EnsureSuccessStatusCode();
-        var login = await LoginTests.Login(client, "other-like@example.com", "synthetic-password");
+        var login = await LoginTests.Login(client, "other-like@example.com", "Synthetic1!password");
         client.DefaultRequestHeaders.Authorization = new("Bearer", login.Token);
         using var status = JsonDocument.Parse(await client.GetStringAsync($"/api/v1/comments/{root}/like/me"));
         Assert.False(status.RootElement.GetProperty("likedByMe").GetBoolean());
@@ -200,9 +200,9 @@ public sealed class CommentPersistenceTests
         var game = Assert.Single(await PostgresCatalogTests.Repository(db).UpsertAsync([PostgresCatalogTests.Payload()], default)).Game;
         await using var host = new PostgresApiFactory();
         using var client = host.CreateClient();
-        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Commenter", "commenter@example.com", "synthetic-password"));
+        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Commenter", "commenter@example.com", "Synthetic1!password"));
         registered.EnsureSuccessStatusCode();
-        var login = await LoginTests.Login(client, "commenter@example.com", "synthetic-password");
+        var login = await LoginTests.Login(client, "commenter@example.com", "Synthetic1!password");
         client.DefaultRequestHeaders.Authorization = new("Bearer", login.Token);
         using var review = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { title = "Fixture review", rating = 3, text = "Review" });
         review.EnsureSuccessStatusCode();

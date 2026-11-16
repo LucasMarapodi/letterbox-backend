@@ -22,9 +22,9 @@ public sealed class EditReviewTests
         Assert.Equal(original with { Text = "Edited", UpdatedAt = clock.GetUtcNow() }, updated);
         Assert.Equal(updated, await client.GetFromJsonAsync<ReviewDto>($"/api/v1/reviews/{original.Id}"));
         Assert.Single((await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/games/1/reviews")) ?? []);
-        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
+        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "Abc1!x"));
         registration.EnsureSuccessStatusCode();
-        await ApiTest.SignIn(client, "b@example.com", "p");
+        await ApiTest.SignIn(client, "b@example.com", "Abc1!x");
         using var forbidden = await client.PatchAsJsonAsync($"/api/v1/reviews/{original.Id}", new ReviewInput("Other"));
         Assert.Equal(403, (int)forbidden.StatusCode);
         Assert.Equal(updated, await client.GetFromJsonAsync<ReviewDto>($"/api/v1/reviews/{original.Id}"));

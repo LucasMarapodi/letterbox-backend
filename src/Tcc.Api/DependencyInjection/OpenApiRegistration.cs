@@ -167,10 +167,17 @@ public static class OpenApiRegistration
                 if (type == typeof(RegisterRequest) || type == typeof(LoginRequest))
                 {
                     if (schema.Properties["password"] is OpenApiSchema password) { password.Format = "password"; password.WriteOnly = true; }
+                    if (type == typeof(RegisterRequest) && schema.Properties["password"] is OpenApiSchema registrationPassword)
+                    {
+                        registrationPassword.MinLength = Tcc.Domain.Identity.PasswordPolicy.MinimumLength;
+                        registrationPassword.Description = Tcc.Domain.Identity.PasswordPolicy.Description;
+                    }
                     schema.Examples = [type == typeof(RegisterRequest)
-                        ? Example(new RegisterRequest("Exemplo", "exemplo@example.com", "senha-ficticia"))
+                        ? Example(new RegisterRequest("Exemplo", "exemplo@example.com", "Exemplo1!"))
                         : Example(new LoginRequest("exemplo@example.com", "senha-ficticia"))];
-                    schema.Description = "Credenciais fictícias. Email normalizado por trim/lowercase; senha preservada, obrigatória, sem política adicional.";
+                    schema.Description = type == typeof(RegisterRequest)
+                        ? "Credenciais fictícias de cadastro. Email normalizado por trim/lowercase; senha obrigatória conforme a política descrita no campo password."
+                        : "Credenciais fictícias de login. Email normalizado por trim/lowercase; senha preservada, obrigatória, sem aplicar a política de cadastro a contas existentes.";
                 }
                 if (type == typeof(RatingRequest) && schema.Properties["value"] is OpenApiSchema value)
                 { value.Minimum = "0"; value.Maximum = "5"; value.Description = "Número finito entre 0 e 5, decimais permitidos."; }

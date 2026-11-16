@@ -29,7 +29,7 @@ public sealed class NotificationQueryTests
         using var client = host.CreateClient();
         var b = await SocialTest.Register(client, "B");
         await SocialTest.Register(client, "C");
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         await SocialTest.Follow(client, 1);
         var bReview = await ApiTest.Publish(client);
         await ApiTest.SignIn(client);
@@ -39,7 +39,7 @@ public sealed class NotificationQueryTests
         commentResponse.EnsureSuccessStatusCode();
         var comment = await commentResponse.Content.ReadFromJsonAsync<CommentDto>();
         var last = await ApiTest.Publish(client, 2);
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         var items = await client.GetFromJsonAsync<NotificationDto[]>("/api/v1/notifications?userId=user-1");
         Assert.NotNull(items);
         Assert.Equal(3, items.Length);
@@ -61,7 +61,7 @@ public sealed class NotificationQueryTests
             Assert.False(item.TryGetProperty("read", out _));
             if (item.GetProperty("type").GetString() == "new-review") Assert.False(item.TryGetProperty("commentId", out _));
         }
-        await ApiTest.SignIn(client, "C@example.com", "p");
+        await ApiTest.SignIn(client, "C@example.com", "Abc1!x");
         Assert.Empty((await client.GetFromJsonAsync<NotificationDto[]>($"/api/v1/notifications?userId={b.Id}")) ?? []);
     }
 }

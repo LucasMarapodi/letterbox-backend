@@ -31,9 +31,9 @@ public sealed class SocialPersistenceTests
 
     private static async Task<(int User, string Token)> Register(HttpClient client, string email)
     {
-        using var result = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Social", email, "synthetic-password"));
+        using var result = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Social", email, "Synthetic1!password"));
         result.EnsureSuccessStatusCode();
-        var login = await LoginTests.Login(client, email, "synthetic-password");
+        var login = await LoginTests.Login(client, email, "Synthetic1!password");
         client.DefaultRequestHeaders.Authorization = new("Bearer", login.Token);
         return (login.User.Id, login.Token);
     }

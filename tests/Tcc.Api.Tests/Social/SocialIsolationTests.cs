@@ -15,7 +15,7 @@ public sealed class SocialIsolationTests
         using var client = first.CreateClient();
         using var other = second.CreateClient();
         var b = await SocialTest.Register(client, "B");
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         await SocialTest.Follow(client, 1);
         await ApiTest.SignIn(client);
         using var favorite = await client.PutAsync("/api/v1/favorites/game/1", null);
@@ -27,7 +27,7 @@ public sealed class SocialIsolationTests
         Assert.Empty((await other.GetFromJsonAsync<FavoriteLists>("/api/v1/favorites"))?.Games ?? []);
         Assert.Empty((await other.GetFromJsonAsync<NotificationDto[]>("/api/v1/notifications")) ?? []);
         Assert.Single((await client.GetFromJsonAsync<FavoriteLists>("/api/v1/favorites"))?.Games ?? []);
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         Assert.Single((await client.GetFromJsonAsync<NotificationDto[]>("/api/v1/notifications")) ?? []);
     }
 }

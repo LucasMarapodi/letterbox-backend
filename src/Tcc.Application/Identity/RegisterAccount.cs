@@ -1,5 +1,4 @@
 using Tcc.Domain.Identity;
-using Tcc.Domain;
 
 namespace Tcc.Application.Identity;
 
@@ -10,7 +9,7 @@ public sealed class RegisterAccount(IUserAccounts accounts, IPasswordHasher pass
         var address = Email.Create(email);
         var now = clock.GetUtcNow();
         var profile = UserProfile.Create(name, updatedAt: now);
-        if (string.IsNullOrWhiteSpace(password)) throw new DomainValidationException("Senha obrigatória.");
+        PasswordPolicy.Validate(password);
         var account = new UserAccount(0, "", address, passwords.Hash(password), profile, now);
         return await accounts.AddAsync(account, cancellationToken) ?? throw new IdentityFailure(IdentityFailureKind.Conflict);
     }

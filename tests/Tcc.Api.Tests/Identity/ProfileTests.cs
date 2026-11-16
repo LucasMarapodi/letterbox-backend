@@ -77,9 +77,9 @@ public sealed class ProfileTests
     {
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
-        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
+        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "Abc1!x"));
         registered.EnsureSuccessStatusCode();
-        var login = await LoginTests.Login(client, "b@example.com", "p");
+        var login = await LoginTests.Login(client, "b@example.com", "Abc1!x");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
         using var response = await Patch(client, json);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -97,9 +97,9 @@ public sealed class ProfileTests
         await using var second = new TestApiFactory();
         using var client = first.CreateClient();
         using var otherHost = second.CreateClient();
-        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
+        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "Abc1!x"));
         registration.EnsureSuccessStatusCode();
-        var login = await LoginTests.Login(client, "b@example.com", "p");
+        var login = await LoginTests.Login(client, "b@example.com", "Abc1!x");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
         using var edited = await Patch(client, "{\"displayName\":\"B edited\"}");
         Assert.Equal(HttpStatusCode.OK, edited.StatusCode);

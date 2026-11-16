@@ -13,7 +13,11 @@ Base `/api/v1`. Desde P-PR-01, IDs de usuários são inteiros positivos gerados 
 
 PublicUserResponse: id, username, displayName, bio, avatarUrl. Sem email, password, hash ou token. Username gerado como `user-{id}`: função determinística do ID único da conta; não é solicitado no cadastro.
 
-Nome/name/displayName: obrigatório, não vazio após trim, máximo 100 caracteres. Email: obrigatório, formato simples de caixa postal sem nome de exibição, máximo 254 caracteres, trim e lowercase para unicidade. Password: obrigatório e não apenas espaços; preservado exatamente, sem exigir tamanho mínimo ou classes de caracteres adicionais. Bio: máximo 2000 caracteres, string vazia permitida. Avatar: null ou URL absoluta HTTP/HTTPS de até 2048 caracteres; não há download ou upload.
+Nome/name/displayName: obrigatório, não vazio após trim, máximo 100 caracteres. Email: obrigatório, formato simples de caixa postal sem nome de exibição, máximo 254 caracteres, trim e lowercase para unicidade. Bio: máximo 2000 caracteres, string vazia permitida. Avatar: null ou URL absoluta HTTP/HTTPS de até 2048 caracteres; não há download ou upload.
+
+Desde C-PR-01, a senha de cadastro exige pelo menos seis caracteres, uma maiúscula (`char.IsUpper`), um número (`char.IsDigit`) e um especial (não letra, dígito, espaço em branco ou controle). Não exige minúscula nem acrescenta tamanho máximo. Null, vazio e somente espaços são inválidos. A senha original é preservada sem Trim ou normalização, inclusive espaços nas extremidades quando os requisitos são atendidos. `Abc1!x` e `ABC1!X` são exemplos sintéticos válidos.
+
+`PasswordPolicy`, em Domain/Identity, concentra a regra; `RegisterAccount` a executa antes de gerar hash ou persistir. Senha inválida retorna 400 com `{"code":"validation_failed","message":"Requisição inválida."}`, sem revelar senha ou hash. O login continua comparando a senha original com o verificador armazenado, inclusive para contas antigas que não cumprem a nova política; não há migração de hashes ou troca obrigatória de senha.
 
 PATCH: campo omitido preserva o valor; opcionais null/vazio limpam, nome null/vazio é inválido. favoriteGameIds:null é inválido, [] limpa jogos favoritos. País/estado alterados devem formar um par das opções configuradas, com estado vazio permitido; legado inalterado é preservado. Perfil incompleto pode ser salvo; todos os campos/favoritos compartilham a transação. Campos desconhecidos (incluindo userId, username, email e password) são rejeitados com 400. Um objeto vazio é válido sem alterações. [Contrato, resposta privada e opções S-PR-32](S-PR-32.md).
 
@@ -29,14 +33,14 @@ O verificador de senha usa PBKDF2-SHA512, 210.000 iterações, salt aleatório d
 POST /api/v1/auth/register
 Content-Type: application/json
 
-{"name":"Lucas","email":"lucas@example.com","password":"exemplo"}
+{"name":"Lucas","email":"lucas@example.com","password":"Exemplo1!"}
 ```
 
 ```http
 POST /api/v1/auth/login
 Content-Type: application/json
 
-{"email":"lucas@example.com","password":"exemplo"}
+{"email":"lucas@example.com","password":"Exemplo1!"}
 ```
 
 Copie token da resposta para o cabeçalho dos comandos privados:

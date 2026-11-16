@@ -28,9 +28,9 @@ public sealed class RatingTests
             Assert.Equal(1, rating.UserId);
             Assert.Equal(rating, (await client.GetFromJsonAsync<MyRating>("/api/v1/games/1/rating/me"))?.Rating);
         }
-        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
+        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "Abc1!x"));
         registration.EnsureSuccessStatusCode();
-        await ApiTest.SignIn(client, "b@example.com", "p");
+        await ApiTest.SignIn(client, "b@example.com", "Abc1!x");
         Assert.Null((await client.GetFromJsonAsync<MyRating>("/api/v1/games/1/rating/me"))?.Rating);
     }
 

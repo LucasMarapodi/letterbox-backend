@@ -16,8 +16,8 @@ public sealed class StorageTests
     {
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
-        using var first = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("A", "a@example.com", "p"));
-        using var second = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
+        using var first = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("A", "a@example.com", "Abc1!x"));
+        using var second = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "Abc1!x"));
         first.EnsureSuccessStatusCode();
         second.EnsureSuccessStatusCode();
         var accounts = host.Services.GetRequiredService<IUserAccounts>();
@@ -26,12 +26,12 @@ public sealed class StorageTests
         var b = await accounts.FindByEmailAsync(Email.Create("b@example.com"));
         Assert.NotNull(a);
         Assert.NotNull(b);
-        Assert.NotEqual("p", a.PasswordHash);
+        Assert.NotEqual("Abc1!x", a.PasswordHash);
         Assert.NotEqual(a.PasswordHash, b.PasswordHash);
-        Assert.True(passwords.Verify("p", a.PasswordHash));
+        Assert.True(passwords.Verify("Abc1!x", a.PasswordHash));
         Assert.False(passwords.Verify("wrong", a.PasswordHash));
-        Assert.False(passwords.Verify("p", "malformed-verifier"));
-        Assert.False(passwords.Verify("p", "pbkdf2-sha512:210000:invalid:invalid"));
+        Assert.False(passwords.Verify("Abc1!x", "malformed-verifier"));
+        Assert.False(passwords.Verify("Abc1!x", "pbkdf2-sha512:210000:invalid:invalid"));
         using var meWithoutLogin = await client.GetAsync("/api/v1/auth/me");
         Assert.Equal(HttpStatusCode.Unauthorized, meWithoutLogin.StatusCode);
     }

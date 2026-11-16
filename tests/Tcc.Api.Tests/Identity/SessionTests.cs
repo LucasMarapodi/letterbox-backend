@@ -30,11 +30,11 @@ public sealed class SessionTests
     {
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
-        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
+        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "Abc1!x"));
         registration.EnsureSuccessStatusCode();
         var first = await LoginTests.Login(client);
         var sameAccount = await LoginTests.Login(client);
-        var other = await LoginTests.Login(client, "b@example.com", "p");
+        var other = await LoginTests.Login(client, "b@example.com", "Abc1!x");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", first.Token);
         using var me = await client.GetAsync($"/api/v1/auth/me?userId={other.User.Id}");
         Assert.Equal(HttpStatusCode.OK, me.StatusCode);

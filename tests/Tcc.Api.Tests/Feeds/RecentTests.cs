@@ -21,7 +21,7 @@ public sealed class RecentTests
         await SocialTest.Register(client, "B");
         await ApiTest.SignIn(client);
         var ana = await ApiTest.Publish(client);
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         var b = await ApiTest.Publish(client);
         var before = await client.GetFromJsonAsync<ReviewDto[]>("/api/v1/community/reviews/recent");
         Assert.NotNull(before);

@@ -53,7 +53,7 @@ public sealed class PostgresIdentityHttpTests
         await PostgresApiFactory.ResetAsync();
         await using var first = new PostgresApiFactory();
         using var client = first.CreateClient();
-        using var response = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Persisted", "persisted@example.com", "synthetic-password"));
+        using var response = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Persisted", "persisted@example.com", "Synthetic1!password"));
         Assert.Equal(201, (int)response.StatusCode);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal(JsonValueKind.Number, json.RootElement.GetProperty("id").ValueKind);
@@ -78,7 +78,7 @@ public sealed class PostgresIdentityHttpTests
         await using var host = new PostgresApiFactory();
         using var client = host.CreateClient();
         var responses = await Task.WhenAll(Enumerable.Range(0, 12).Select(index => client.PostAsJsonAsync("/api/v1/auth/register",
-            new RegisterInput("Concurrent", index % 2 == 0 ? " ConCurrent@example.com " : "concurrent@example.com", "synthetic-password"))));
+            new RegisterInput("Concurrent", index % 2 == 0 ? " ConCurrent@example.com " : "concurrent@example.com", "Synthetic1!password"))));
         try
         {
             Assert.Single(responses, response => (int)response.StatusCode == 201);

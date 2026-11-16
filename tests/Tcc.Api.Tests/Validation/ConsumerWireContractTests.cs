@@ -30,9 +30,9 @@ public sealed class ConsumerWireContractTests
     {
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
-        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new { name = "Consumer", email = "consumer@example.com", password = "p" });
+        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new { name = "Consumer", email = "consumer@example.com", password = "Abc1!x" });
         Assert.Equal(201, (int)registered.StatusCode);
-        await ApiTest.SignIn(client, "consumer@example.com", "p");
+        await ApiTest.SignIn(client, "consumer@example.com", "Abc1!x");
         using var added = await client.PutAsync(path, null);
         Assert.Equal(200, (int)added.StatusCode);
         using var deleted = await client.DeleteAsync(path);
