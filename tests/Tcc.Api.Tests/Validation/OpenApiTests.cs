@@ -198,6 +198,15 @@ public sealed class OpenApiTests
         var password = schemas.GetProperty("RegisterRequest").GetProperty("properties").GetProperty("password");
         Assert.Equal("password", password.GetProperty("format").GetString());
         Assert.True(password.GetProperty("writeOnly").GetBoolean());
+        Assert.Equal(6, password.GetProperty("minLength").GetInt32());
+        Assert.False(password.TryGetProperty("maxLength", out _));
+        var passwordDescription = password.GetProperty("description").GetString()!;
+        Assert.Contains("maiúscula", passwordDescription);
+        Assert.Contains("número", passwordDescription);
+        Assert.Contains("especial", passwordDescription);
+        Assert.Contains("sem Trim", passwordDescription);
+        var loginPassword = schemas.GetProperty("LoginRequest").GetProperty("properties").GetProperty("password");
+        Assert.False(loginPassword.TryGetProperty("minLength", out _));
         Assert.True(schemas.GetProperty("RegisterRequest").GetProperty("examples").GetArrayLength() > 0);
         var value = schemas.GetProperty("RatingRequest").GetProperty("properties").GetProperty("value");
         Assert.Equal(0, value.GetProperty("minimum").GetInt32());
