@@ -15,7 +15,7 @@ internal static class SocialTest
 {
     public static async Task<PublicUser> Register(HttpClient client, string name)
     {
-        using var response = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput(name, $"{name}@example.com", "p"));
+        using var response = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput(name, $"{name}@example.com", "Abc1!x"));
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<PublicUser>() ?? throw new InvalidOperationException("Usuário ausente.");
     }

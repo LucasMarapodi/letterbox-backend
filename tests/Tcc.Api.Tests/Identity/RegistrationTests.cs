@@ -12,7 +12,7 @@ public sealed class RegistrationTests
     {
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
-        using var response = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("  Lucas  ", " Lucas@example.com ", "p"));
+        using var response = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("  Lucas  ", " Lucas@example.com ", "Abc1!x"));
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var user = await response.Content.ReadFromJsonAsync<PublicUser>();
         Assert.NotNull(user);
@@ -34,8 +34,8 @@ public sealed class RegistrationTests
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         var responses = await Task.WhenAll(
-            client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("One", " Test@example.com ", "p")),
-            client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Two", "test@EXAMPLE.COM", "p")));
+            client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("One", " Test@example.com ", "Abc1!x")),
+            client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Two", "test@EXAMPLE.COM", "Abc1!x")));
         try
         {
             Assert.Equal(1, responses.Count(response => response.StatusCode == HttpStatusCode.Created));
@@ -46,11 +46,11 @@ public sealed class RegistrationTests
     }
 
     [Theory]
-    [InlineData(null, "a@example.com", "p")]
-    [InlineData(" ", "a@example.com", "p")]
-    [InlineData("A", null, "p")]
-    [InlineData("A", "not-an-email", "p")]
-    [InlineData("A", "Name <a@example.com>", "p")]
+    [InlineData(null, "a@example.com", "Abc1!x")]
+    [InlineData(" ", "a@example.com", "Abc1!x")]
+    [InlineData("A", null, "Abc1!x")]
+    [InlineData("A", "not-an-email", "Abc1!x")]
+    [InlineData("A", "Name <a@example.com>", "Abc1!x")]
     [InlineData("A", "a@example.com", null)]
     [InlineData("A", "a@example.com", " ")]
     public async Task Invalid_fields_return_standard_400(string? name, string? email, string? password)
@@ -69,7 +69,7 @@ public sealed class RegistrationTests
         await using var second = new TestApiFactory();
         using var a = first.CreateClient();
         using var b = second.CreateClient();
-        var input = new RegisterInput("A", "a@example.com", "p");
+        var input = new RegisterInput("A", "a@example.com", "Abc1!x");
         using var created = await a.PostAsJsonAsync("/api/v1/auth/register", input);
         using var duplicate = await a.PostAsJsonAsync("/api/v1/auth/register", input);
         using var isolated = await b.PostAsJsonAsync("/api/v1/auth/register", input);

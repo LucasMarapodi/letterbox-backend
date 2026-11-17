@@ -25,7 +25,7 @@ public sealed class OpinionPersistenceTests
         var game = Assert.Single(await PostgresCatalogTests.Repository(db).UpsertAsync([PostgresCatalogTests.Payload()], default)).Game;
         await using var host = new PostgresApiFactory();
         using var client = host.CreateClient();
-        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Writer", "constraints@example.com", "synthetic-password"));
+        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Writer", "constraints@example.com", "Synthetic1!password"));
         registered.EnsureSuccessStatusCode();
         using var user = JsonDocument.Parse(await registered.Content.ReadAsStringAsync());
         var userId = user.RootElement.GetProperty("id").GetInt32();
@@ -54,9 +54,9 @@ public sealed class OpinionPersistenceTests
         await using var host = original.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
             services.AddScoped<INotifications>(provider => new FailingNotifications(new Tcc.Infrastructure.Persistence.Repositories.PostgresNotifications(provider.GetRequiredService<Lazy<TccDbContext>>())))));
         using var client = host.CreateClient();
-        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Writer", "rollback@example.com", "synthetic-password"));
+        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Writer", "rollback@example.com", "Synthetic1!password"));
         registered.EnsureSuccessStatusCode();
-        var login = await LoginTests.Login(client, "rollback@example.com", "synthetic-password");
+        var login = await LoginTests.Login(client, "rollback@example.com", "Synthetic1!password");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
         using var failed = await client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { title = "Fixture review", rating = 3, text = "Must roll back" });
         Assert.Equal(500, (int)failed.StatusCode);
@@ -75,7 +75,7 @@ public sealed class OpinionPersistenceTests
         var users = new List<int>();
         foreach (var email in new[] { "average-a@example.com", "average-b@example.com" })
         {
-            using var result = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Rater", email, "synthetic-password"));
+            using var result = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Rater", email, "Synthetic1!password"));
             result.EnsureSuccessStatusCode();
             using var body = JsonDocument.Parse(await result.Content.ReadAsStringAsync());
             users.Add(body.RootElement.GetProperty("id").GetInt32());
@@ -122,9 +122,9 @@ public sealed class OpinionPersistenceTests
         var game = Assert.Single(await PostgresCatalogTests.Repository(db).UpsertAsync([PostgresCatalogTests.Payload()], default)).Game;
         await using var host = new PostgresApiFactory();
         using var client = host.CreateClient();
-        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Writer", "writer@example.com", "synthetic-password"));
+        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Writer", "writer@example.com", "Synthetic1!password"));
         registered.EnsureSuccessStatusCode();
-        var login = await LoginTests.Login(client, "writer@example.com", "synthetic-password");
+        var login = await LoginTests.Login(client, "writer@example.com", "Synthetic1!password");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
         var responses = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => client.PostAsJsonAsync($"/api/v1/games/{game.Id}/reviews", new { title = "Fixture review", rating = 3, text = "Persisted review" })));
         int id;
@@ -140,9 +140,9 @@ public sealed class OpinionPersistenceTests
         Assert.Equal(200, (int)edited.StatusCode);
         using var invalid = await client.PatchAsJsonAsync($"/api/v1/reviews/{id}", new { rating = 6 });
         Assert.Equal(400, (int)invalid.StatusCode);
-        using var outsider = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Other", "other@example.com", "synthetic-password"));
+        using var outsider = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Other", "other@example.com", "Synthetic1!password"));
         outsider.EnsureSuccessStatusCode();
-        var otherLogin = await LoginTests.Login(client, "other@example.com", "synthetic-password");
+        var otherLogin = await LoginTests.Login(client, "other@example.com", "Synthetic1!password");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", otherLogin.Token);
         using var forbidden = await client.PatchAsJsonAsync($"/api/v1/reviews/{id}", new { text = "Unauthorized edit" });
         Assert.Equal(403, (int)forbidden.StatusCode);
@@ -164,9 +164,9 @@ public sealed class OpinionPersistenceTests
         var game = Assert.Single(await PostgresCatalogTests.Repository(db).UpsertAsync([PostgresCatalogTests.Payload()], default)).Game;
         await using var host = new PostgresApiFactory();
         using var client = host.CreateClient();
-        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Rater", "rater@example.com", "synthetic-password"));
+        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Rater", "rater@example.com", "Synthetic1!password"));
         registered.EnsureSuccessStatusCode();
-        var login = await LoginTests.Login(client, "rater@example.com", "synthetic-password");
+        var login = await LoginTests.Login(client, "rater@example.com", "Synthetic1!password");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
         using var empty = JsonDocument.Parse(await client.GetStringAsync($"/api/v1/games/{game.Id}"));
         Assert.Equal(JsonValueKind.Null, empty.RootElement.GetProperty("averageRating").ValueKind);

@@ -30,7 +30,7 @@ public sealed class DashboardTests
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
         var b = await SocialTest.Register(client, "B");
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         await SocialTest.Follow(client, 1);
         using var game = await client.PutAsync("/api/v1/favorites/game/1", null);
         using var favoriteReview = await client.PutAsync("/api/v1/favorites/review/1", null);
@@ -43,7 +43,7 @@ public sealed class DashboardTests
         Assert.NotNull(own);
         Assert.Empty(own.Favorites.Games);
         Assert.Empty(own.Feed);
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         var dashboard = await client.GetFromJsonAsync<DashboardDto>("/api/v1/dashboard?userId=user-1");
         Assert.NotNull(dashboard);
         Assert.Equal(newest.Id, dashboard.Feed[0].Id);

@@ -24,9 +24,9 @@ public sealed class PublishCommentTests
         Assert.Equal("Own comment", first.Text);
         Assert.Equal(clock.GetUtcNow(), first.CreatedAt);
         Assert.Equal(url, own.Headers.Location?.OriginalString);
-        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
+        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "Abc1!x"));
         registration.EnsureSuccessStatusCode();
-        await ApiTest.SignIn(client, "b@example.com", "p");
+        await ApiTest.SignIn(client, "b@example.com", "Abc1!x");
         clock.UtcNow = clock.UtcNow.AddMinutes(1);
         using var other = await client.PostAsJsonAsync(url, new TextInput("Other comment"));
         Assert.Equal(201, (int)other.StatusCode);

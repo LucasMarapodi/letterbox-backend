@@ -31,7 +31,7 @@ public sealed class FavoriteTests
         Assert.NotNull(lists);
         Assert.Equal(1, Assert.Single(lists.Games).Id);
         Assert.Equal(1, Assert.Single(lists.Reviews).Id);
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         var other = await client.GetFromJsonAsync<FavoriteLists>("/api/v1/favorites?userId=user-1");
         Assert.NotNull(other);
         Assert.Empty(other.Games);

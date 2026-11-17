@@ -81,7 +81,7 @@ public sealed class CorsTests
         using var client = host.CreateClient();
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/register");
         request.Headers.Add("Origin", custom);
-        request.Content = new StringContent("{\"name\":\"CORS\",\"email\":\"cors@example.com\",\"password\":\"p\"}");
+        request.Content = new StringContent("{\"name\":\"CORS\",\"email\":\"cors@example.com\",\"password\":\"Abc1!x\"}");
         request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
         using var response = await client.SendAsync(request);
         Assert.Equal(201, (int)response.StatusCode);

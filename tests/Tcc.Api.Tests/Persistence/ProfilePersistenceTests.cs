@@ -15,9 +15,9 @@ public sealed class ProfilePersistenceTests
         await PostgresApiFactory.ResetAsync();
         await using var host = new PostgresApiFactory();
         using var client = host.CreateClient();
-        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Profile", "profile@example.com", "synthetic-password"));
+        using var registered = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Profile", "profile@example.com", "Synthetic1!password"));
         registered.EnsureSuccessStatusCode();
-        var login = await LoginTests.Login(client, "profile@example.com", "synthetic-password");
+        var login = await LoginTests.Login(client, "profile@example.com", "Synthetic1!password");
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
         using var avatar = await Patch(client, "{\"avatarUrl\":\"https://example.com/avatar.png\"}");
         avatar.EnsureSuccessStatusCode();
@@ -55,7 +55,7 @@ public sealed class ProfilePersistenceTests
         {
             await using var host = new PostgresApiFactory();
             using var client = host.CreateClient();
-            using var response = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Rollback", "rollback@example.com", "synthetic-password"));
+            using var response = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Rollback", "rollback@example.com", "Synthetic1!password"));
             Assert.Equal(503, (int)response.StatusCode);
             var error = await response.Content.ReadFromJsonAsync<ErrorResult>();
             Assert.Equal("storage_unavailable", error?.Code);

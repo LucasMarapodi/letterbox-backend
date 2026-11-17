@@ -15,10 +15,10 @@ public sealed class LoginTests
     {
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
-        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Lucas", "lucas@example.com", " p "));
+        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("Lucas", "lucas@example.com", " Abc1!x "));
         registration.EnsureSuccessStatusCode();
         var account = await registration.Content.ReadFromJsonAsync<PublicUser>();
-        using var response = await client.PostAsJsonAsync("/api/v1/auth/login", new LoginInput(" LUCAS@EXAMPLE.COM ", " p "));
+        using var response = await client.PostAsJsonAsync("/api/v1/auth/login", new LoginInput(" LUCAS@EXAMPLE.COM ", " Abc1!x "));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var login = await response.Content.ReadFromJsonAsync<LoginResult>();
         Assert.NotNull(login);
@@ -28,7 +28,7 @@ public sealed class LoginTests
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal(new[] { "expiresAt", "token", "user" }, json.RootElement.EnumerateObject().Select(property => property.Name).Order().ToArray());
         Assert.Equal(new[] { "avatarUrl", "bio", "displayName", "id", "username" }, json.RootElement.GetProperty("user").EnumerateObject().Select(property => property.Name).Order().ToArray());
-        using var wrong = await client.PostAsJsonAsync("/api/v1/auth/login", new LoginInput("lucas@example.com", "p"));
+        using var wrong = await client.PostAsJsonAsync("/api/v1/auth/login", new LoginInput("lucas@example.com", "Abc1!x"));
         Assert.Equal(HttpStatusCode.Unauthorized, wrong.StatusCode);
     }
 
@@ -51,11 +51,11 @@ public sealed class LoginTests
         var clock = new MutableClock(new DateTimeOffset(2026, 10, 11, 12, 0, 0, TimeSpan.Zero));
         await using var host = new IdentityFactory(clock, "15");
         using var client = host.CreateClient();
-        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "p"));
+        using var registration = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("B", "b@example.com", "Abc1!x"));
         registration.EnsureSuccessStatusCode();
         var first = await Login(client, "ana@example.com", "teste123");
         var sameAccount = await Login(client, "ana@example.com", "teste123");
-        var second = await Login(client, "b@example.com", "p");
+        var second = await Login(client, "b@example.com", "Abc1!x");
         Assert.NotEqual(first.Token, sameAccount.Token);
         Assert.NotEqual(first.Token, second.Token);
         Assert.NotEqual(first.User.Id, second.User.Id);

@@ -22,9 +22,9 @@ public sealed class NotificationGenerationTests
         var b = await SocialTest.Register(client, "B");
         var c = await SocialTest.Register(client, "C");
         var d = await SocialTest.Register(client, "D");
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         await SocialTest.Follow(client, 1);
-        await ApiTest.SignIn(client, "C@example.com", "p");
+        await ApiTest.SignIn(client, "C@example.com", "Abc1!x");
         await SocialTest.Follow(client, 1);
         await ApiTest.SignIn(client);
         var responses = await Task.WhenAll(client.PostAsJsonAsync("/api/v1/games/1/reviews", new ReviewInput("One")),
@@ -51,7 +51,7 @@ public sealed class NotificationGenerationTests
         using var edit = await client.PatchAsJsonAsync($"/api/v1/reviews/{review.Id}", new ReviewInput("Edited"));
         edit.EnsureSuccessStatusCode();
         Assert.Single((await Events(host, b.Id)));
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         using var unfollow = await client.DeleteAsync("/api/v1/users/1/follow");
         unfollow.EnsureSuccessStatusCode();
         await ApiTest.SignIn(client);
@@ -72,7 +72,7 @@ public sealed class NotificationGenerationTests
         using var own = await client.PostAsJsonAsync(url, new TextInput("Own"));
         own.EnsureSuccessStatusCode();
         Assert.Empty((await Events(host, 1)));
-        await ApiTest.SignIn(client, "B@example.com", "p");
+        await ApiTest.SignIn(client, "B@example.com", "Abc1!x");
         using var response = await client.PostAsJsonAsync(url, new TextInput("Other"));
         response.EnsureSuccessStatusCode();
         var comment = await response.Content.ReadFromJsonAsync<CommentDto>();

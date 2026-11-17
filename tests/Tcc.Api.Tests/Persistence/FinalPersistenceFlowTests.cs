@@ -74,7 +74,7 @@ public sealed class FinalPersistenceFlowTests
             replyId = await Publish(client, $"/api/v1/reviews/{reviewId}/comments", new { text = "Persistent reply", parentCommentId = rootId });
             await Put(client, $"/api/v1/reviews/{reviewId}/like");
             foreach (var path in new[] { $"/api/v1/comments/{rootId}/like", $"/api/v1/comments/{replyId}/like", $"/api/v1/favorites/game/{gameId}", $"/api/v1/favorites/review/{reviewId}" }) await Put(client, path);
-            revoked = (await LoginTests.Login(client, "final-author@example.com", "synthetic-password")).Token;
+            revoked = (await LoginTests.Login(client, "final-author@example.com", "Synthetic1!password")).Token;
             client.DefaultRequestHeaders.Authorization = new("Bearer", revoked);
             using (var logout = await client.PostAsync("/api/v1/auth/logout", null)) Assert.Equal(204, (int)logout.StatusCode);
             foreach (var (key, token, path) in Reads(author, reader, gameId, reviewId, rootId, forumTopicId))
