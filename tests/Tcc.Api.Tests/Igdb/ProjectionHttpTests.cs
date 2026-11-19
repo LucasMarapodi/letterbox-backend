@@ -16,7 +16,7 @@ public sealed class ProjectionHttpTests
     public async Task Mixed_cache_local_and_missing_games_only_send_missing_ids_to_supplier()
     {
         var source = new MissingGamesCatalog();
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
+        await using var host = new ApiFactory().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.AddSingleton<IExternalGameCatalog>(source)));
         var now = host.Services.GetRequiredService<TimeProvider>().GetUtcNow();
         await host.Services.GetRequiredService<ICatalogCache>().SaveGamesAsync([
@@ -37,7 +37,7 @@ public sealed class ProjectionHttpTests
     [Fact]
     public async Task Unknown_local_game_does_not_guess_external_identity_or_erase_review()
     {
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
+        await using var host = new ApiFactory().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.AddSingleton<IExternalGameCatalog, OfflineCatalog>()));
         var store = host.Services.GetRequiredService<IReviews>();
         store.TryAdd(Review.Create(106, 1, 10, "Original", CatalogFlow.Metadata.FetchedAt, "Fixture review"));
@@ -76,7 +76,7 @@ public sealed class ProjectionHttpTests
     public async Task Known_local_review_is_readable_with_empty_cache_and_unavailable_supplier()
     {
         var external = new OfflineCatalog();
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
+        await using var host = new ApiFactory().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(identityBuilder => identityBuilder.ConfigureServices(identityServices => Tcc.Api.Tests.Fixtures.TestIdentityRegistration.AddTestIdentity(identityServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.AddSingleton<IExternalGameCatalog>(external)));
         await host.Services.GetRequiredService<ILocalGameCatalog>().SaveGamesAsync([
             CatalogFlow.Game(10) with { Metadata = new(CatalogFlow.Metadata.FetchedAt.AddDays(-2), true) }], default);

@@ -27,7 +27,7 @@ public sealed class AggregatedSearchTests
     [InlineData("q=abc%0Adef")]
     public async Task Invalid_query_returns_400_before_accessing_sources(string query)
     {
-        await using var host = new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>();
+        await using var host = new ApiFactory();
         using var client = host.CreateClient();
         using var response = await client.GetAsync("/api/v1/search?" + query);
         Assert.Equal(400, (int)response.StatusCode);
@@ -145,7 +145,7 @@ public sealed class AggregatedSearchTests
     [Fact]
     public async Task SQL_failure_keeps_cached_games_and_total_failure_has_structured_safe_errors()
     {
-        await using var host = new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new ApiFactory().WithWebHostBuilder(builder =>
         {
             builder.ConfigureLogging(logging => logging.ClearProviders());
             builder.ConfigureServices(services => Tcc.Api.DependencyInjection.PersistenceRegistration.AddPostgresPersistence(services, _ =>
@@ -170,7 +170,7 @@ public sealed class AggregatedSearchTests
     [Fact]
     public async Task OpenAPI_documents_public_query_and_same_envelope_for_partial_and_total_failures()
     {
-        await using var host = new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>();
+        await using var host = new ApiFactory();
         using var client = host.CreateClient();
         using var json = JsonDocument.Parse(await client.GetStringAsync("/openapi/v1.json"));
         var operation = json.RootElement.GetProperty("paths").GetProperty("/api/v1/search").GetProperty("get");

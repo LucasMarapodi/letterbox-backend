@@ -1,6 +1,6 @@
 # Acesso HTTP pelo navegador
 
-A política `BrowserClient` permite somente `Cors:AllowedOrigins`. Em Production, a lista padrão é vazia. Em Development, `appsettings.Development.json` permite `http://localhost:5173` e `http://127.0.0.1:5173`, origens distintas do Vite padrão. Se o Vite mudar de porta, configure a origem efetiva antes de validar.
+A política `BrowserClient` permite somente `Cors:AllowedOrigins`. Em Production, a lista padrão é vazia. Em Development, `appsettings.Development.json` permite somente `https://localhost:5173`. Outro hostname/porta exige configuração HTTPS explícita e certificado compatível.
 
 Exemplo de configuração para um ambiente:
 
@@ -12,21 +12,22 @@ Exemplo de configuração para um ambiente:
 }
 ```
 
-Use origens HTTP(S) completas, sem barra final, caminho, query, credenciais ou wildcard. Configuração inválida interrompe a criação da política. Variáveis de ambiente usam índices, por exemplo `Cors__AllowedOrigins__0`. Arrays de provedores de configuração são combinados por índice; para substituir uma lista de desenvolvimento, atualize todos os índices ou use um ambiente com lista padrão vazia.
+Use origens HTTPS completas, sem barra final, caminho, query, credenciais ou wildcard. Configuração inválida, inclusive origem HTTP, interrompe a criação da política. Variáveis de ambiente usam índices, por exemplo `Cors__AllowedOrigins__0`. Arrays de provedores de configuração são combinados por índice; para substituir uma lista de desenvolvimento, atualize todos os índices ou use um ambiente com lista padrão vazia.
 
 Métodos permitidos: GET, POST, PATCH, PUT e DELETE. Headers permitidos: Content-Type e Authorization. Location é exposto para permitir leitura das URLs retornadas por cadastro, reviews e comentários. OPTIONS é tratado pelo middleware como preflight, sem exigir sessão. O cliente usa Bearer e não deve enviar `credentials: include`; não há `Access-Control-Allow-Credentials`.
 
-O pipeline aplica CORS depois do roteamento e antes de autenticação/autorização. Respostas de sucesso e erro, inclusive 401 e 500, preservam os headers para origens permitidas. Origens não configuradas não recebem liberação. CORS controla a leitura pelo navegador; a API continua aplicando autorização às operações privadas e clientes HTTP de servidor continuam acessando rotas públicas.
+O pipeline rejeita HTTP com 400 antes do roteamento, CORS e autenticação, sem redirect. Em HTTPS, aplica CORS depois do roteamento e antes de autenticação/autorização. Respostas de sucesso e erro, inclusive 401 e 500, preservam os headers para origens permitidas. Origens não configuradas não recebem liberação. CORS controla a leitura pelo navegador; autorização continua obrigatória nas operações privadas.
 
 ## Execução local
 
 Na pasta Back:
 
 ```powershell
-dotnet run --project src/Tcc.Api --launch-profile http --urls http://localhost:5080
+dotnet dev-certs https --check --trust
+dotnet run --project src/Tcc.Api --launch-profile https
 ```
 
-O perfil http define Development. Front pode executar `npm run dev -- --host localhost --port 5173 --strictPort`. A futura configuração de URL do cliente deve apontar diretamente para `http://localhost:5080`, preservando origens distintas e sem proxy.
+O perfil https define Development e somente `https://localhost:7119`. O Front precisa servir `https://localhost:5173` com certificado confiável e apontar diretamente para a API, conforme C-PR-05; iniciar Vite sem configurar TLS não atende a esse contrato. [Certificado, configuração e limites](HTTPS.md).
 
 ## Evidência desta PR
 

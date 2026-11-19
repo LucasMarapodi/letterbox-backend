@@ -83,7 +83,7 @@ public sealed class ExternalCatalogTests
     [Fact]
     public async Task Resolving_supplier_port_and_empty_batch_do_not_load_credentials_before_external_IO()
     {
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(builder =>
+        await using var host = new ApiFactory().WithWebHostBuilder(testCatalogBuilder => testCatalogBuilder.ConfigureServices(testCatalogServices => Tcc.Api.Tests.Fixtures.TestCatalogRegistration.AddTestCatalog(testCatalogServices))).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.AddSingleton<IgdbCredentialOptions>(_ =>
                 throw new InvalidOperationException("Credentials must only be read after a supplier miss"))));
         using var scope = host.Services.CreateScope();

@@ -12,10 +12,10 @@ public static class BrowserCorsRegistration
             foreach (var origin in origins)
             {
                 if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)
-                    || uri.Scheme is not ("http" or "https")
+                    || uri.Scheme != "https"
                     || origin != uri.GetLeftPart(UriPartial.Authority)
                     || !string.IsNullOrEmpty(uri.UserInfo))
-                    throw new InvalidOperationException("Cors:AllowedOrigins deve conter somente origens HTTP(S) explícitas, sem caminhos ou wildcard.");
+                    throw new InvalidOperationException("Cors:AllowedOrigins deve conter somente origens HTTPS explícitas, sem caminhos ou wildcard.");
             }
 
             if (origins.Length > 0) policy.WithOrigins(origins);

@@ -36,7 +36,7 @@ public sealed class MostLikedCommentTests
     [InlineData("pageSize=abc")]
     public async Task Invalid_query_returns_400_without_accessing_SQL(string query)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new ApiFactory();
         using var client = host.CreateClient();
         using var response = await client.GetAsync(Path + "?" + query);
         Assert.Equal(400, (int)response.StatusCode);
@@ -184,7 +184,7 @@ public sealed class MostLikedCommentTests
     [Fact]
     public async Task Unavailable_database_returns_safe_503_without_fallback()
     {
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new ApiFactory().WithWebHostBuilder(builder =>
         {
             builder.ConfigureLogging(logging => logging.ClearProviders());
             builder.ConfigureServices(services => services.AddPostgresPersistence(_ =>

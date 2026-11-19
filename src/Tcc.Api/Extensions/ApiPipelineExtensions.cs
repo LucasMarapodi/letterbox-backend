@@ -17,6 +17,16 @@ public static class ApiPipelineExtensions
         app.UseStatusCodePages(async statusContext =>
             await statusContext.HttpContext.Response.WriteAsJsonAsync(
                 ApiError.FromStatus(statusContext.HttpContext.Response.StatusCode)));
+        app.Use(async (context, next) =>
+        {
+            if (!context.Request.IsHttps)
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                await context.Response.WriteAsJsonAsync(ApiError.FromStatus(400), context.RequestAborted);
+                return;
+            }
+            await next(context);
+        });
         app.UseRouting();
         app.UseCors(BrowserCorsRegistration.PolicyName);
         app.UseAuthentication();

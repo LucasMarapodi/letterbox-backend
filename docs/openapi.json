@@ -7669,7 +7669,7 @@
               "null",
               "string"
             ],
-            "description": "Opcional: omissão preserva, null/vazio remove. HTTP/HTTPS até 2048 caracteres."
+            "description": "Opcional: omissão preserva, null/vazio remove. Nova URL exige HTTPS absoluto, até 2048 caracteres; URL HTTP histórica inalterada é preservada."
           }
         },
         "additionalProperties": false,
@@ -7717,11 +7717,11 @@
               "null",
               "string"
             ],
-            "description": "Opcional: omissão preserva, null/vazio remove. HTTP/HTTPS até 2048 caracteres."
+            "description": "Opcional: omissão preserva, null/vazio remove. Nova URL exige HTTPS absoluto, até 2048 caracteres; URL HTTP histórica inalterada é preservada."
           }
         },
         "additionalProperties": false,
-        "description": "PATCH parcial: omissão preserva; nome não aceita null/vazio, opcionais null/vazio limpam, [] limpa favoritos. Nome até 100, bio até 2000, avatar HTTP/HTTPS até 2048. Localização valida o par final; legado inalterado preservado. Completar perfil não é pré-condição de salvar."
+        "description": "PATCH parcial: omissão preserva; nome não aceita null/vazio, opcionais null/vazio limpam, [] limpa favoritos. Nome até 100, bio até 2000, novo avatar HTTPS até 2048. Localização e avatar históricos inalterados são preservados. Completar perfil não é pré-condição de salvar."
       },
       "ProfileUpdateResponse": {
         "required": [

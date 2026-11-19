@@ -13,7 +13,7 @@ public sealed class ForumWriteTests
     [InlineData("/api/v1/forum/topics/1/replies")]
     public async Task Visitor_cannot_write_even_without_database(string path)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new ApiFactory();
         using var response = await host.CreateClient().PostAsJsonAsync(path, new { text = "Reply", title = "Topic" });
         Assert.Equal(401, (int)response.StatusCode);
     }
