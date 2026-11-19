@@ -8,7 +8,7 @@ namespace Tcc.Api.Tests.Validation;
 
 public sealed class CorsTests
 {
-    private const string Origin = "http://localhost:5173";
+    private const string Origin = "https://localhost:5173";
 
     [Theory]
     [InlineData("/health", 200)]
@@ -104,9 +104,8 @@ public sealed class CorsTests
     }
 
     [Theory]
-    [InlineData("http://localhost:5173")]
-    [InlineData("http://127.0.0.1:5173")]
-    public async Task Development_defaults_release_both_vite_hostnames(string origin)
+    [InlineData("https://localhost:5173")]
+    public async Task Development_defaults_release_secure_vite_origin(string origin)
     {
         await using var host = new TestApiFactory().WithWebHostBuilder(builder => builder.UseEnvironment("Development"));
         using var client = host.CreateClient();
@@ -118,6 +117,8 @@ public sealed class CorsTests
 
     [Theory]
     [InlineData("*")]
+    [InlineData("http://localhost:5173")]
+    [InlineData("http://web.example")]
     [InlineData("https://*.example")]
     [InlineData("https://web.example/path")]
     [InlineData("https://web.example/")]
