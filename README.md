@@ -2,7 +2,9 @@
 
 API .NET 10 da plataforma de avaliações e reviews de jogos. Catálogo IGDB assíncrono, cache em memória e catálogo local PostgreSQL; usuários, perfis e sessões também persistidos. Reviews e avaliações persistem com filtros e médias SQL. Comentários, respostas e curtidas também persistem em SQL. Favoritos e seguimentos também persistem; notificações também persistem, na mesma transação de publicação. Código exclusivamente em Back.
 
-A V-PR-02 adiciona [temas do catálogo](docs/CATALOG-THEMES.md): expansão IGDB, persistência normalizada, campo público aditivo `themes` e compatibilidade com jogos antigos. A migration `CatalogThemes` foi validada somente no banco exclusivo de testes; atualizar explicitamente o ambiente antes de executar o novo código. Recomendações, rankings e banners permanecem nas próximas entregas da nona fase.
+A V-PR-02 adiciona [temas do catálogo](docs/CATALOG-THEMES.md): expansão IGDB, persistência normalizada, campo público aditivo `themes` e compatibilidade com jogos antigos. A migration `CatalogThemes` foi validada somente no banco exclusivo de testes; atualizar explicitamente o ambiente antes de executar o novo código. Rankings e recomendações são entregues pela V-PR-03; banners permanecem nas etapas finais da nona fase.
+
+A V-PR-03 implementa [mais bem avaliados, em alta e recomendações pessoais](docs/GAME-DISCOVERY.md), com agregação/paginação SQL, preferências por gêneros/temas e data de avaliação preservada em edições apenas textuais. Sem migration adicional ou chamadas IGDB para o ranking. A interface e os banners seguem nas PRs próprias.
 
 ## Executar
 

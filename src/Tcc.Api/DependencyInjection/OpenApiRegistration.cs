@@ -44,6 +44,14 @@ public static class OpenApiRegistration
                 var catalogOperation = context.Description.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor action
                     && action.ControllerName is "Games" or "Reviews" or "Ratings" or "Favorites" or "Feed" or "Dashboard" or "Community";
                 var storageOperation = secured || context.Description.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor;
+                var discoveryOperation = context.Description.RelativePath is "api/v1/games/top-rated" or "api/v1/games/trending" or "api/v1/games/recommendations/me";
+                if (discoveryOperation)
+                    operation.Description = context.Description.RelativePath switch
+                    {
+                        "api/v1/games/top-rated" => "Público/no-store. Média das notas locais atuais 0–5; exige pelo menos uma. Ordem: média DESC, quantidade DESC, última avaliação DESC, ID ASC. SQL antes da paginação, sem IGDB. page>=1, pageSize 1–50 (padrão20), hasNextPage.",
+                        "api/v1/games/trending" => "Público/no-store. Um jogo por item, por avaliação local mais recente DESC e ID ASC, sem janela temporal. Mudança só de título/texto ou mesma nota não renova LastRatedAt. SQL antes da paginação; pageSize 1–50 (padrão20). Histórico anterior pode incluir edições textuais indistinguíveis.",
+                        _ => "Privado/no-store. Conta exclusivamente do Bearer. Score: gêneros distintos + temas distintos em comum com favoritos atuais. Exclui favoritos e jogos avaliados pelo usuário. Ordem: score DESC, média local DESC (sem nota por último), ID ASC. Catálogo local, sem IGDB por card ou favoritos privados na resposta. pageSize 1–50 (padrão20). reason no_preferences/no_matches quando vazio; null com resultados."
+                    };
                 if (catalogOperation)
                     foreach (var response in operation.Responses.Where(item => int.TryParse(item.Key, out var code) && code is >= 200 and < 300).Select(item => item.Value).OfType<OpenApiResponse>())
                     {
@@ -101,6 +109,7 @@ public static class OpenApiRegistration
                         schema.Enum = new[] { 10, 20, 50 }.Select(value => (JsonNode)JsonValue.Create(value)).ToList();
                     }
                     if (parameter.Name == "kind") schema.Enum = Nodes("game", "review");
+                    if (discoveryOperation && parameter.Name == "pageSize") schema.Maximum = "50";
                     if (parameter.Name == "userId") schema.Minimum = "1";
                     if (parameter.Name is "gameId" or "igdbId" or "reviewId" or "commentId" or "targetId" or "topicId") schema.Minimum = "1";
                     if (parameter.Name is "genreId" or "platformId") { schema.Minimum = "1"; schema.Description = "ID local int32 de GET /api/v1/games/filters; omissão significa Todos. Inválido/inexistente retorna 400 invalid_filter."; }
