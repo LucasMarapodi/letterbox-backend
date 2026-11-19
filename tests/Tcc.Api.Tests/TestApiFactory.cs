@@ -20,6 +20,7 @@ public class TestApiFactory : ApiFactory
         services.AddSingleton<Tcc.Infrastructure.Memory.HostMemory>();
         services.AddSingleton<IHostSeed>(provider => provider.GetRequiredService<Tcc.Infrastructure.Memory.HostMemory>());
         services.AddSingleton<IExternalGameCatalog, FixtureCatalog>();
+        services.AddSingleton<IGameDiscovery, FixtureGameDiscovery>();
         services.AddSingleton<ICatalogFilterStore, FixtureCatalogFilters>();
         services.AddSingleton<IExternalCatalogFilters, FixtureCatalogFilters>();
         services.AddSingleton<ICommentRanking, Fixtures.EmptyCommentRanking>();
@@ -28,6 +29,14 @@ public class TestApiFactory : ApiFactory
         services.AddHostedService<CatalogFixtures>();
         services.AddHostedService<OpinionFixtures>();
     });
+}
+
+internal sealed class FixtureGameDiscovery : IGameDiscovery
+{
+    public Task<IReadOnlyList<RankedCatalogGame>> RankAsync(bool trending, int offset, int limit, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<RankedCatalogGame>>([]);
+    public Task<CatalogRecommendations> RecommendAsync(int userId, int offset, int limit, CancellationToken ct) =>
+        Task.FromResult(new CatalogRecommendations([], false));
 }
 
 internal sealed class FixtureCatalogFilters : ICatalogFilterStore, IExternalCatalogFilters

@@ -10,6 +10,8 @@ public static class QueriesRegistration
     public static IServiceCollection AddQueriesFeature(this IServiceCollection services)
     {
         services.AddScoped<FollowingFeed>();
+        services.AddScoped<Tcc.Application.Catalog.IGameDiscovery, PostgresGameDiscovery>();
+        services.AddScoped<Tcc.Application.Catalog.GameDiscovery>();
         services.AddScoped<IPeopleSearch, PostgresPeopleSearch>();
         services.AddScoped<AggregatedSearch>();
         services.AddScoped<PersonalDashboard>();

@@ -37,7 +37,8 @@ public sealed record Review
         var edited = Edit(actorId, textSpecified ? text : Text, now, titleSpecified, title);
         var value = rating is double supplied ? RatingValue.Create(supplied) : Evaluation?.Value
             ?? throw new DomainValidationException("Informe a nota da review legada.");
-        return edited with { Evaluation = new Rating(Evaluation?.Id ?? 0, UserId, GameId, value, Evaluation?.CreatedAt ?? now, now) };
+        var ratedAt = Evaluation is null || Evaluation.Value.Value != value.Value ? now : Evaluation.UpdatedAt;
+        return edited with { Evaluation = new Rating(Evaluation?.Id ?? 0, UserId, GameId, value, Evaluation?.CreatedAt ?? now, ratedAt) };
     }
 
     public Review Edit(int actorId, string? text, DateTimeOffset now, bool titleSpecified = false, string? title = null)

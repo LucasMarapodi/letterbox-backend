@@ -70,7 +70,9 @@ public sealed class PostgresRatings(Lazy<TccDbContext> context) : IRatings
         var rows = await db.Ratings.FromSqlInterpolated($"""
             INSERT INTO avaliacoes (usuario_id,jogo_id,nota,criado_em,atualizado_em)
             VALUES ({userId},{gameId},{value.Value},{timestamp},{timestamp})
-            ON CONFLICT (usuario_id,jogo_id) DO UPDATE SET nota=EXCLUDED.nota,atualizado_em=GREATEST(avaliacoes.atualizado_em,EXCLUDED.atualizado_em)
+            ON CONFLICT (usuario_id,jogo_id) DO UPDATE SET nota=EXCLUDED.nota,
+            atualizado_em=CASE WHEN avaliacoes.nota IS DISTINCT FROM EXCLUDED.nota
+                THEN GREATEST(avaliacoes.atualizado_em,EXCLUDED.atualizado_em) ELSE avaliacoes.atualizado_em END
             RETURNING *
             """).AsNoTracking().ToArrayAsync(ct);
         return rows.Single();

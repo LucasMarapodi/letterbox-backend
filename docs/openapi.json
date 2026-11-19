@@ -3588,6 +3588,315 @@
         ]
       }
     },
+    "/api/v1/games/top-rated": {
+      "get": {
+        "tags": [
+          "GameDiscovery"
+        ],
+        "summary": "GET /api/v1/games/top-rated",
+        "description": "Público/no-store. Média das notas locais atuais 0–5; exige pelo menos uma. Ordem: média DESC, quantidade DESC, última avaliação DESC, ID ASC. SQL antes da paginação, sem IGDB. page>=1, pageSize 1–50 (padrão20), hasNextPage.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryPageResponseOfTopRatedGameResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryPageResponseOfTopRatedGameResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryPageResponseOfTopRatedGameResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/games/trending": {
+      "get": {
+        "tags": [
+          "GameDiscovery"
+        ],
+        "summary": "GET /api/v1/games/trending",
+        "description": "Público/no-store. Um jogo por item, por avaliação local mais recente DESC e ID ASC, sem janela temporal. Mudança só de título/texto ou mesma nota não renova LastRatedAt. SQL antes da paginação; pageSize 1–50 (padrão20). Histórico anterior pode incluir edições textuais indistinguíveis.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryPageResponseOfTrendingGameResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryPageResponseOfTrendingGameResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryPageResponseOfTrendingGameResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/games/recommendations/me": {
+      "get": {
+        "tags": [
+          "GameDiscovery"
+        ],
+        "summary": "GET /api/v1/games/recommendations/me",
+        "description": "Privado/no-store. Conta exclusivamente do Bearer. Score: gêneros distintos + temas distintos em comum com favoritos atuais. Exclui favoritos e jogos avaliados pelo usuário. Ordem: score DESC, média local DESC (sem nota por último), ID ASC. Catálogo local, sem IGDB por card ou favoritos privados na resposta. pageSize 1–50 (padrão20). reason no_preferences/no_matches quando vazio; null com resultados.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Requisição inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "validation_failed",
+                  "message": "Requisição inválida."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationsPageResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationsPageResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationsPageResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão necessária ou inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "unauthorized",
+                  "message": "Sessão necessária ou inválida."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/games/filters": {
       "get": {
         "tags": [
@@ -6826,6 +7135,62 @@
           }
         }
       },
+      "DiscoveryPageResponseOfTopRatedGameResponse": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "hasNextPage"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopRatedGameResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DiscoveryPageResponseOfTrendingGameResponse": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "hasNextPage"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrendingGameResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          }
+        }
+      },
       "FavoriteListsResponse": {
         "required": [
           "games",
@@ -7982,6 +8347,71 @@
           }
         }
       },
+      "RecommendationsPageResponse": {
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "hasNextPage",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecommendedGameResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasNextPage": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RecommendedGameResponse": {
+        "required": [
+          "game",
+          "score",
+          "matchedGenres",
+          "matchedThemes"
+        ],
+        "type": "object",
+        "properties": {
+          "game": {
+            "$ref": "#/components/schemas/GameResponse"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "matchedGenres": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "matchedThemes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "RegisterRequest": {
         "examples": [
           {
@@ -8331,6 +8761,54 @@
           "unavailable",
           "notRequested"
         ]
+      },
+      "TopRatedGameResponse": {
+        "required": [
+          "game",
+          "averageRating",
+          "ratingCount",
+          "lastRatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "game": {
+            "$ref": "#/components/schemas/GameResponse"
+          },
+          "averageRating": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "ratingCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastRatedAt": {
+            "type": "string",
+            "description": "Data UTC em ISO 8601.",
+            "format": "date-time"
+          }
+        }
+      },
+      "TrendingGameResponse": {
+        "required": [
+          "game",
+          "lastRatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "game": {
+            "$ref": "#/components/schemas/GameResponse"
+          },
+          "lastRatedAt": {
+            "type": "string",
+            "description": "Data UTC em ISO 8601.",
+            "format": "date-time"
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -8378,6 +8856,9 @@
     },
     {
       "name": "Forum"
+    },
+    {
+      "name": "GameDiscovery"
     },
     {
       "name": "Games"
