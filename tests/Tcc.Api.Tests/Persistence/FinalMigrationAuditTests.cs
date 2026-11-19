@@ -17,7 +17,7 @@ public sealed class FinalMigrationAuditTests
         await PostgresTestDatabase.VerifyExclusiveAsync(db);
         var migrator = db.GetService<IMigrator>();
         var migrations = db.Database.GetMigrations().ToArray();
-        Assert.Equal(12, migrations.Length);
+        Assert.Equal(13, migrations.Length);
         await migrator.MigrateAsync("0");
         try
         {
@@ -44,7 +44,7 @@ public sealed class FinalMigrationAuditTests
     private static async Task AssertSchema(Tcc.Infrastructure.Persistence.TccDbContext db)
     {
         var tables = db.GetService<IDesignTimeModel>().Model.GetRelationalModel().Tables.ToArray();
-        Assert.Equal(19, tables.Length);
+        Assert.Equal(21, tables.Length);
         Assert.Equal(tables.Select(table => table.Name).Order(),
             await Read(db, "SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename <> '__EFMigrationsHistory' ORDER BY tablename"));
         foreach (var table in tables)

@@ -59,7 +59,12 @@ public sealed class FinalPersistenceFlowTests
         {
             using var client = original.CreateClient();
             await using (var db = PostgresTestDatabase.Context())
-                gameId = Assert.Single(await PostgresCatalogTests.Repository(db).UpsertAsync([PostgresCatalogTests.Payload()], default)).Game.Id;
+            {
+                var fixture = PostgresCatalogTests.Payload();
+                fixture = fixture with { Game = fixture.Game with { Themes = ["Fantasy"],
+                    ThemeEntries = [new Tcc.Domain.Catalog.Theme(0, 40, "Fantasy")], ThemesFetchedAt = fixture.Metadata.FetchedAt } };
+                gameId = Assert.Single(await PostgresCatalogTests.Repository(db).UpsertAsync([fixture], default)).Game.Id;
+            }
             author = await NotificationPersistenceTests.Register(client, "final-author@example.com");
             using (var profile = await client.PatchAsJsonAsync("/api/v1/users/me/profile", new { displayName = "Persistent author", bio = "Final lifecycle" })) profile.EnsureSuccessStatusCode();
             reader = await NotificationPersistenceTests.Register(client, "final-reader@example.com");

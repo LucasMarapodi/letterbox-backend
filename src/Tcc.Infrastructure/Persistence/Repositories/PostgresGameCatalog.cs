@@ -83,7 +83,9 @@ public sealed partial class PostgresGameCatalog : ILocalGameCatalog, ICatalogFil
         {
             if (item.Game.IgdbId <= 0 || string.IsNullOrWhiteSpace(item.Game.Title)
                 || item.Game.GenreEntries.Any(genre => genre.IgdbId <= 0 || string.IsNullOrWhiteSpace(genre.Name))
-                || item.Game.PlatformEntries.Any(platform => platform.IgdbId <= 0 || string.IsNullOrWhiteSpace(platform.Name)))
+                || item.Game.PlatformEntries.Any(platform => platform.IgdbId <= 0 || string.IsNullOrWhiteSpace(platform.Name))
+                || item.Game.ThemeEntries.Any(theme => theme.IgdbId <= 0 || string.IsNullOrWhiteSpace(theme.Name) || theme.Name.Trim().Length > Theme.NameMaxLength)
+                || item.Game.ThemeEntries.Count > 0 && !item.Game.ThemesFetchedAt.HasValue)
                 throw new CatalogInvalidResponseException();
         }
         if (games.Count == 0) return Task.FromResult<IReadOnlyList<CatalogGame>>([]);
@@ -98,13 +100,24 @@ public sealed partial class PostgresGameCatalog : ILocalGameCatalog, ICatalogFil
                 var game = item.Game;
                 var now = clock.GetUtcNow();
                 var inserted = await Scalar(db, tx, """
-                    INSERT INTO jogos (igdb_id,nome,descricao,capa_url,primeira_data_lancamento,dados_obtidos_em,criado_em,atualizado_em)
-                    VALUES (@p0,@p1,@p2,@p3,@p4,@p5,@p6,@p6)
+                    INSERT INTO jogos (igdb_id,nome,descricao,capa_url,primeira_data_lancamento,dados_obtidos_em,criado_em,atualizado_em,temas_obtidos_em)
+                    VALUES (@p0,@p1,@p2,@p3,@p4,@p5,@p6,@p6,@p7)
                     ON CONFLICT (igdb_id) DO UPDATE SET nome=EXCLUDED.nome,descricao=EXCLUDED.descricao,capa_url=EXCLUDED.capa_url,
-                    primeira_data_lancamento=EXCLUDED.primeira_data_lancamento,dados_obtidos_em=EXCLUDED.dados_obtidos_em,atualizado_em=EXCLUDED.atualizado_em
+                    primeira_data_lancamento=EXCLUDED.primeira_data_lancamento,dados_obtidos_em=EXCLUDED.dados_obtidos_em,atualizado_em=EXCLUDED.atualizado_em,
+                    temas_obtidos_em=COALESCE(EXCLUDED.temas_obtidos_em,jogos.temas_obtidos_em)
                     WHERE jogos.dados_obtidos_em <= EXCLUDED.dados_obtidos_em RETURNING id
-                    """, ct, game.IgdbId, game.Title, game.Summary, game.CoverUrl, game.ReleaseDate, item.Metadata.FetchedAt.ToUniversalTime(), now);
+                    """, ct, game.IgdbId, game.Title, game.Summary, game.CoverUrl, game.ReleaseDate, item.Metadata.FetchedAt.ToUniversalTime(), now,
+                    game.ThemesFetchedAt.HasValue ? item.Metadata.FetchedAt.ToUniversalTime() : null);
                 if (inserted is not int gameId) continue; // A late, older response cannot replace a newer game or its relationships.
+                if (game.ThemesFetchedAt.HasValue)
+                {
+                    await Scalar(db, tx, "DELETE FROM jogos_temas WHERE jogo_id=@p0", ct, gameId);
+                    foreach (var theme in game.ThemeEntries.DistinctBy(entry => entry.IgdbId).OrderBy(entry => entry.IgdbId))
+                    {
+                        var themeId = await Scalar(db, tx, "INSERT INTO temas (igdb_id,nome) VALUES (@p0,@p1) ON CONFLICT (igdb_id) DO UPDATE SET nome=EXCLUDED.nome RETURNING id", ct, theme.IgdbId, theme.Name.Trim());
+                        await Scalar(db, tx, "INSERT INTO jogos_temas (jogo_id,tema_id) VALUES (@p0,@p1) ON CONFLICT DO NOTHING", ct, gameId, themeId);
+                    }
+                }
                 await Scalar(db, tx, "DELETE FROM jogos_generos WHERE jogo_id=@p0", ct, gameId);
                 await Scalar(db, tx, "DELETE FROM jogos_plataformas WHERE jogo_id=@p0", ct, gameId);
                 foreach (var genre in game.GenreEntries.DistinctBy(entry => entry.IgdbId).OrderBy(entry => entry.IgdbId))
@@ -144,11 +157,16 @@ public sealed partial class PostgresGameCatalog : ILocalGameCatalog, ICatalogFil
             .Join(db.Platforms.AsNoTracking(), link => link.PlatformId, platform => platform.Id, (link, platform) => new { link.GameId, Platform = platform }).ToArrayAsync(ct);
         var genreLookup = genres.ToLookup(item => item.GameId, item => item.Genre);
         var platformLookup = platforms.ToLookup(item => item.GameId, item => item.Platform);
+        var themes = await db.GameThemes.AsNoTracking().Where(link => ids.Contains(link.GameId))
+            .Join(db.Themes.AsNoTracking(), link => link.ThemeId, theme => theme.Id, (link, theme) => new { link.GameId, Theme = theme }).ToArrayAsync(ct);
+        var themeLookup = themes.ToLookup(item => item.GameId, item => item.Theme);
         return games.ToDictionary(game => game.Id, game =>
         {
             var gs = genreLookup[game.Id].OrderBy(item => item.IgdbId).ToArray();
             var ps = platformLookup[game.Id].OrderBy(item => item.IgdbId).ToArray();
-            var projected = game with { GenreEntries = gs, Genres = gs.Select(item => item.Name).ToArray(), PlatformEntries = ps, Platforms = ps.Select(item => item.Name).ToArray() };
+            var ts = themeLookup[game.Id].OrderBy(item => item.IgdbId).ToArray();
+            var projected = game with { GenreEntries = gs, Genres = gs.Select(item => item.Name).ToArray(), PlatformEntries = ps, Platforms = ps.Select(item => item.Name).ToArray(),
+                ThemeEntries = ts, Themes = ts.Select(item => item.Name).ToArray() };
             return CatalogStorage.Read(new(projected, new(game.FetchedAt)), clock.GetUtcNow(), options);
         });
     }

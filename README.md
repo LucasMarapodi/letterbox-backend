@@ -2,6 +2,8 @@
 
 API .NET 10 da plataforma de avaliações e reviews de jogos. Catálogo IGDB assíncrono, cache em memória e catálogo local PostgreSQL; usuários, perfis e sessões também persistidos. Reviews e avaliações persistem com filtros e médias SQL. Comentários, respostas e curtidas também persistem em SQL. Favoritos e seguimentos também persistem; notificações também persistem, na mesma transação de publicação. Código exclusivamente em Back.
 
+A V-PR-02 adiciona [temas do catálogo](docs/CATALOG-THEMES.md): expansão IGDB, persistência normalizada, campo público aditivo `themes` e compatibilidade com jogos antigos. A migration `CatalogThemes` foi validada somente no banco exclusivo de testes; atualizar explicitamente o ambiente antes de executar o novo código. Recomendações, rankings e banners permanecem nas próximas entregas da nona fase.
+
 ## Executar
 
 A [S-PR-32](docs/S-PR-32.md) unifica a edição parcial: PATCH de perfil salva nome/localização/bio/avatar e favoritos atomicamente, mesmo incompleto. Mantém campos atuais da resposta e acrescenta completion privado. Localização usa opções fechadas e preserva legado inalterado; PUT anterior permanece por compatibilidade. Modal na S-PR-33, sem migration nova.

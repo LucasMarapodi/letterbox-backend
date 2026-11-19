@@ -10,6 +10,7 @@ public sealed class IgdbGameDto
     [JsonPropertyName("cover")] public IgdbCoverDto? Cover { get; init; }
     [JsonPropertyName("genres")] public IgdbNameDto[]? Genres { get; init; }
     [JsonPropertyName("platforms")] public IgdbNameDto[]? Platforms { get; init; }
+    [JsonPropertyName("themes")] public IgdbNameDto[]? Themes { get; init; }
     [JsonPropertyName("first_release_date")] public long? FirstReleaseDate { get; init; }
 }
 public sealed class IgdbCoverDto
