@@ -23,5 +23,7 @@ public sealed class TccDbContext(DbContextOptions<TccDbContext> options) : DbCon
     public DbSet<Tcc.Domain.Catalog.Platform> Platforms => Set<Tcc.Domain.Catalog.Platform>();
     public DbSet<Tcc.Domain.Catalog.GameGenre> GameGenres => Set<Tcc.Domain.Catalog.GameGenre>();
     public DbSet<Tcc.Domain.Catalog.GamePlatform> GamePlatforms => Set<Tcc.Domain.Catalog.GamePlatform>();
+    public DbSet<Tcc.Domain.Catalog.Theme> Themes => Set<Tcc.Domain.Catalog.Theme>();
+    public DbSet<Tcc.Domain.Catalog.GameTheme> GameThemes => Set<Tcc.Domain.Catalog.GameTheme>();
     protected override void OnModelCreating(ModelBuilder modelBuilder) => modelBuilder.ApplyConfigurationsFromAssembly(typeof(TccDbContext).Assembly);
 }

@@ -16,7 +16,8 @@ internal static class CatalogStorage
         return entry with { Game = entry.Game with
         {
             Genres = Array.AsReadOnly(entry.Game.Genres.ToArray()), Platforms = Array.AsReadOnly(entry.Game.Platforms.ToArray()),
-            GenreEntries = Array.AsReadOnly(entry.Game.GenreEntries.ToArray()), PlatformEntries = Array.AsReadOnly(entry.Game.PlatformEntries.ToArray())
+            GenreEntries = Array.AsReadOnly(entry.Game.GenreEntries.ToArray()), PlatformEntries = Array.AsReadOnly(entry.Game.PlatformEntries.ToArray()),
+            Themes = Array.AsReadOnly(entry.Game.Themes.ToArray()), ThemeEntries = Array.AsReadOnly(entry.Game.ThemeEntries.ToArray())
         }};
     }
     public static CatalogGame Read(CatalogGame entry, DateTimeOffset now, CatalogMemoryOptions options) => entry with

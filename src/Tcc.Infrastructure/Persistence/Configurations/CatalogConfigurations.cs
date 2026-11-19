@@ -18,10 +18,12 @@ public sealed class GameConfiguration : IEntityTypeConfiguration<Game>
         entity.Property(item => item.CoverUrl).HasColumnName("capa_url");
         entity.Property(item => item.ReleaseDate).HasColumnName("primeira_data_lancamento");
         entity.Property(item => item.FetchedAt).HasColumnName("dados_obtidos_em");
+        entity.Property(item => item.ThemesFetchedAt).HasColumnName("temas_obtidos_em");
         entity.Property(item => item.CreatedAt).HasColumnName("criado_em");
         entity.Property(item => item.UpdatedAt).HasColumnName("atualizado_em");
         entity.Ignore(item => item.Genres); entity.Ignore(item => item.Platforms);
         entity.Ignore(item => item.GenreEntries); entity.Ignore(item => item.PlatformEntries);
+        entity.Ignore(item => item.Themes); entity.Ignore(item => item.ThemeEntries);
     }
 }
 public sealed class GenreConfiguration : IEntityTypeConfiguration<Genre>
@@ -68,5 +70,36 @@ public sealed class GamePlatformConfiguration : IEntityTypeConfiguration<GamePla
         entity.Property(item => item.PlatformId).HasColumnName("plataforma_id").ValueGeneratedNever();
         entity.HasOne<Game>().WithMany().HasForeignKey(item => item.GameId).OnDelete(DeleteBehavior.Restrict);
         entity.HasOne<Platform>().WithMany().HasForeignKey(item => item.PlatformId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class ThemeConfiguration : IEntityTypeConfiguration<Theme>
+{
+    public void Configure(EntityTypeBuilder<Theme> entity)
+    {
+        entity.ToTable("temas", table =>
+        {
+            table.HasCheckConstraint("ck_temas_igdb_positivo", "igdb_id > 0");
+            table.HasCheckConstraint("ck_temas_nome_obrigatorio", "length(btrim(nome)) > 0");
+        });
+        entity.HasKey(item => item.Id);
+        entity.Property(item => item.Id).HasColumnName("id").UseIdentityByDefaultColumn();
+        entity.Property(item => item.IgdbId).HasColumnName("igdb_id");
+        entity.Property(item => item.Name).HasColumnName("nome").HasMaxLength(Theme.NameMaxLength).IsRequired();
+        entity.HasIndex(item => item.IgdbId).IsUnique();
+    }
+}
+
+public sealed class GameThemeConfiguration : IEntityTypeConfiguration<GameTheme>
+{
+    public void Configure(EntityTypeBuilder<GameTheme> entity)
+    {
+        entity.ToTable("jogos_temas");
+        entity.HasKey(item => new { item.GameId, item.ThemeId });
+        entity.Property(item => item.GameId).HasColumnName("jogo_id").ValueGeneratedNever();
+        entity.Property(item => item.ThemeId).HasColumnName("tema_id").ValueGeneratedNever();
+        entity.HasIndex(item => item.ThemeId);
+        entity.HasOne<Game>().WithMany().HasForeignKey(item => item.GameId).OnDelete(DeleteBehavior.Restrict);
+        entity.HasOne<Theme>().WithMany().HasForeignKey(item => item.ThemeId).OnDelete(DeleteBehavior.Restrict);
     }
 }

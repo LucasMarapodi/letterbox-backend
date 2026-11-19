@@ -155,6 +155,13 @@ public static class OpenApiRegistration
                     schema.Format = "date-time";
                     schema.Description = "Data UTC em ISO 8601.";
                 }
+                // GameResponse is also generated as a nested property of pages, reviews and favorites.
+                if (type == typeof(GameResponse) && schema.Properties is not null)
+                {
+                    schema.Required = schema.Properties.Keys.ToHashSet(StringComparer.Ordinal);
+                    if (schema.Properties["themes"] is OpenApiSchema themes)
+                        themes.Description = "Nomes de temas reais da IGDB, normalizados por ID externo e persistidos no catálogo local. [] quando ausentes; ausência de metadado não impede leitura. IDs/estado de sincronização são internos.";
+                }
                 if (context.JsonPropertyInfo is not null || schema.Properties is null) return Task.CompletedTask;
                 if (type == typeof(RegisterRequest) || type == typeof(LoginRequest) || type == typeof(RatingRequest) || type == typeof(TextRequest))
                 {

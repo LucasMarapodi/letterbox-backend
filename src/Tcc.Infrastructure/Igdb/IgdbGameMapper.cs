@@ -24,12 +24,17 @@ public sealed class IgdbGameMapper(ExternalEndpointOptions endpoints)
         }
         var genres = Names(dto.Genres);
         var platforms = Names(dto.Platforms);
+        var themes = Names(dto.Themes);
+        if (themes.Any(item => item.Name.Length > Theme.NameMaxLength)) throw new CatalogInvalidResponseException();
         var game = new Game(0, dto.Name.Trim(), dto.Summary ?? "", cover,
             genres.Select(item => item.Name).ToArray(), platforms.Select(item => item.Name).ToArray(), release)
         {
             IgdbId = dto.Id.Value, FetchedAt = fetchedAt.ToUniversalTime(),
             GenreEntries = genres.Select(item => new Genre(0, item.Id, item.Name)).ToArray(),
-            PlatformEntries = platforms.Select(item => new Platform(0, item.Id, item.Name)).ToArray()
+            PlatformEntries = platforms.Select(item => new Platform(0, item.Id, item.Name)).ToArray(),
+            ThemeEntries = themes.Select(item => new Theme(0, item.Id, item.Name)).ToArray(),
+            Themes = themes.Select(item => item.Name).ToArray(),
+            ThemesFetchedAt = dto.Themes is null ? null : fetchedAt.ToUniversalTime()
         };
         return new(game, new CatalogMetadata(fetchedAt.ToUniversalTime()));
     }

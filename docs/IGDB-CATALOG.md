@@ -17,12 +17,13 @@ Desde [S-PR-05](S-PR-05.md), genreId/platformId são opcionais e locais, resolvi
 
 CatalogSearch valida termo com trim (até 200, sem controles), sort permitido, page >= 1, pageSize de 1 a 100 e offset sem overflow. Sem termo: release-desc; com termo: name-asc. Também aceita name-desc. Página usa pageSize+1 para hasNextPage, sem total artificial.
 
-Campos: id, name, summary, cover.image_id, genres.id/genres.name, platforms.id/platforms.name e first_release_date. Sem termo e em release-desc, são excluídos lançamentos ausentes/futuros. Aspas e barras do termo são escapadas; fields/endpoint/expressão não são definidos pelo usuário. Expansões seguem a [documentação oficial IGDB](https://api-docs.igdb.com/#expander).
+Campos: id, name, summary, cover.image_id, genres.id/genres.name, platforms.id/platforms.name, themes.id/themes.name e first_release_date. Sem termo e em release-desc, são excluídos lançamentos ausentes/futuros. Aspas e barras do termo são escapadas; fields/endpoint/expressão não são definidos pelo usuário. Expansões seguem a [documentação oficial IGDB](https://api-docs.igdb.com/#expander).
 
 - ID externo positivo → IgdbId long; ID local atribuído pelo PostgreSQL após commit.
 - name obrigatório → title trim; summary ausente → vazio.
 - cover.image_id validado → URL sob IGDB__ImagesBaseUrl com t_cover_big/{image_id}.jpg; ausência → null. Configuração e limites em [S-PR-07](S-PR-07.md).
 - gêneros/plataformas preservam ID externo e nome. Repetição consistente do ID é deduplicada; IDs ausentes/inválidos ou nomes conflitantes são rejeitados.
+- Temas seguem a mesma normalização por ID externo, com nomes até 200 caracteres e persistência N:N. Ausência do campo não apaga temas conhecidos; jogos antigos continuam legíveis sem exigir rede. [Modelo, contrato e atualização](CATALOG-THEMES.md).
 - lançamento Unix → DateOnly UTC; ausência → null.
 - ratings externos/enums/campos extras não são importados; média usa avaliações locais.
 

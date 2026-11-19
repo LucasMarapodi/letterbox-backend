@@ -10,9 +10,17 @@ public sealed record Game(int Id, string Title, string Summary, string? CoverUrl
     public DateTimeOffset UpdatedAt { get; init; }
     public IReadOnlyList<Genre> GenreEntries { get; init; } = [];
     public IReadOnlyList<Platform> PlatformEntries { get; init; } = [];
+    public IReadOnlyList<string> Themes { get; init; } = [];
+    public IReadOnlyList<Theme> ThemeEntries { get; init; } = [];
+    public DateTimeOffset? ThemesFetchedAt { get; init; }
 }
 
 public sealed record Genre(int Id, long IgdbId, string Name);
 public sealed record Platform(int Id, long IgdbId, string Name);
 public sealed record GameGenre(int GameId, int GenreId);
 public sealed record GamePlatform(int GameId, int PlatformId);
+public sealed record Theme(int Id, long IgdbId, string Name)
+{
+    public const int NameMaxLength = 200;
+}
+public sealed record GameTheme(int GameId, int ThemeId);

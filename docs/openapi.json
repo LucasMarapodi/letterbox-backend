@@ -7244,7 +7244,8 @@
           "genres",
           "platforms",
           "releaseDate",
-          "averageRating"
+          "averageRating",
+          "themes"
         ],
         "type": "object",
         "properties": {
@@ -7295,6 +7296,13 @@
               "string"
             ],
             "format": "double"
+          },
+          "themes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Nomes de temas reais da IGDB, normalizados por ID externo e persistidos no catálogo local. [] quando ausentes; ausência de metadado não impede leitura. IDs/estado de sincronização são internos."
           }
         }
       },
