@@ -136,7 +136,7 @@ public sealed class EndpointConfigurationTests
     }
 
     private static WebApplicationFactory<Program> Host(Dictionary<string, string?> values, Action<IServiceCollection>? configure = null) =>
-        new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        new ApiFactory().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Production");
             builder.ConfigureLogging(logging => logging.ClearProviders());

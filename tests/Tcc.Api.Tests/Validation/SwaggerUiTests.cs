@@ -47,7 +47,7 @@ public sealed class SwaggerUiTests
     public async Task Swagger_short_url_redirects_to_the_page()
     {
         await using var host = new TestApiFactory();
-        using var client = host.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        using var client = host.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, BaseAddress = new("https://localhost") });
         using var response = await client.GetAsync("/swagger");
         Assert.Equal(301, (int)response.StatusCode);
         Assert.Equal("swagger/index.html", response.Headers.Location?.OriginalString);

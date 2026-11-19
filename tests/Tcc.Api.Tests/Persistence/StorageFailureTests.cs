@@ -15,7 +15,7 @@ public sealed class StorageFailureTests
     {
         const string sentinel = "synthetic-database-secret";
         using var logs = new SecurityLogs();
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new ApiFactory().WithWebHostBuilder(builder =>
         {
             builder.ConfigureLogging(logging => logging.ClearProviders().AddProvider(logs));
             builder.ConfigureServices(services => services.AddPostgresPersistence(_ =>

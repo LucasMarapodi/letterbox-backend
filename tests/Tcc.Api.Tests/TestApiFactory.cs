@@ -11,7 +11,7 @@ using Tcc.Domain.Opinions;
 namespace Tcc.Api.Tests;
 
 // Business fixtures belong exclusively to the test host. The real resolver/cache/local stores stay active.
-public class TestApiFactory : WebApplicationFactory<Program>
+public class TestApiFactory : ApiFactory
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder) => builder.ConfigureServices(services =>
     {

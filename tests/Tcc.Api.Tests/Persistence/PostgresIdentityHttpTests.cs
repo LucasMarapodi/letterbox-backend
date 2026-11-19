@@ -91,7 +91,7 @@ public sealed class PostgresIdentityHttpTests
     }
 }
 
-public sealed class PostgresApiFactory : WebApplicationFactory<Program>
+public sealed class PostgresApiFactory : ApiFactory
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

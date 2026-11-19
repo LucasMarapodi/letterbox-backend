@@ -117,7 +117,7 @@ public sealed class ProfileTests
         using var client = host.CreateClient();
         var login = await LoginTests.Login(client);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.Token);
-        var valid = new ProfileInput(new string('n', 100), new string('b', 2000), "http://example.com/a");
+        var valid = new ProfileInput(new string('n', 100), new string('b', 2000), "https://example.com/a");
         using var allowed = await Patch(client, JsonSerializer.Serialize(valid, JsonSerializerOptions.Web));
         Assert.Equal(HttpStatusCode.OK, allowed.StatusCode);
         var baseline = await allowed.Content.ReadFromJsonAsync<PublicUser>();

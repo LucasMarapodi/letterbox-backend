@@ -20,7 +20,7 @@ public sealed class CommentLikeContractTests
     [InlineData("GET", "/me")]
     public async Task Visitor_is_rejected_without_accessing_persistence(string method, string suffix)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new ApiFactory();
         using var client = host.CreateClient();
         using var response = await client.SendAsync(new(new HttpMethod(method), "/api/v1/comments/1/like" + suffix));
         Assert.Equal(401, (int)response.StatusCode);

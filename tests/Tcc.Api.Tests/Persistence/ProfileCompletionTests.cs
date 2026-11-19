@@ -22,7 +22,7 @@ public sealed class ProfileCompletionTests
     [InlineData("PUT")]
     public async Task Completion_requires_a_session_before_accessing_private_data(string method)
     {
-        await using var host = new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>();
+        await using var host = new ApiFactory();
         using var client = host.CreateClient();
         using var response = await client.SendAsync(new(new HttpMethod(method), Path));
         Assert.Equal(401, (int)response.StatusCode);

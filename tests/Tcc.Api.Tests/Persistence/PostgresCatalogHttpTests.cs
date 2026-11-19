@@ -58,7 +58,7 @@ public sealed class PostgresCatalogHttpTests
     {
         Assert.DoesNotContain(typeof(IgdbGameCatalog).Assembly.GetTypes(), type => type.Name == "InMemoryLocalGameCatalog");
         var supplier = new Supplier();
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new ApiFactory().WithWebHostBuilder(builder =>
         {
             builder.ConfigureLogging(logging => logging.ClearProviders());
             builder.ConfigureServices(services =>

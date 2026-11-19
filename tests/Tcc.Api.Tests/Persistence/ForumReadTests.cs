@@ -20,7 +20,7 @@ public sealed class ForumReadTests
     [Fact]
     public async Task Unavailable_SQL_returns_safe_503_without_connection_details()
     {
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new ApiFactory().WithWebHostBuilder(builder =>
         {
             builder.ConfigureLogging(logging => logging.ClearProviders());
             builder.ConfigureServices(services => services.AddPostgresPersistence(_ =>
@@ -40,7 +40,7 @@ public sealed class ForumReadTests
     [InlineData("/api/v1/forum/topics/1/replies?page=-1")]
     public async Task Invalid_query_fails_before_database_access(string path)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new ApiFactory();
         using var response = await host.CreateClient().GetAsync(path);
         Assert.Equal(400, (int)response.StatusCode);
     }

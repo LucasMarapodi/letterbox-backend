@@ -13,7 +13,7 @@ Base `/api/v1`. Desde P-PR-01, IDs de usuários são inteiros positivos gerados 
 
 PublicUserResponse: id, username, displayName, bio, avatarUrl. Sem email, password, hash ou token. Username gerado como `user-{id}`: função determinística do ID único da conta; não é solicitado no cadastro.
 
-Nome/name/displayName: obrigatório, não vazio após trim, máximo 100 caracteres. Email: obrigatório, formato simples de caixa postal sem nome de exibição, máximo 254 caracteres, trim e lowercase para unicidade. Bio: máximo 2000 caracteres, string vazia permitida. Avatar: null ou URL absoluta HTTP/HTTPS de até 2048 caracteres; não há download ou upload.
+Nome/name/displayName: obrigatório, não vazio após trim, máximo 100 caracteres. Email: obrigatório, formato simples de caixa postal sem nome de exibição, máximo 254 caracteres, trim e lowercase para unicidade. Bio: máximo 2000 caracteres, string vazia permitida. Novo avatar: null ou URL absoluta HTTPS de até 2048 caracteres; omissão ou valor histórico inalterado preserva o avatar anterior, null/vazio explícito remove. Não há download ou upload.
 
 Desde C-PR-01, a senha de cadastro exige pelo menos seis caracteres, uma maiúscula (`char.IsUpper`), um número (`char.IsDigit`) e um especial (não letra, dígito, espaço em branco ou controle). Não exige minúscula nem acrescenta tamanho máximo. Null, vazio e somente espaços são inválidos. A senha original é preservada sem Trim ou normalização, inclusive espaços nas extremidades quando os requisitos são atendidos. `Abc1!x` e `ABC1!X` são exemplos sintéticos válidos.
 

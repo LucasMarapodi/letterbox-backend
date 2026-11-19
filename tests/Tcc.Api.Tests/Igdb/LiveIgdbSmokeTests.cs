@@ -16,7 +16,7 @@ public sealed class LiveIgdbSmokeTests(ITestOutputHelper output)
     public async Task Real_catalog_public_API_cache_local_and_token_are_verified_with_limited_requests()
     {
         var counters = new SmokeCounters();
-        await using var host = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        await using var host = new ApiFactory().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
             // Live credentials/payloads must never be included in runner logs.

@@ -24,16 +24,17 @@ Na raiz Back, com SDK 10.0.401:
 dotnet restore
 dotnet test --no-restore
 dotnet build --no-restore -c Release
-dotnet run --project src/Tcc.Api --urls http://localhost:5080
+dotnet dev-certs https --check --trust
+dotnet run --project src/Tcc.Api --launch-profile https
 ```
 
 `GET /health` retorna `200 {"status":"ok"}`. Endpoints de negócio estão em `/api/v1`; contratos e exemplos em [AUTH.md](docs/AUTH.md), [OPINIONS.md](docs/OPINIONS.md), [SOCIAL.md](docs/SOCIAL.md) e [FEEDS.md](docs/FEEDS.md).
 
 `GET /openapi/v1.json` fornece OpenAPI 3.1 com 45 operações funcionais e health, schemas, erros e autenticação Bearer. [Documento exportado](docs/openapi.json) e [mapeamento para o frontend](docs/COMPATIBILITY.md).
 
-Swagger UI em [http://localhost:5080/swagger](http://localhost:5080/swagger), usando o mesmo documento OpenAPI. Permite explorar contratos e executar chamadas; para operações privadas, faça login e informe o token no botão **Authorize**. [Guia do Swagger](docs/SWAGGER.md).
+Swagger UI em [https://localhost:7119/swagger](https://localhost:7119/swagger), usando o mesmo documento OpenAPI. Permite explorar contratos e executar chamadas; para operações privadas, faça login e informe o token no botão **Authorize**. [Guia do Swagger](docs/SWAGGER.md).
 
-A primeira entrega da terceira fase prepara CORS para consumo direto pelo navegador: [origens, execução local e evidências](docs/CORS.md). Em Development, as origens padrão são localhost:5173 e 127.0.0.1:5173; em Production, configure `Cors:AllowedOrigins` explicitamente.
+A política de [CORS](docs/CORS.md) permite em Development somente `https://localhost:5173`; em Production, configure origens HTTPS explícitas. A API exige HTTPS, sem redirecionar HTTP. [Certificado e preparação para hospedagem](docs/HTTPS.md). O Front depende da C-PR-05 para servir HTTPS e consumir diretamente a API segura.
 
 [Contratos para integração HTTP](docs/HTTP-INTEGRATION.md) e [descrição da I-PR-01](docs/I-PR-01.md).
 

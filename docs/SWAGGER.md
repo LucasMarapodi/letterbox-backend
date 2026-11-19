@@ -4,12 +4,13 @@ Execute na pasta Back:
 
 ```powershell
 dotnet restore
-dotnet run --project src/Tcc.Api --launch-profile http --urls http://localhost:5080
+dotnet dev-certs https --check --trust
+dotnet run --project src/Tcc.Api --launch-profile https
 ```
 
-Abra [Swagger local](http://localhost:5080/swagger). Se utilizar outra porta, abra `/swagger` na mesma origem da API. A página fica disponível em todos os ambientes, assim como o documento OpenAPI já existente.
+Abra [Swagger local](https://localhost:7119/swagger). Se utilizar outra porta, abra `/swagger` na mesma origem da API. A página fica disponível em todos os ambientes, assim como o documento OpenAPI já existente.
 
-Os perfis http/https em `launchSettings.json` usam `launchUrl: swagger` para abrir essa página ao iniciar o projeto por uma IDE que respeite o perfil. Sem a opção `--urls`, o perfil http utiliza `http://localhost:5207/swagger`.
+O único perfil, https, em `launchSettings.json` usa `launchUrl: swagger` e `https://localhost:7119`, sem listener HTTP. O certificado precisa ser confiável. [Preparação HTTPS](HTTPS.md).
 
 ## Explorar e executar operações
 

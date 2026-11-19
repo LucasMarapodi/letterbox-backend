@@ -243,7 +243,7 @@ public static class OpenApiRegistration
                 if (type == typeof(ProfilePatchRequest))
                 {
                     schema.Required = new HashSet<string>();
-                    schema.Description = "PATCH parcial: omissão preserva; nome não aceita null/vazio, opcionais null/vazio limpam, [] limpa favoritos. Nome até 100, bio até 2000, avatar HTTP/HTTPS até 2048. Localização valida o par final; legado inalterado preservado. Completar perfil não é pré-condição de salvar.";
+                    schema.Description = "PATCH parcial: omissão preserva; nome não aceita null/vazio, opcionais null/vazio limpam, [] limpa favoritos. Nome até 100, bio até 2000, novo avatar HTTPS até 2048. Localização e avatar históricos inalterados são preservados. Completar perfil não é pré-condição de salvar.";
                     if (schema.Properties["displayName"] is OpenApiSchema name) name.Type = JsonSchemaType.String;
                 }
                 if (type == typeof(ProfileCompletionRequest))
@@ -267,7 +267,7 @@ public static class OpenApiRegistration
                         if (ids.Items is OpenApiSchema item) item.Minimum = "1";
                     }
                     if (schema.Properties["avatarUrl"] is OpenApiSchema avatar)
-                        avatar.Description = "Opcional: omissão preserva, null/vazio remove. HTTP/HTTPS até 2048 caracteres.";
+                        avatar.Description = "Opcional: omissão preserva, null/vazio remove. Nova URL exige HTTPS absoluto, até 2048 caracteres; URL HTTP histórica inalterada é preservada.";
                     schema.AdditionalPropertiesAllowed = false;
                 }
                 if (type == typeof(FavoriteResponse) && schema.Properties["targetType"] is OpenApiSchema kind) kind.Enum = Nodes("game", "review");

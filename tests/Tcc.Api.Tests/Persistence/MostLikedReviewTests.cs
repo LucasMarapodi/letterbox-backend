@@ -24,7 +24,7 @@ public sealed class MostLikedReviewTests
     [InlineData("pageSize=15")]
     public async Task Invalid_query_returns_400_without_SQL(string query)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new ApiFactory();
         using var response = await host.CreateClient().GetAsync(Path + "?" + query);
         Assert.Equal(400, (int)response.StatusCode);
     }

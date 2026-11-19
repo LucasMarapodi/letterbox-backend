@@ -85,7 +85,7 @@ public sealed class ReviewLikeTests
     [InlineData("GET", "/me")]
     public async Task Anonymous_user_is_rejected_before_reading_SQL(string method, string suffix)
     {
-        await using var host = new WebApplicationFactory<Program>();
+        await using var host = new ApiFactory();
         using var client = host.CreateClient();
         using var response = await client.SendAsync(new(new HttpMethod(method), "/api/v1/reviews/1/like" + suffix));
         Assert.Equal(401, (int)response.StatusCode);
