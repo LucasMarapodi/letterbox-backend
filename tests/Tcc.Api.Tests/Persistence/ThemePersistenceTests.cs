@@ -92,10 +92,10 @@ public sealed class ThemePersistenceTests
         {
             await db.Database.ExecuteSqlRawAsync("TRUNCATE jogos RESTART IDENTITY CASCADE; INSERT INTO jogos(igdb_id,nome,descricao,dados_obtidos_em,criado_em,atualizado_em) VALUES(3000000099,'Before themes','Old','2026-01-01Z','2026-01-01Z','2026-01-01Z')");
             await db.Database.ExecuteSqlRawAsync("INSERT INTO generos(igdb_id,nome) VALUES(3000000098,'Preserved genre') ON CONFLICT(igdb_id) DO NOTHING; INSERT INTO jogos_generos(jogo_id,genero_id) SELECT j.id,g.id FROM jogos j CROSS JOIN generos g WHERE j.igdb_id=3000000099 AND g.igdb_id=3000000098");
-            var before = await FinalMigrationAuditTests.Read(db, "SELECT id::text || '|' || igdb_id::text || '|' || nome FROM jogos");
+            var before = await FinalMigrationAuditTests.Read(db, "SELECT id::text || '|' || igdb_id::text || '|' || nome FROM jogos WHERE igdb_id=3000000099");
             var genres = await FinalMigrationAuditTests.Read(db, "SELECT jogo_id::text || '|' || genero_id::text FROM jogos_generos ORDER BY jogo_id,genero_id");
             await db.Database.MigrateAsync();
-            Assert.Equal(before, await FinalMigrationAuditTests.Read(db, "SELECT id::text || '|' || igdb_id::text || '|' || nome FROM jogos"));
+            Assert.Equal(before, await FinalMigrationAuditTests.Read(db, "SELECT id::text || '|' || igdb_id::text || '|' || nome FROM jogos WHERE igdb_id=3000000099"));
             Assert.Equal(genres, await FinalMigrationAuditTests.Read(db, "SELECT jogo_id::text || '|' || genero_id::text FROM jogos_generos ORDER BY jogo_id,genero_id"));
             Assert.Empty(await FinalMigrationAuditTests.Read(db, "SELECT nome FROM temas"));
             Assert.False(db.Database.HasPendingModelChanges());

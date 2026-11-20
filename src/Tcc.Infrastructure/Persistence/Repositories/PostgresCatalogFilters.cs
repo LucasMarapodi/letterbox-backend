@@ -14,10 +14,12 @@ public sealed partial class PostgresGameCatalog
     {
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         await Scalar(db, tx, "SELECT pg_advisory_xact_lock(72422002)", ct);
+        await using var writes = CreateBatch(db, tx);
         foreach (var item in filters.Genres.OrderBy(item => item.Id))
-            await Scalar(db, tx, "INSERT INTO generos(igdb_id,nome) VALUES(@p0,@p1) ON CONFLICT(igdb_id) DO UPDATE SET nome=EXCLUDED.nome", ct, item.Id, item.Name);
+            Queue(writes, "INSERT INTO generos(igdb_id,nome) VALUES(@p0,@p1) ON CONFLICT(igdb_id) DO UPDATE SET nome=EXCLUDED.nome", item.Id, item.Name);
         foreach (var item in filters.Platforms.OrderBy(item => item.Id))
-            await Scalar(db, tx, "INSERT INTO plataformas(igdb_id,nome) VALUES(@p0,@p1) ON CONFLICT(igdb_id) DO UPDATE SET nome=EXCLUDED.nome", ct, item.Id, item.Name);
+            Queue(writes, "INSERT INTO plataformas(igdb_id,nome) VALUES(@p0,@p1) ON CONFLICT(igdb_id) DO UPDATE SET nome=EXCLUDED.nome", item.Id, item.Name);
+        if (writes.BatchCommands.Count > 0) await writes.ExecuteNonQueryAsync(ct);
         await tx.CommitAsync(ct);
         snapshots.Invalidate();
         return true;

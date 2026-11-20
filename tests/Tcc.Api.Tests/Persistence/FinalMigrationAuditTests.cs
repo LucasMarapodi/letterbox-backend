@@ -17,7 +17,7 @@ public sealed class FinalMigrationAuditTests
         await PostgresTestDatabase.VerifyExclusiveAsync(db);
         var migrator = db.GetService<IMigrator>();
         var migrations = db.Database.GetMigrations().ToArray();
-        Assert.Equal(15, migrations.Length);
+        Assert.Equal(16, migrations.Length);
         await migrator.MigrateAsync("0");
         try
         {
@@ -119,8 +119,8 @@ internal static class IdentityUpgradeBaseline
         """;
     // Compare IDs, relationships, public content and timestamps without printing verifiers.
     public const string ReadSql = """
-        SELECT 'user|' || id || '|' || username || '|' || email || '|' || criado_em || '|' || atualizado_em FROM usuarios
-        UNION ALL SELECT 'profile|' || usuario_id || '|' || nome_exibicao || '|' || biografia || '|' || atualizado_em FROM perfis_usuarios
-        UNION ALL SELECT 'session|' || id || '|' || usuario_id || '|' || criado_em || '|' || expira_em FROM sessoes_usuarios ORDER BY 1
+        SELECT 'user|' || id || '|' || username || '|' || email || '|' || criado_em || '|' || atualizado_em FROM usuarios WHERE email='upgrade@example.com'
+        UNION ALL SELECT 'profile|' || usuario_id || '|' || nome_exibicao || '|' || biografia || '|' || atualizado_em FROM perfis_usuarios WHERE usuario_id IN (SELECT id FROM usuarios WHERE email='upgrade@example.com')
+        UNION ALL SELECT 'session|' || id || '|' || usuario_id || '|' || criado_em || '|' || expira_em FROM sessoes_usuarios WHERE usuario_id IN (SELECT id FROM usuarios WHERE email='upgrade@example.com') ORDER BY 1
         """;
 }

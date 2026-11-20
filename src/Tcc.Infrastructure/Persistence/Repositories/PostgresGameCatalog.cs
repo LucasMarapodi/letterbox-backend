@@ -95,11 +95,12 @@ public sealed partial class PostgresGameCatalog : ILocalGameCatalog, ICatalogFil
             await using var tx = await db.Database.BeginTransactionAsync(ct);
             // Short SQL-only import unit: serializes shared dimensions and association replacement across processes.
             await Scalar(db, tx, "SELECT pg_advisory_xact_lock(72422002)", ct);
+            await using var gameWrites = CreateBatch(db, tx);
             foreach (var item in batch)
             {
                 var game = item.Game;
                 var now = clock.GetUtcNow();
-                var inserted = await Scalar(db, tx, """
+                Queue(gameWrites, """
                     INSERT INTO jogos (igdb_id,nome,descricao,capa_url,primeira_data_lancamento,dados_obtidos_em,criado_em,atualizado_em,temas_obtidos_em,banner_url)
                     VALUES (@p0,@p1,@p2,@p3,@p4,@p5,@p6,@p6,@p7,@p8)
                     ON CONFLICT (igdb_id) DO UPDATE SET nome=EXCLUDED.nome,descricao=EXCLUDED.descricao,capa_url=EXCLUDED.capa_url,
@@ -107,31 +108,47 @@ public sealed partial class PostgresGameCatalog : ILocalGameCatalog, ICatalogFil
                     temas_obtidos_em=COALESCE(EXCLUDED.temas_obtidos_em,jogos.temas_obtidos_em),
                     banner_url=CASE WHEN @p9 THEN EXCLUDED.banner_url ELSE jogos.banner_url END
                     WHERE jogos.dados_obtidos_em <= EXCLUDED.dados_obtidos_em RETURNING id
-                    """, ct, game.IgdbId, game.Title, game.Summary, game.CoverUrl, game.ReleaseDate, item.Metadata.FetchedAt.ToUniversalTime(), now,
+                    """, game.IgdbId, game.Title, game.Summary, game.CoverUrl, game.ReleaseDate, item.Metadata.FetchedAt.ToUniversalTime(), now,
                     game.ThemesFetchedAt.HasValue ? item.Metadata.FetchedAt.ToUniversalTime() : null, game.BannerUrl, game.BannerSpecified);
-                if (inserted is not int gameId) continue; // A late, older response cannot replace a newer game or its relationships.
+            }
+            var accepted = new List<(CatalogGame Item, int Id)>();
+            await using (var reader = await gameWrites.ExecuteReaderAsync(ct))
+            {
+                foreach (var item in batch)
+                {
+                    if (await reader.ReadAsync(ct)) accepted.Add((item, reader.GetInt32(0)));
+                    await reader.NextResultAsync(ct);
+                }
+            }
+            // Commands are pipelined in two batches, avoiding a network round trip per relationship.
+            // Only accepted versions can replace relationships; stale responses leave them intact.
+            await using var relationships = CreateBatch(db, tx);
+            foreach (var (item, gameId) in accepted)
+            {
+                var game = item.Game;
                 if (game.ThemesFetchedAt.HasValue)
                 {
-                    await Scalar(db, tx, "DELETE FROM jogos_temas WHERE jogo_id=@p0", ct, gameId);
+                    Queue(relationships, "DELETE FROM jogos_temas WHERE jogo_id=@p0", gameId);
                     foreach (var theme in game.ThemeEntries.DistinctBy(entry => entry.IgdbId).OrderBy(entry => entry.IgdbId))
                     {
-                        var themeId = await Scalar(db, tx, "INSERT INTO temas (igdb_id,nome) VALUES (@p0,@p1) ON CONFLICT (igdb_id) DO UPDATE SET nome=EXCLUDED.nome RETURNING id", ct, theme.IgdbId, theme.Name.Trim());
-                        await Scalar(db, tx, "INSERT INTO jogos_temas (jogo_id,tema_id) VALUES (@p0,@p1) ON CONFLICT DO NOTHING", ct, gameId, themeId);
+                        Queue(relationships, "INSERT INTO temas (igdb_id,nome) VALUES (@p0,@p1) ON CONFLICT (igdb_id) DO UPDATE SET nome=EXCLUDED.nome", theme.IgdbId, theme.Name.Trim());
+                        Queue(relationships, "INSERT INTO jogos_temas (jogo_id,tema_id) SELECT @p0,id FROM temas WHERE igdb_id=@p1 ON CONFLICT DO NOTHING", gameId, theme.IgdbId);
                     }
                 }
-                await Scalar(db, tx, "DELETE FROM jogos_generos WHERE jogo_id=@p0", ct, gameId);
-                await Scalar(db, tx, "DELETE FROM jogos_plataformas WHERE jogo_id=@p0", ct, gameId);
+                Queue(relationships, "DELETE FROM jogos_generos WHERE jogo_id=@p0", gameId);
+                Queue(relationships, "DELETE FROM jogos_plataformas WHERE jogo_id=@p0", gameId);
                 foreach (var genre in game.GenreEntries.DistinctBy(entry => entry.IgdbId).OrderBy(entry => entry.IgdbId))
                 {
-                    var genreId = await Scalar(db, tx, "INSERT INTO generos (igdb_id,nome) VALUES (@p0,@p1) ON CONFLICT (igdb_id) DO UPDATE SET nome=EXCLUDED.nome RETURNING id", ct, genre.IgdbId, genre.Name.Trim());
-                    await Scalar(db, tx, "INSERT INTO jogos_generos (jogo_id,genero_id) VALUES (@p0,@p1) ON CONFLICT DO NOTHING", ct, gameId, genreId);
+                    Queue(relationships, "INSERT INTO generos (igdb_id,nome) VALUES (@p0,@p1) ON CONFLICT (igdb_id) DO UPDATE SET nome=EXCLUDED.nome", genre.IgdbId, genre.Name.Trim());
+                    Queue(relationships, "INSERT INTO jogos_generos (jogo_id,genero_id) SELECT @p0,id FROM generos WHERE igdb_id=@p1 ON CONFLICT DO NOTHING", gameId, genre.IgdbId);
                 }
                 foreach (var platform in game.PlatformEntries.DistinctBy(entry => entry.IgdbId).OrderBy(entry => entry.IgdbId))
                 {
-                    var platformId = await Scalar(db, tx, "INSERT INTO plataformas (igdb_id,nome) VALUES (@p0,@p1) ON CONFLICT (igdb_id) DO UPDATE SET nome=EXCLUDED.nome RETURNING id", ct, platform.IgdbId, platform.Name.Trim());
-                    await Scalar(db, tx, "INSERT INTO jogos_plataformas (jogo_id,plataforma_id) VALUES (@p0,@p1) ON CONFLICT DO NOTHING", ct, gameId, platformId);
+                    Queue(relationships, "INSERT INTO plataformas (igdb_id,nome) VALUES (@p0,@p1) ON CONFLICT (igdb_id) DO UPDATE SET nome=EXCLUDED.nome", platform.IgdbId, platform.Name.Trim());
+                    Queue(relationships, "INSERT INTO jogos_plataformas (jogo_id,plataforma_id) SELECT @p0,id FROM plataformas WHERE igdb_id=@p1 ON CONFLICT DO NOTHING", gameId, platform.IgdbId);
                 }
             }
+            if (relationships.BatchCommands.Count > 0) await relationships.ExecuteNonQueryAsync(ct);
             ct.ThrowIfCancellationRequested();
             await tx.CommitAsync(ct);
             snapshots.Invalidate();
@@ -170,6 +187,20 @@ public sealed partial class PostgresGameCatalog : ILocalGameCatalog, ICatalogFil
                 ThemeEntries = ts, Themes = ts.Select(item => item.Name).ToArray() };
             return CatalogStorage.Read(new(projected, new(game.FetchedAt)), clock.GetUtcNow(), options);
         });
+    }
+    private static NpgsqlBatch CreateBatch(TccDbContext db, IDbContextTransaction tx) =>
+        new((NpgsqlConnection)db.Database.GetDbConnection(), (NpgsqlTransaction)tx.GetDbTransaction());
+
+    private static void Queue(NpgsqlBatch batch, string sql, params object?[] values)
+    {
+        var command = new NpgsqlBatchCommand(sql);
+        for (var i = 0; i < values.Length; i++)
+        {
+            var parameter = new NpgsqlParameter("p" + i, values[i] ?? DBNull.Value);
+            if (values[i] is null) parameter.NpgsqlDbType = NpgsqlDbType.Unknown;
+            command.Parameters.Add(parameter);
+        }
+        batch.BatchCommands.Add(command);
     }
     private static async Task<object?> Scalar(TccDbContext db, IDbContextTransaction tx, string sql, CancellationToken ct, params object?[] values)
     {
