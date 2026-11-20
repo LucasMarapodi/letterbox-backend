@@ -100,14 +100,15 @@ public sealed partial class PostgresGameCatalog : ILocalGameCatalog, ICatalogFil
                 var game = item.Game;
                 var now = clock.GetUtcNow();
                 var inserted = await Scalar(db, tx, """
-                    INSERT INTO jogos (igdb_id,nome,descricao,capa_url,primeira_data_lancamento,dados_obtidos_em,criado_em,atualizado_em,temas_obtidos_em)
-                    VALUES (@p0,@p1,@p2,@p3,@p4,@p5,@p6,@p6,@p7)
+                    INSERT INTO jogos (igdb_id,nome,descricao,capa_url,primeira_data_lancamento,dados_obtidos_em,criado_em,atualizado_em,temas_obtidos_em,banner_url)
+                    VALUES (@p0,@p1,@p2,@p3,@p4,@p5,@p6,@p6,@p7,@p8)
                     ON CONFLICT (igdb_id) DO UPDATE SET nome=EXCLUDED.nome,descricao=EXCLUDED.descricao,capa_url=EXCLUDED.capa_url,
                     primeira_data_lancamento=EXCLUDED.primeira_data_lancamento,dados_obtidos_em=EXCLUDED.dados_obtidos_em,atualizado_em=EXCLUDED.atualizado_em,
-                    temas_obtidos_em=COALESCE(EXCLUDED.temas_obtidos_em,jogos.temas_obtidos_em)
+                    temas_obtidos_em=COALESCE(EXCLUDED.temas_obtidos_em,jogos.temas_obtidos_em),
+                    banner_url=CASE WHEN @p9 THEN EXCLUDED.banner_url ELSE jogos.banner_url END
                     WHERE jogos.dados_obtidos_em <= EXCLUDED.dados_obtidos_em RETURNING id
                     """, ct, game.IgdbId, game.Title, game.Summary, game.CoverUrl, game.ReleaseDate, item.Metadata.FetchedAt.ToUniversalTime(), now,
-                    game.ThemesFetchedAt.HasValue ? item.Metadata.FetchedAt.ToUniversalTime() : null);
+                    game.ThemesFetchedAt.HasValue ? item.Metadata.FetchedAt.ToUniversalTime() : null, game.BannerUrl, game.BannerSpecified);
                 if (inserted is not int gameId) continue; // A late, older response cannot replace a newer game or its relationships.
                 if (game.ThemesFetchedAt.HasValue)
                 {

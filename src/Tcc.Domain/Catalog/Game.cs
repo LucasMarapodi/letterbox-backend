@@ -13,6 +13,8 @@ public sealed record Game(int Id, string Title, string Summary, string? CoverUrl
     public IReadOnlyList<string> Themes { get; init; } = [];
     public IReadOnlyList<Theme> ThemeEntries { get; init; } = [];
     public DateTimeOffset? ThemesFetchedAt { get; init; }
+    public string? BannerUrl { get; init; }
+    public bool BannerSpecified { get; init; }
 }
 
 public sealed record Genre(int Id, long IgdbId, string Name);

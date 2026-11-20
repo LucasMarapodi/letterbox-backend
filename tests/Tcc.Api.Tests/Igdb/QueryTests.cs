@@ -15,10 +15,10 @@ public sealed class QueryTests
         Assert.Contains("first_release_date != null & first_release_date <= " + now.ToUnixTimeSeconds(), body);
         Assert.Contains("sort first_release_date desc;", body);
         Assert.Contains("limit 21; offset 40;", body);
-        Assert.Contains("fields id,name,summary,cover.image_id,genres.id,genres.name,platforms.id,platforms.name,themes.id,themes.name,first_release_date;", body);
+        Assert.Contains("fields id,name,summary,cover.image_id,genres.id,genres.name,platforms.id,platforms.name,themes.id,themes.name,artworks.image_id,artworks.width,artworks.height,screenshots.image_id,screenshots.width,screenshots.height,first_release_date;", body);
         Assert.DoesNotContain("fields *", body);
         Assert.DoesNotContain("rating", body);
-        Assert.DoesNotContain("screenshots", body);
+        Assert.Contains("screenshots.width", body);
     }
 
     [Theory]

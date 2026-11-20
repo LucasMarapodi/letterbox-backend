@@ -16,6 +16,8 @@ public sealed class GameConfiguration : IEntityTypeConfiguration<Game>
         entity.Property(item => item.Title).HasColumnName("nome").IsRequired();
         entity.Property(item => item.Summary).HasColumnName("descricao").IsRequired();
         entity.Property(item => item.CoverUrl).HasColumnName("capa_url");
+        entity.Property(item => item.BannerUrl).HasColumnName("banner_url").HasMaxLength(2048);
+        entity.Ignore(item => item.BannerSpecified);
         entity.Property(item => item.ReleaseDate).HasColumnName("primeira_data_lancamento");
         entity.Property(item => item.FetchedAt).HasColumnName("dados_obtidos_em");
         entity.Property(item => item.ThemesFetchedAt).HasColumnName("temas_obtidos_em");

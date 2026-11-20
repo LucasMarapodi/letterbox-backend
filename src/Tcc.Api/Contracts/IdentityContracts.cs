@@ -12,8 +12,8 @@ public sealed record LoginRequest([Required] string? Email, [Required] string? P
 
 public sealed record LoginResponse(string Token, DateTimeOffset ExpiresAt, PublicUserResponse User);
 
-public sealed record PublicUserResponse(int Id, string Username, string DisplayName, string Bio, string? AvatarUrl)
+public sealed record PublicUserResponse(int Id, string Username, string DisplayName, string Bio, string? AvatarUrl, string? BannerUrl = null)
 {
     public static PublicUserResponse From(UserAccount account) =>
-        new(account.Id, account.Username, account.Profile.DisplayName, account.Profile.Bio, account.Profile.AvatarUrl);
+        new(account.Id, account.Username, account.Profile.DisplayName, account.Profile.Bio, account.Profile.AvatarUrl, account.Profile.BannerUrl);
 }

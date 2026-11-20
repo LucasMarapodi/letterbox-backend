@@ -23,7 +23,7 @@ public sealed class RegistrationTests
         Assert.Null(user.AvatarUrl);
         Assert.Equal($"/api/v1/users/{user.Id}", response.Headers.Location?.OriginalString);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal(new[] { "avatarUrl", "bio", "displayName", "id", "username" }, json.RootElement.EnumerateObject().Select(property => property.Name).Order().ToArray());
+        Assert.Equal(new[] { "avatarUrl", "bannerUrl", "bio", "displayName", "id", "username" }, json.RootElement.EnumerateObject().Select(property => property.Name).Order().ToArray());
         Assert.Null(response.Headers.WwwAuthenticate.FirstOrDefault());
         Assert.False(response.Headers.Contains("Set-Cookie"));
     }

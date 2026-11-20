@@ -11,11 +11,19 @@ public sealed class IgdbGameDto
     [JsonPropertyName("genres")] public IgdbNameDto[]? Genres { get; init; }
     [JsonPropertyName("platforms")] public IgdbNameDto[]? Platforms { get; init; }
     [JsonPropertyName("themes")] public IgdbNameDto[]? Themes { get; init; }
+    [JsonPropertyName("artworks")] public IgdbImageDto[]? Artworks { get; init; }
+    [JsonPropertyName("screenshots")] public IgdbImageDto[]? Screenshots { get; init; }
     [JsonPropertyName("first_release_date")] public long? FirstReleaseDate { get; init; }
 }
 public sealed class IgdbCoverDto
 {
     [JsonPropertyName("image_id")] public string? ImageId { get; init; }
+}
+public sealed class IgdbImageDto
+{
+    [JsonPropertyName("image_id")] public string? ImageId { get; init; }
+    [JsonPropertyName("width")] public int? Width { get; init; }
+    [JsonPropertyName("height")] public int? Height { get; init; }
 }
 public sealed class IgdbNameDto
 {

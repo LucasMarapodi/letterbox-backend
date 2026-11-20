@@ -6,6 +6,8 @@ A V-PR-02 adiciona [temas do catálogo](docs/CATALOG-THEMES.md): expansão IGDB,
 
 A V-PR-03 implementa [mais bem avaliados, em alta e recomendações pessoais](docs/GAME-DISCOVERY.md), com agregação/paginação SQL, preferências por gêneros/temas e data de avaliação preservada em edições apenas textuais. Sem migration adicional ou chamadas IGDB para o ranking. A interface e os banners seguem nas PRs próprias.
 
+A V-PR-07 adiciona [banners de perfil/jogos e destaque do Início](docs/BANNERS.md): URL HTTPS opcional no perfil, imagem horizontal IGDB persistida e GET /api/v1/home/featured. A migration de duas colunas foi aplicada somente ao banco de testes. A revisão da V-PR-06 continua pendente e a integração visual pertence à V-PR-08.
+
 ## Executar
 
 A [S-PR-32](docs/S-PR-32.md) unifica a edição parcial: PATCH de perfil salva nome/localização/bio/avatar e favoritos atomicamente, mesmo incompleto. Mantém campos atuais da resposta e acrescenta completion privado. Localização usa opções fechadas e preserva legado inalterado; PUT anterior permanece por compatibilidade. Modal na S-PR-33, sem migration nova.

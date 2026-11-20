@@ -33,6 +33,7 @@ public class TestApiFactory : ApiFactory
 
 internal sealed class FixtureGameDiscovery : IGameDiscovery
 {
+    public Task<FeaturedCatalogGame> FeaturedAsync(CancellationToken ct) => Task.FromResult(new FeaturedCatalogGame(null, "no_candidate"));
     public Task<IReadOnlyList<RankedCatalogGame>> RankAsync(bool trending, int offset, int limit, CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<RankedCatalogGame>>([]);
     public Task<CatalogRecommendations> RecommendAsync(int userId, int offset, int limit, CancellationToken ct) =>

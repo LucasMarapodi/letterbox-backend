@@ -8,7 +8,7 @@ namespace Tcc.Api.Tests.Igdb;
 public sealed class ThemeMappingTests
 {
     [Fact]
-    public async Task OpenAPI_documents_the_required_themes_array_and_keeps_banners_out()
+    public async Task OpenAPI_documents_the_required_themes_array_and_nullable_banner()
     {
         await using var host = new TestApiFactory();
         using var client = host.CreateClient();
@@ -18,7 +18,7 @@ public sealed class ThemeMappingTests
         var themes = schema.GetProperty("properties").GetProperty("themes");
         Assert.Equal("array", themes.GetProperty("type").GetString());
         Assert.Contains("IGDB", themes.GetProperty("description").GetString());
-        Assert.False(schema.GetProperty("properties").TryGetProperty("bannerUrl", out _));
+        Assert.True(schema.GetProperty("properties").TryGetProperty("bannerUrl", out _));
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public sealed class ThemeMappingTests
         using var response = JsonDocument.Parse(JsonSerializer.Serialize(GameResponse.From(item.Game), JsonSerializerOptions.Web));
         Assert.Equal("Fantasy", response.RootElement.GetProperty("themes")[0].GetString());
         Assert.True(response.RootElement.TryGetProperty("genres", out _));
-        Assert.False(response.RootElement.TryGetProperty("bannerUrl", out _));
+        Assert.Equal(JsonValueKind.Null, response.RootElement.GetProperty("bannerUrl").ValueKind);
     }
 
     [Theory]

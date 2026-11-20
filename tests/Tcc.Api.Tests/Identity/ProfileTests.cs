@@ -19,7 +19,7 @@ public sealed class ProfileTests
         var user = await response.Content.ReadFromJsonAsync<PublicUser>();
         Assert.Equal("Ana", user?.DisplayName);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        Assert.Equal(new[] { "avatarUrl", "bio", "displayName", "id", "username" }, json.RootElement.EnumerateObject().Select(property => property.Name).Order().ToArray());
+        Assert.Equal(new[] { "avatarUrl", "bannerUrl", "bio", "displayName", "id", "username" }, json.RootElement.EnumerateObject().Select(property => property.Name).Order().ToArray());
         using var missing = await client.GetAsync("/api/v1/users/999999");
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
         Assert.Equal("not_found", (await missing.Content.ReadFromJsonAsync<ErrorResult>())?.Code);

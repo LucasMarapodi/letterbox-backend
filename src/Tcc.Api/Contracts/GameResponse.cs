@@ -6,6 +6,7 @@ public sealed record GameResponse(int Id, long IgdbId, string Title, string Summ
     IReadOnlyList<string> Genres, IReadOnlyList<string> Platforms, DateOnly? ReleaseDate, double? AverageRating)
 {
     public IReadOnlyList<string> Themes { get; init; } = [];
+    public string? BannerUrl { get; init; }
     public static GameResponse From(Game game, double? average = null) =>
-        new(game.Id, game.IgdbId, game.Title, game.Summary, game.CoverUrl, game.Genres, game.Platforms, game.ReleaseDate, average) { Themes = game.Themes };
+        new(game.Id, game.IgdbId, game.Title, game.Summary, game.CoverUrl, game.Genres, game.Platforms, game.ReleaseDate, average) { Themes = game.Themes, BannerUrl = game.BannerUrl };
 }

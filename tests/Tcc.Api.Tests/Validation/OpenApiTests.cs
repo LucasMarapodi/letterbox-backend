@@ -57,7 +57,7 @@ public sealed class OpenApiTests
         Assert.Equal("array", ids.GetProperty("type").GetString());
         Assert.Equal(0, ids.GetProperty("minItems").GetInt32());
         Assert.Equal(1, ids.GetProperty("items").GetProperty("minimum").GetInt32());
-        Assert.Equal(new[] { "avatarUrl", "bio", "completion", "displayName", "id", "username" },
+        Assert.Equal(new[] { "avatarUrl", "bannerUrl", "bio", "completion", "displayName", "id", "username" },
             schemas.GetProperty("ProfileUpdateResponse").GetProperty("properties").EnumerateObject().Select(item => item.Name).Order());
         Assert.False(schemas.GetProperty("PublicUserResponse").GetProperty("properties").TryGetProperty("completion", out _));
         Assert.True(root.GetProperty("paths").GetProperty("/api/v1/users/me/profile-completion").GetProperty("put").GetProperty("deprecated").GetBoolean());
@@ -125,7 +125,7 @@ public sealed class OpenApiTests
         Assert.Equal(0, ids.GetProperty("minItems").GetInt32());
         Assert.Equal("integer", ids.GetProperty("items").GetProperty("type").GetString());
         var output = schemas.GetProperty("ProfileCompletionDetails");
-        Assert.Equal(new[] { "avatarUrl", "bio", "country", "favoriteGameCount", "favoriteGameIds", "isComplete", "state" }, output.GetProperty("required").EnumerateArray().Select(item => item.GetString()).Order());
+        Assert.Equal(new[] { "avatarUrl", "bannerUrl", "bio", "country", "favoriteGameCount", "favoriteGameIds", "isComplete", "state" }, output.GetProperty("required").EnumerateArray().Select(item => item.GetString()).Order());
         Assert.Equal("boolean", output.GetProperty("properties").GetProperty("isComplete").GetProperty("type").GetString());
     }
 
@@ -189,7 +189,7 @@ public sealed class OpenApiTests
             Assert.Equal("int32", id.GetProperty("format").GetString());
         }
         var user = schemas.GetProperty("PublicUserResponse").GetProperty("properties");
-        Assert.Equal(new[] { "avatarUrl", "bio", "displayName", "id", "username" }, user.EnumerateObject().Select(property => property.Name).Order());
+        Assert.Equal(new[] { "avatarUrl", "bannerUrl", "bio", "displayName", "id", "username" }, user.EnumerateObject().Select(property => property.Name).Order());
         foreach (var schema in schemas.EnumerateObject().Where(schema => schema.Name.EndsWith("Response", StringComparison.Ordinal)))
         {
             Assert.DoesNotContain("password", schema.Value.ToString(), StringComparison.OrdinalIgnoreCase);

@@ -12,7 +12,7 @@ public sealed class InMemoryProfileCompletion(IUserAccounts accounts, IFavorites
         var account = await accounts.FindByIdAsync(userId, ct);
         if (account is null) return null;
         var ids = (await favorites.SnapshotAsync(userId, ct)).GameIds.Order().ToArray();
-        return new(account.Profile.Country, account.Profile.State, account.Profile.Bio, account.Profile.AvatarUrl, ids);
+        return new(account.Profile.Country, account.Profile.State, account.Profile.Bio, account.Profile.AvatarUrl, ids, account.Profile.BannerUrl);
     }
     public async Task<ProfileSaveResult?> SaveAsync(int userId, ProfileCompletionChange change, DateTimeOffset now, CancellationToken ct)
     {

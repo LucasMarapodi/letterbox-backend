@@ -31,6 +31,11 @@ namespace Tcc.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("BannerUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("banner_url");
+
                     b.Property<string>("CoverUrl")
                         .HasColumnType("text")
                         .HasColumnName("capa_url");
@@ -823,6 +828,11 @@ namespace Tcc.Infrastructure.Persistence.Migrations
                                 .HasMaxLength(2048)
                                 .HasColumnType("character varying(2048)")
                                 .HasColumnName("avatar_url");
+
+                            b1.Property<string>("BannerUrl")
+                                .HasMaxLength(2048)
+                                .HasColumnType("character varying(2048)")
+                                .HasColumnName("banner_url");
 
                             b1.Property<string>("Bio")
                                 .IsRequired()

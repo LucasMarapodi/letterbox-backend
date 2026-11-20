@@ -44,6 +44,8 @@ public static class OpenApiRegistration
                 var catalogOperation = context.Description.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor action
                     && action.ControllerName is "Games" or "Reviews" or "Ratings" or "Favorites" or "Feed" or "Dashboard" or "Community";
                 var storageOperation = secured || context.Description.ActionDescriptor is Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor;
+                if (context.Description.RelativePath == "api/v1/home/featured")
+                    operation.Description = "Público/no-store. Jogo local com banner horizontal HTTPS: prioriza a ordem de Em alta, fallback para Mais bem avaliados. Filtra imagem antes do recorte, sem IGDB por card. game:null e selectionReason=no_candidate sem candidato; demais motivos trending/top_rated. ID local int32 para abrir a ficha.";
                 var discoveryOperation = context.Description.RelativePath is "api/v1/games/top-rated" or "api/v1/games/trending" or "api/v1/games/recommendations/me";
                 if (discoveryOperation)
                     operation.Description = context.Description.RelativePath switch
@@ -170,7 +172,10 @@ public static class OpenApiRegistration
                     schema.Required = schema.Properties.Keys.ToHashSet(StringComparer.Ordinal);
                     if (schema.Properties["themes"] is OpenApiSchema themes)
                         themes.Description = "Nomes de temas reais da IGDB, normalizados por ID externo e persistidos no catálogo local. [] quando ausentes; ausência de metadado não impede leitura. IDs/estado de sincronização são internos.";
+                    if (schema.Properties["bannerUrl"] is OpenApiSchema banner) banner.Description = "Imagem horizontal IGDB HTTPS persistida; null quando ausente. Artwork prioritário, screenshot como fallback; nunca deriva da capa vertical.";
                 }
+                if ((type == typeof(PublicUserResponse) || type == typeof(ProfileUpdateResponse) || type == typeof(ProfileCompletionDetails)) && schema.Properties is not null)
+                    schema.Required = schema.Properties.Keys.ToHashSet(StringComparer.Ordinal);
                 if (context.JsonPropertyInfo is not null || schema.Properties is null) return Task.CompletedTask;
                 if (type == typeof(RegisterRequest) || type == typeof(LoginRequest) || type == typeof(RatingRequest) || type == typeof(TextRequest))
                 {
@@ -284,6 +289,12 @@ public static class OpenApiRegistration
                     }
                     if (schema.Properties["avatarUrl"] is OpenApiSchema avatar)
                         avatar.Description = "Opcional: omissão preserva, null/vazio remove. Nova URL exige HTTPS absoluto, até 2048 caracteres; URL HTTP histórica inalterada é preservada.";
+                    if (schema.Properties["bannerUrl"] is OpenApiSchema banner)
+                    {
+                        banner.Type = JsonSchemaType.String | JsonSchemaType.Null;
+                        banner.MaxLength = 2048;
+                        banner.Description = "URL HTTPS absoluta opcional, sem upload/download. Omissão preserva; null/vazio remove. Pública na apresentação do perfil; não participa de IsComplete.";
+                    }
                     schema.AdditionalPropertiesAllowed = false;
                 }
                 if (type == typeof(FavoriteResponse) && schema.Properties["targetType"] is OpenApiSchema kind) kind.Enum = Nodes("game", "review");
