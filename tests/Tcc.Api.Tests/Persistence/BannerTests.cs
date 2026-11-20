@@ -34,7 +34,7 @@ public sealed class BannerTests
         using var client = host.CreateClient();
         using (var anonymous = await client.PatchAsJsonAsync("/api/v1/users/me/profile", new {bannerUrl="https://example.com/banner"})) Assert.Equal(401,(int)anonymous.StatusCode);
         var owner = await NotificationPersistenceTests.Register(client,"banner-owner@example.com");
-        using (var saved = await client.PatchAsJsonAsync("/api/v1/users/me/profile", new {bannerUrl="https://example.com/banner",avatarUrl="https://example.com/avatar"}))
+        using (var saved = await client.PatchAsJsonAsync("/api/v1/users/me/profile", new {bannerUrl="https://example.com/banner",avatarUrl="https://example.com/avatar",bannerPositionX=0,bannerPositionY=80}))
         {
             Assert.Equal(200,(int)saved.StatusCode);
             using var json = JsonDocument.Parse(await saved.Content.ReadAsStringAsync());
@@ -49,12 +49,16 @@ public sealed class BannerTests
         using var other = restarted.CreateClient();
         using var profile = JsonDocument.Parse(await other.GetStringAsync($"/api/v1/users/{owner.Id}"));
         Assert.Equal("https://example.com/banner",profile.RootElement.GetProperty("bannerUrl").GetString());
+        Assert.Equal(0,profile.RootElement.GetProperty("bannerPositionX").GetInt32());
+        Assert.Equal(80,profile.RootElement.GetProperty("bannerPositionY").GetInt32());
         Assert.Equal("https://example.com/avatar",profile.RootElement.GetProperty("avatarUrl").GetString());
         Assert.False(profile.RootElement.TryGetProperty("country",out _));
         other.DefaultRequestHeaders.Authorization = new("Bearer",owner.Token);
         using (var clear = await other.PutAsJsonAsync("/api/v1/users/me/profile-completion",new {bannerUrl=(string?)null,favoriteGameIds=Array.Empty<int>()})) clear.EnsureSuccessStatusCode();
         using var completion = JsonDocument.Parse(await other.GetStringAsync("/api/v1/users/me/profile-completion"));
         Assert.Equal(JsonValueKind.Null,completion.RootElement.GetProperty("bannerUrl").ValueKind);
+        Assert.Equal(50,completion.RootElement.GetProperty("bannerPositionX").GetInt32());
+        Assert.Equal(50,completion.RootElement.GetProperty("bannerPositionY").GetInt32());
         Assert.Equal("https://example.com/avatar",completion.RootElement.GetProperty("avatarUrl").GetString());
     }
 

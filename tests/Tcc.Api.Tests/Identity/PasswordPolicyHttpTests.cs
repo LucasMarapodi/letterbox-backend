@@ -42,7 +42,7 @@ public sealed class PasswordPolicyHttpTests
         using var created = await client.PostAsJsonAsync("/api/v1/auth/register", new RegisterInput("User", "policy@example.com", password));
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
         using var json = JsonDocument.Parse(await created.Content.ReadAsStringAsync());
-        Assert.Equal(new[] { "avatarUrl", "bannerUrl", "bio", "displayName", "id", "username" }, json.RootElement.EnumerateObject().Select(property => property.Name).Order());
+        Assert.Equal(new[] { "avatarUrl", "bannerPositionX", "bannerPositionY", "bannerUrl", "bio", "displayName", "id", "username" }, json.RootElement.EnumerateObject().Select(property => property.Name).Order());
         using var login = await client.PostAsJsonAsync("/api/v1/auth/login", new LoginInput("policy@example.com", password));
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         using var changed = await client.PostAsJsonAsync("/api/v1/auth/login", new LoginInput("policy@example.com", password + "x"));

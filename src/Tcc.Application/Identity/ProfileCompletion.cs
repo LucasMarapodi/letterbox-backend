@@ -4,7 +4,7 @@ using Tcc.Domain;
 
 namespace Tcc.Application.Identity;
 
-public sealed record ProfileCompletionDetails(string? Country, string? State, string Bio, string? AvatarUrl, IReadOnlyList<int> FavoriteGameIds, string? BannerUrl = null)
+public sealed record ProfileCompletionDetails(string? Country, string? State, string Bio, string? AvatarUrl, IReadOnlyList<int> FavoriteGameIds, string? BannerUrl = null, int BannerPositionX = 50, int BannerPositionY = 50)
 {
     public int FavoriteGameCount => FavoriteGameIds.Count;
     public bool IsComplete => ProfileCompletionPolicy.IsComplete(Country, State, Bio, FavoriteGameIds);

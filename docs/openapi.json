@@ -8080,6 +8080,8 @@
           "avatarUrl",
           "favoriteGameIds",
           "bannerUrl",
+          "bannerPositionX",
+          "bannerPositionY",
           "favoriteGameCount",
           "isComplete"
         ],
@@ -8118,6 +8120,16 @@
               "null",
               "string"
             ]
+          },
+          "bannerPositionX": {
+            "type": "integer",
+            "format": "int32",
+            "default": 50
+          },
+          "bannerPositionY": {
+            "type": "integer",
+            "format": "int32",
+            "default": 50
           },
           "favoriteGameCount": {
             "type": "integer",
@@ -8195,6 +8207,20 @@
             ],
             "description": "URL HTTPS absoluta opcional, sem upload/download. Omissão preserva; null/vazio remove. Pública na apresentação do perfil; não participa de IsComplete."
           },
+          "bannerPositionX": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "bannerPositionY": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
           "favoriteGameIds": {
             "minItems": 0,
             "type": "array",
@@ -8248,7 +8274,9 @@
           "bio",
           "avatarUrl",
           "completion",
-          "bannerUrl"
+          "bannerUrl",
+          "bannerPositionX",
+          "bannerPositionY"
         ],
         "type": "object",
         "properties": {
@@ -8279,6 +8307,16 @@
               "null",
               "string"
             ]
+          },
+          "bannerPositionX": {
+            "type": "integer",
+            "format": "int32",
+            "default": 50
+          },
+          "bannerPositionY": {
+            "type": "integer",
+            "format": "int32",
+            "default": 50
           }
         }
       },
@@ -8289,7 +8327,9 @@
           "displayName",
           "bio",
           "avatarUrl",
-          "bannerUrl"
+          "bannerUrl",
+          "bannerPositionX",
+          "bannerPositionY"
         ],
         "type": "object",
         "properties": {
@@ -8317,6 +8357,16 @@
               "null",
               "string"
             ]
+          },
+          "bannerPositionX": {
+            "type": "integer",
+            "format": "int32",
+            "default": 50
+          },
+          "bannerPositionY": {
+            "type": "integer",
+            "format": "int32",
+            "default": 50
           }
         }
       },
