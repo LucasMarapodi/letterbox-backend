@@ -16,6 +16,8 @@ public sealed class ProfilePatchRequest : IValidatableObject
     private string? bannerUrl;
     private bool bannerSpecified;
     public string? BannerUrl { get => bannerUrl; set { bannerUrl = value; bannerSpecified = true; } }
+    [JsonNumberHandling(JsonNumberHandling.Strict)] public int? BannerPositionX { get; set; }
+    [JsonNumberHandling(JsonNumberHandling.Strict)] public int? BannerPositionY { get; set; }
     private string? country;
     private string? state;
     private bool countrySpecified;
@@ -53,5 +55,5 @@ public sealed class ProfilePatchRequest : IValidatableObject
             yield return new ValidationResult("Favoritos não podem ser null; envie [] para limpar.", [nameof(FavoriteGameIds)]);
     }
 
-    public ProfileChange ToChange() => new(DisplayName, bioSpecified ? Bio ?? "" : null, avatarSpecified, AvatarUrl, countrySpecified, Country, stateSpecified, State, bannerSpecified, BannerUrl);
+    public ProfileChange ToChange() => new(DisplayName, bioSpecified ? Bio ?? "" : null, avatarSpecified, AvatarUrl, countrySpecified, Country, stateSpecified, State, bannerSpecified, BannerUrl, BannerPositionX, BannerPositionY);
 }

@@ -2,4 +2,4 @@ namespace Tcc.Domain.Identity;
 
 public sealed record ProfileChange(string? DisplayName, string? Bio, bool AvatarSpecified, string? AvatarUrl,
     bool CountrySpecified = false, string? Country = null, bool StateSpecified = false, string? State = null,
-    bool BannerSpecified = false, string? BannerUrl = null);
+    bool BannerSpecified = false, string? BannerUrl = null, int? BannerPositionX = null, int? BannerPositionY = null);

@@ -26,7 +26,7 @@ public sealed class PostgresProfileCompletion(Lazy<TccDbContext> context) : IPro
                          join game in db.Games.AsNoTracking() on favorite.GameId equals game.Id
                          where favorite.UserId == userId orderby favorite.GameId select favorite.GameId).ToArrayAsync(ct);
         await tx.CommitAsync(ct);
-        return new(profile.Country, profile.State, profile.Bio, profile.AvatarUrl, ids, profile.BannerUrl);
+        return new(profile.Country, profile.State, profile.Bio, profile.AvatarUrl, ids, profile.BannerUrl, profile.BannerPositionX, profile.BannerPositionY);
     });
 
     public Task<ProfileSaveResult?> SaveAsync(int userId, ProfileCompletionChange change, DateTimeOffset now, CancellationToken ct) => OpinionStorage.Run<ProfileSaveResult?>(async () =>
@@ -41,7 +41,7 @@ public sealed class PostgresProfileCompletion(Lazy<TccDbContext> context) : IPro
         // Recheck SQL existence even if the catalog had cached these IDs before the transaction.
         if (await db.Games.CountAsync(game => ids.Contains(game.Id), ct) != ids.Length) throw new ResourceFailure(ResourceFailureKind.NotFound);
         var updated = account.Profile.Apply(change.Profile, now);
-        if (updated.DisplayName != account.Profile.DisplayName || updated.Country != account.Profile.Country || updated.State != account.Profile.State || updated.Bio != account.Profile.Bio || updated.AvatarUrl != account.Profile.AvatarUrl || updated.BannerUrl != account.Profile.BannerUrl)
+        if (updated.DisplayName != account.Profile.DisplayName || updated.Country != account.Profile.Country || updated.State != account.Profile.State || updated.Bio != account.Profile.Bio || updated.AvatarUrl != account.Profile.AvatarUrl || updated.BannerUrl != account.Profile.BannerUrl || updated.BannerPositionX != account.Profile.BannerPositionX || updated.BannerPositionY != account.Profile.BannerPositionY)
         {
             db.Entry(account.Profile).CurrentValues.SetValues(updated);
             db.Entry(account).Property(user => user.UpdatedAt).CurrentValue = now;
@@ -50,6 +50,6 @@ public sealed class PostgresProfileCompletion(Lazy<TccDbContext> context) : IPro
         foreach (var id in ids.Except(existing)) db.GameFavorites.Add(new GameFavorite(0, userId, id, now));
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
-        return new(account, new(updated.Country, updated.State, updated.Bio, updated.AvatarUrl, ids, updated.BannerUrl));
+        return new(account, new(updated.Country, updated.State, updated.Bio, updated.AvatarUrl, ids, updated.BannerUrl, updated.BannerPositionX, updated.BannerPositionY));
     });
 }
