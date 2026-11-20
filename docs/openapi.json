@@ -4485,6 +4485,66 @@
         "security": []
       }
     },
+    "/api/v1/home/featured": {
+      "get": {
+        "tags": [
+          "Home"
+        ],
+        "summary": "GET /api/v1/home/featured",
+        "description": "Público/no-store. Jogo local com banner horizontal HTTPS: prioriza a ordem de Em alta, fallback para Mais bem avaliados. Filtra imagem antes do recorte, sem IGDB por card. game:null e selectionReason=no_candidate sem candidato; demais motivos trending/top_rated. ID local int32 para abrir a ficha.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeaturedGameResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeaturedGameResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeaturedGameResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência temporariamente indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "storage_unavailable",
+                  "message": "Persistência temporariamente indisponível."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "code": "internal_error",
+                  "message": "Erro interno."
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
     "/api/v1/notifications": {
       "get": {
         "tags": [
@@ -7256,6 +7316,59 @@
           }
         }
       },
+      "FeaturedGameDetails": {
+        "required": [
+          "id",
+          "title",
+          "summary",
+          "coverUrl",
+          "bannerUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "coverUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "bannerUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "FeaturedGameResponse": {
+        "required": [
+          "game",
+          "selectionReason"
+        ],
+        "type": "object",
+        "properties": {
+          "game": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FeaturedGameDetails"
+              }
+            ]
+          },
+          "selectionReason": {
+            "type": "string"
+          }
+        }
+      },
       "FollowStatusResponse": {
         "required": [
           "following"
@@ -7610,7 +7723,8 @@
           "platforms",
           "releaseDate",
           "averageRating",
-          "themes"
+          "themes",
+          "bannerUrl"
         ],
         "type": "object",
         "properties": {
@@ -7668,6 +7782,13 @@
               "type": "string"
             },
             "description": "Nomes de temas reais da IGDB, normalizados por ID externo e persistidos no catálogo local. [] quando ausentes; ausência de metadado não impede leitura. IDs/estado de sincronização são internos."
+          },
+          "bannerUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Imagem horizontal IGDB HTTPS persistida; null quando ausente. Artwork prioritário, screenshot como fallback; nunca deriva da capa vertical."
           }
         }
       },
@@ -7958,6 +8079,7 @@
           "bio",
           "avatarUrl",
           "favoriteGameIds",
+          "bannerUrl",
           "favoriteGameCount",
           "isComplete"
         ],
@@ -7990,6 +8112,12 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          "bannerUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "favoriteGameCount": {
             "type": "integer",
@@ -8043,6 +8171,14 @@
               "string"
             ],
             "description": "Opcional: omissão preserva, null/vazio remove. Nova URL exige HTTPS absoluto, até 2048 caracteres; URL HTTP histórica inalterada é preservada."
+          },
+          "bannerUrl": {
+            "maxLength": 2048,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "URL HTTPS absoluta opcional, sem upload/download. Omissão preserva; null/vazio remove. Pública na apresentação do perfil; não participa de IsComplete."
           }
         },
         "additionalProperties": false,
@@ -8051,6 +8187,14 @@
       "ProfilePatchRequest": {
         "type": "object",
         "properties": {
+          "bannerUrl": {
+            "maxLength": 2048,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "URL HTTPS absoluta opcional, sem upload/download. Omissão preserva; null/vazio remove. Pública na apresentação do perfil; não participa de IsComplete."
+          },
           "favoriteGameIds": {
             "minItems": 0,
             "type": "array",
@@ -8103,7 +8247,8 @@
           "displayName",
           "bio",
           "avatarUrl",
-          "completion"
+          "completion",
+          "bannerUrl"
         ],
         "type": "object",
         "properties": {
@@ -8128,6 +8273,12 @@
           },
           "completion": {
             "$ref": "#/components/schemas/ProfileCompletionDetails"
+          },
+          "bannerUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -8137,7 +8288,8 @@
           "username",
           "displayName",
           "bio",
-          "avatarUrl"
+          "avatarUrl",
+          "bannerUrl"
         ],
         "type": "object",
         "properties": {
@@ -8155,6 +8307,12 @@
             "type": "string"
           },
           "avatarUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "bannerUrl": {
             "type": [
               "null",
               "string"
@@ -8862,6 +9020,9 @@
     },
     {
       "name": "Games"
+    },
+    {
+      "name": "Home"
     },
     {
       "name": "Notifications"

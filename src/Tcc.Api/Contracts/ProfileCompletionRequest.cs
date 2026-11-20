@@ -13,4 +13,7 @@ public sealed class ProfileCompletionRequest
     private string? avatarUrl;
     public string? AvatarUrl { get => avatarUrl; set { avatarUrl = value; AvatarSpecified = true; } }
     [JsonIgnore] public bool AvatarSpecified { get; private set; }
+    private string? bannerUrl;
+    public string? BannerUrl { get => bannerUrl; set { bannerUrl = value; BannerSpecified = true; } }
+    [JsonIgnore] public bool BannerSpecified { get; private set; }
 }

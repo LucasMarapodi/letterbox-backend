@@ -16,6 +16,8 @@ Development lê somente as chaves permitidas do `.env`; ambiente do processo tem
 
 ## Migrations explícitas
 
+V-PR-07 acrescenta `20261120021553_ProfileAndGameBanners`: duas colunas banner_url nullable em jogos/perfis, sem backfill ou tabelas novas. Validada somente no banco exclusivo de testes; atualizar explicitamente o ambiente antes de executar esta versão. [Contrato e operação](BANNERS.md).
+
 V-PR-02 acrescenta `20261119205619_CatalogThemes`: tabelas `temas`/`jogos_temas` e `jogos.temas_obtidos_em` nullable. Sem backfill ou alteração de gêneros/identidades. Validada somente no banco exclusivo de testes; aplicar explicitamente no ambiente real antes de iniciar este código. [Contrato e operação](CATALOG-THEMES.md).
 
 Ferramenta local em `.config/dotnet-tools.json`. A factory de design lê somente `ConnectionStrings__TccDatabase` do ambiente do processo; ela não carrega `.env` nem inicia a API. Para aplicar em um ambiente de desenvolvimento previamente identificado, disponibilize essa variável por mecanismo local seguro e execute:

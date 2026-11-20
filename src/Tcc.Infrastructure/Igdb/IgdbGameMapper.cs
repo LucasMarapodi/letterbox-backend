@@ -25,6 +25,7 @@ public sealed class IgdbGameMapper(ExternalEndpointOptions endpoints)
         var genres = Names(dto.Genres);
         var platforms = Names(dto.Platforms);
         var themes = Names(dto.Themes);
+        var banner = Landscape(dto.Artworks) ?? Landscape(dto.Screenshots);
         if (themes.Any(item => item.Name.Length > Theme.NameMaxLength)) throw new CatalogInvalidResponseException();
         var game = new Game(0, dto.Name.Trim(), dto.Summary ?? "", cover,
             genres.Select(item => item.Name).ToArray(), platforms.Select(item => item.Name).ToArray(), release)
@@ -34,9 +35,19 @@ public sealed class IgdbGameMapper(ExternalEndpointOptions endpoints)
             PlatformEntries = platforms.Select(item => new Platform(0, item.Id, item.Name)).ToArray(),
             ThemeEntries = themes.Select(item => new Theme(0, item.Id, item.Name)).ToArray(),
             Themes = themes.Select(item => item.Name).ToArray(),
-            ThemesFetchedAt = dto.Themes is null ? null : fetchedAt.ToUniversalTime()
+            ThemesFetchedAt = dto.Themes is null ? null : fetchedAt.ToUniversalTime(),
+            BannerUrl = banner,
+            BannerSpecified = banner is not null || dto.Artworks is not null && dto.Screenshots is not null
         };
         return new(game, new CatalogMetadata(fetchedAt.ToUniversalTime()));
+    }
+    private string? Landscape(IgdbImageDto[]? images)
+    {
+        var image = (images ?? []).Where(item => item is not null && item.Width is > 0 && item.Height is > 0 && item.Width > item.Height
+            && !string.IsNullOrWhiteSpace(item.ImageId) && item.ImageId.Length <= 128
+            && item.ImageId.All(c => char.IsAsciiLetterOrDigit(c) || c == '_'))
+            .OrderByDescending(item => (long)item.Width!.Value * item.Height!.Value).ThenBy(item => item.ImageId, StringComparer.Ordinal).FirstOrDefault();
+        return image is null ? null : new Uri(endpoints.ImagesBaseUrl, "t_1080p/" + image.ImageId + ".jpg").AbsoluteUri;
     }
     private static IReadOnlyList<(long Id, string Name)> Names(IgdbNameDto[]? items)
     {

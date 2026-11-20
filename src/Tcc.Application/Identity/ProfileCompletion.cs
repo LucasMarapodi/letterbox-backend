@@ -4,7 +4,7 @@ using Tcc.Domain;
 
 namespace Tcc.Application.Identity;
 
-public sealed record ProfileCompletionDetails(string? Country, string? State, string Bio, string? AvatarUrl, IReadOnlyList<int> FavoriteGameIds)
+public sealed record ProfileCompletionDetails(string? Country, string? State, string Bio, string? AvatarUrl, IReadOnlyList<int> FavoriteGameIds, string? BannerUrl = null)
 {
     public int FavoriteGameCount => FavoriteGameIds.Count;
     public bool IsComplete => ProfileCompletionPolicy.IsComplete(Country, State, Bio, FavoriteGameIds);
@@ -23,10 +23,10 @@ public sealed class ProfileCompletion(IProfileCompletionStore store, ICurrentSes
         await store.ReadAsync((await access.Require(current, ct)).UserId, ct) ?? throw new IdentityFailure(IdentityFailureKind.NotFound);
 
     public async Task<ProfileCompletionDetails> Set(string? country, string? state, string? bio, bool avatarSpecified,
-        string? avatarUrl, IReadOnlyList<int>? favoriteGameIds, CancellationToken ct = default)
+        string? avatarUrl, IReadOnlyList<int>? favoriteGameIds, CancellationToken ct = default, bool bannerSpecified = false, string? bannerUrl = null)
     {
         if (favoriteGameIds is null) throw new DomainValidationException("Informe os jogos favoritos.");
-        var saved = await Patch(new(null, bio ?? "", avatarSpecified, avatarUrl, true, country, true, state), favoriteGameIds, ct);
+        var saved = await Patch(new(null, bio ?? "", avatarSpecified, avatarUrl, true, country, true, state, bannerSpecified, bannerUrl), favoriteGameIds, ct);
         return saved.Completion;
     }
 

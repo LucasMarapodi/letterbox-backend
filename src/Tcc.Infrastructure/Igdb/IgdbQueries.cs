@@ -6,7 +6,7 @@ namespace Tcc.Infrastructure.Igdb;
 
 public static class IgdbQueries
 {
-    private const string Fields = "fields id,name,summary,cover.image_id,genres.id,genres.name,platforms.id,platforms.name,themes.id,themes.name,first_release_date; ";
+    private const string Fields = "fields id,name,summary,cover.image_id,genres.id,genres.name,platforms.id,platforms.name,themes.id,themes.name,artworks.image_id,artworks.width,artworks.height,screenshots.image_id,screenshots.width,screenshots.height,first_release_date; ";
     public static string Search(CatalogSearch query, DateTimeOffset now, long? genreId = null, long? platformId = null) =>
         Window(query, now, genreId, platformId, query.PageSize + 1, query.Offset);
     internal static string Window(CatalogSearch query, DateTimeOffset now, long? genreId, long? platformId, int limit, int offset,

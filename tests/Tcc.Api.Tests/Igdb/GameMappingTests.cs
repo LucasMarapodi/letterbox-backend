@@ -17,7 +17,7 @@ public sealed class GameMappingTests
         const string json = """
             {"id":42,"name":" Game ","summary":"Summary","cover":{"image_id":"co_test","url":"https://untrusted.example"},
              "genres":[{"id":12,"name":"RPG"},{"id":12,"name":"RPG"}],"platforms":[{"id":6,"name":"PC"}],
-             "first_release_date":1609459200,"rating":99,"aggregated_rating":90,"game_type":123456,"screenshots":[1]}
+             "first_release_date":1609459200,"rating":99,"aggregated_rating":90,"game_type":123456,"screenshots":[]}
             """;
         var dto = JsonSerializer.Deserialize<IgdbGameDto>(json);
         Assert.NotNull(dto);

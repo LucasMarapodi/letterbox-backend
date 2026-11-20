@@ -21,5 +21,6 @@ public sealed class ProfileCompletionController(ProfileCompletion completion) : 
     [ProducesResponseType<ApiError>(401)]
     [ProducesResponseType<ApiError>(404)]
     public async Task<ActionResult<ProfileCompletionDetails>> Put(ProfileCompletionRequest request, CancellationToken cancellationToken) =>
-        Ok(await completion.Set(request.Country, request.State, request.Bio, request.AvatarSpecified, request.AvatarUrl, request.FavoriteGameIds, cancellationToken));
+        Ok(await completion.Set(request.Country, request.State, request.Bio, request.AvatarSpecified, request.AvatarUrl, request.FavoriteGameIds, cancellationToken,
+            bannerSpecified: request.BannerSpecified, bannerUrl: request.BannerUrl));
 }

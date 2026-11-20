@@ -27,7 +27,7 @@ public sealed class LoginTests
         Assert.Equal(TimeSpan.Zero, login.ExpiresAt.Offset);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal(new[] { "expiresAt", "token", "user" }, json.RootElement.EnumerateObject().Select(property => property.Name).Order().ToArray());
-        Assert.Equal(new[] { "avatarUrl", "bio", "displayName", "id", "username" }, json.RootElement.GetProperty("user").EnumerateObject().Select(property => property.Name).Order().ToArray());
+        Assert.Equal(new[] { "avatarUrl", "bannerUrl", "bio", "displayName", "id", "username" }, json.RootElement.GetProperty("user").EnumerateObject().Select(property => property.Name).Order().ToArray());
         using var wrong = await client.PostAsJsonAsync("/api/v1/auth/login", new LoginInput("lucas@example.com", "Abc1!x"));
         Assert.Equal(HttpStatusCode.Unauthorized, wrong.StatusCode);
     }

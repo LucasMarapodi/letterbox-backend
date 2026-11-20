@@ -8,10 +8,7 @@ public sealed class PostgresGameDiscovery(Lazy<TccDbContext> context, ILocalGame
     public Task<IReadOnlyList<RankedCatalogGame>> RankAsync(bool trending, int offset, int limit, CancellationToken ct) =>
         OpinionStorage.Run<IReadOnlyList<RankedCatalogGame>>(async () =>
         {
-            var query = context.Value.Database.SqlQuery<RatingRow>($"""
-                SELECT jogo_id AS "GameId", AVG(nota) AS "AverageRating", COUNT(*)::int AS "RatingCount",
-                       MAX(atualizado_em) AS "LastRatedAt" FROM avaliacoes GROUP BY jogo_id
-                """);
+            var query = RatingRows(context.Value);
             var ordered = trending
                 ? query.OrderByDescending(row => row.LastRatedAt).ThenBy(row => row.GameId)
                 : query.OrderByDescending(row => row.AverageRating).ThenByDescending(row => row.RatingCount)
@@ -57,6 +54,30 @@ public sealed class PostgresGameDiscovery(Lazy<TccDbContext> context, ILocalGame
             return new CatalogRecommendations(rows.Select(row => new RecommendedCatalogGame(games[row.GameId].Game,
                 row.Score, row.AverageRating, row.MatchedGenres, row.MatchedThemes)).ToArray(), true);
         });
+
+    public Task<FeaturedCatalogGame> FeaturedAsync(CancellationToken ct) => OpinionStorage.Run(async () =>
+    {
+        var db = context.Value;
+        var candidates = RatingRows(db).Where(row => db.Games.Any(game => game.Id == row.GameId
+            && game.BannerUrl != null && game.BannerUrl.StartsWith("https://")));
+        // Filter images before selecting: a later candidate may have a banner even if the first cards do not.
+        var selected = await candidates.OrderByDescending(row => row.LastRatedAt).ThenBy(row => row.GameId).FirstOrDefaultAsync(ct);
+        var reason = "trending";
+        if (selected is null)
+        {
+            selected = await candidates.OrderByDescending(row => row.AverageRating).ThenByDescending(row => row.RatingCount)
+                .ThenByDescending(row => row.LastRatedAt).ThenBy(row => row.GameId).FirstOrDefaultAsync(ct);
+            reason = "top_rated";
+        }
+        if (selected is null) return new FeaturedCatalogGame(null, "no_candidate");
+        var games = await catalog.FindGamesAsync([selected.GameId], ct);
+        return new FeaturedCatalogGame(games[selected.GameId].Game, reason);
+    });
+
+    private static IQueryable<RatingRow> RatingRows(TccDbContext db) => db.Database.SqlQuery<RatingRow>($"""
+        SELECT jogo_id AS "GameId", AVG(nota) AS "AverageRating", COUNT(*)::int AS "RatingCount",
+               MAX(atualizado_em) AS "LastRatedAt" FROM avaliacoes GROUP BY jogo_id
+        """);
 
     private sealed record RatingRow(int GameId, double AverageRating, int RatingCount, DateTimeOffset LastRatedAt);
     private sealed record RecommendationRow(int GameId, int Score, double? AverageRating, string[] MatchedGenres, string[] MatchedThemes);

@@ -7,6 +7,7 @@ internal static class EndpointInventory
     public static IReadOnlyList<EndpointContract> All { get; } = new EndpointContract[]
     {
         new("get", "/health", 200, false),
+        new("get", "/api/v1/home/featured", 200, false, 503),
         new("get", "/api/v1/games/top-rated", 200, false, 400, 503),
         new("get", "/api/v1/games/trending", 200, false, 400, 503),
         new("get", "/api/v1/games/recommendations/me", 200, true, 400, 503),

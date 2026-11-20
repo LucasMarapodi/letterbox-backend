@@ -33,6 +33,7 @@ public sealed class UserAccountConfiguration : IEntityTypeConfiguration<UserAcco
             profile.Property(item => item.DisplayName).HasColumnName("nome_exibicao").HasMaxLength(100).IsRequired();
             profile.Property(item => item.Bio).HasColumnName("biografia").HasMaxLength(2000).IsRequired();
             profile.Property(item => item.AvatarUrl).HasColumnName("avatar_url").HasMaxLength(2048);
+            profile.Property(item => item.BannerUrl).HasColumnName("banner_url").HasMaxLength(2048);
             profile.Property(item => item.Country).HasColumnName("pais").HasMaxLength(100);
             profile.Property(item => item.State).HasColumnName("estado").HasMaxLength(100);
             profile.Property(item => item.UpdatedAt).HasColumnName("atualizado_em");
